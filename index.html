@@ -240,47 +240,6 @@
   }
   .divider { border: none; border-top: 1px solid rgba(99,102,241,0.09); }
 
-  /* ── PROJECT CARDS ── */
-  .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
-  .project-card {
-    background: rgba(255,255,255,0.028);
-    border: 1px solid rgba(99,102,241,0.14);
-    border-radius: 16px; padding: 26px;
-    cursor: pointer; transition: transform 0.3s, border-color 0.3s, background 0.3s;
-    position: relative; overflow: hidden;
-  }
-  .project-card::after {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, transparent 55%);
-    opacity: 0; transition: opacity 0.3s;
-  }
-  .project-card:hover { transform: translateY(-5px); border-color: rgba(99,102,241,0.42); background: rgba(255,255,255,0.052); }
-  .project-card:hover::after { opacity: 1; }
-  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
-  .card-icon {
-    width: 46px; height: 46px; border-radius: 13px;
-    display: flex; align-items: center; justify-content: center; font-size: 22px;
-  }
-  .icon-blue   { background: rgba(56,189,248,0.13); border: 1px solid rgba(56,189,248,0.24); }
-  .icon-purple { background: rgba(168,85,247,0.13); border: 1px solid rgba(168,85,247,0.24); }
-  .icon-green  { background: rgba(52,211,153,0.13); border: 1px solid rgba(52,211,153,0.24); }
-  .icon-amber  { background: rgba(251,191,36,0.13); border: 1px solid rgba(251,191,36,0.24); }
-  .card-badge {
-    font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
-    padding: 4px 11px; border-radius: 100px; letter-spacing: 0.04em;
-  }
-  .badge-live { background: rgba(52,211,153,0.11); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.24); }
-  .badge-beta { background: rgba(251,191,36,0.11); color: #fcd34d; border: 1px solid rgba(251,191,36,0.24); }
-  .badge-new  { background: rgba(99,102,241,0.11); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.28); }
-  .card-title { font-size: 17px; font-weight: 600; color: #f1f5f9; margin-bottom: 9px; }
-  .card-desc  { font-size: 13px; color: rgba(226,232,240,0.43); line-height: 1.65; margin-bottom: 20px; }
-  .card-tags  { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tag {
-    font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
-    background: rgba(99,102,241,0.08); color: rgba(165,180,252,0.78);
-    border: 1px solid rgba(99,102,241,0.17); padding: 3px 10px; border-radius: 4px;
-  }
-
   /* ── TECH STACK ── */
   .tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 14px; }
   .tech-item {
@@ -394,7 +353,6 @@
   <div class="nav-inner">
     <div class="nav-logo">// AXON.AI</div>
     <div class="nav-links">
-      <a href="#projects">Projects</a>
       <a href="#stack">Stack</a>
       <a href="#skills">Skills</a>
       <a href="#contact">Contact</a>
@@ -412,86 +370,12 @@
   </h1>
   <p class="hero-sub">I craft intelligent systems that think, learn, and evolve. From neural architectures to production-grade AI pipelines that scale.</p>
   <div class="hero-btns">
-    <button class="btn-primary" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">Explore My Work</button>
-    <button class="btn-secondary" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Get in Touch</button>
+<button class="btn-secondary" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Get in Touch</button>
   </div>
   <div class="hero-stats">
     <div class="stat"><div class="stat-val" id="s1">0+</div><div class="stat-label">Projects Built</div></div>
     <div class="stat"><div class="stat-val" id="s2">0+</div><div class="stat-label">Models Deployed</div></div>
     <div class="stat"><div class="stat-val" id="s3">0+</div><div class="stat-label">Years Experience</div></div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- PROJECTS -->
-<section class="section" id="projects">
-  <div class="container">
-    <div class="section-label">// Featured Work</div>
-    <div class="section-title">AI <span>Projects</span></div>
-    <div class="projects-grid">
-
-      <div class="project-card">
-        <div class="card-top">
-          <div class="card-icon icon-blue">🧠</div>
-          <span class="card-badge badge-live">● Live</span>
-        </div>
-        <div class="card-title">NeuroChat</div>
-        <div class="card-desc">Conversational AI with persistent memory, multi-modal inputs, and real-time emotion detection built on GPT-4 Turbo.</div>
-        <div class="card-tags"><span class="tag">GPT-4</span><span class="tag">LangChain</span><span class="tag">Redis</span><span class="tag">React</span></div>
-      </div>
-
-      <div class="project-card">
-        <div class="card-top">
-          <div class="card-icon icon-purple">🎨</div>
-          <span class="card-badge badge-new">✦ New</span>
-        </div>
-        <div class="card-title">VisionForge</div>
-        <div class="card-desc">Text-to-image pipeline with custom LoRA fine-tuning and style transfer at enterprise scale. 10k+ daily generations.</div>
-        <div class="card-tags"><span class="tag">Diffusion</span><span class="tag">LoRA</span><span class="tag">CUDA</span><span class="tag">FastAPI</span></div>
-      </div>
-
-      <div class="project-card">
-        <div class="card-top">
-          <div class="card-icon icon-green">📊</div>
-          <span class="card-badge badge-live">● Live</span>
-        </div>
-        <div class="card-title">PredictFlow</div>
-        <div class="card-desc">Time-series forecasting engine for financial markets with 94% directional accuracy over 18 months of live trading.</div>
-        <div class="card-tags"><span class="tag">LSTM</span><span class="tag">Transformer</span><span class="tag">MLflow</span></div>
-      </div>
-
-      <div class="project-card">
-        <div class="card-top">
-          <div class="card-icon icon-amber">🔬</div>
-          <span class="card-badge badge-beta">⬡ Beta</span>
-        </div>
-        <div class="card-title">BioScan AI</div>
-        <div class="card-desc">Medical imaging classifier with explainable AI for radiology reports. HIPAA compliant, deployed across 3 hospital networks.</div>
-        <div class="card-tags"><span class="tag">ResNet</span><span class="tag">LIME</span><span class="tag">PyTorch</span></div>
-      </div>
-
-      <div class="project-card">
-        <div class="card-top">
-          <div class="card-icon icon-blue">🤖</div>
-          <span class="card-badge badge-live">● Live</span>
-        </div>
-        <div class="card-title">AgentOS</div>
-        <div class="card-desc">Multi-agent orchestration framework for autonomous task execution, planning, and tool-use across complex workflows.</div>
-        <div class="card-tags"><span class="tag">AutoGPT</span><span class="tag">Tools API</span><span class="tag">Docker</span><span class="tag">K8s</span></div>
-      </div>
-
-      <div class="project-card">
-        <div class="card-top">
-          <div class="card-icon icon-purple">🗣️</div>
-          <span class="card-badge badge-new">✦ New</span>
-        </div>
-        <div class="card-title">VoiceClone</div>
-        <div class="card-desc">Zero-shot voice synthesis with 3-second enrollment and 99% speaker similarity score. Sub-200ms streaming latency.</div>
-        <div class="card-tags"><span class="tag">XTTS</span><span class="tag">FastAPI</span><span class="tag">WebRTC</span></div>
-      </div>
-
-    </div>
   </div>
 </section>
 
