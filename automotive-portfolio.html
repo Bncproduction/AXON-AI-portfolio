@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marcus Cole — Automotive Quality Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red:     #e63946;
+    --red-dim: rgba(230,57,70,0.15);
+    --amber:   #f4a261;
+    --silver:  #94a3b8;
+    --bg:      #080c14;
+    --bg2:     #0d1220;
+    --surface: rgba(255,255,255,0.03);
+    --border:  rgba(230,57,70,0.18);
+    --border2: rgba(255,255,255,0.07);
+    --text:    #e2e8f0;
+    --muted:   rgba(226,232,240,0.45);
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ── BACKGROUND ── */
+  .bg-carbon {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+  }
+  .bg-glow {
+    position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+  }
+  .bg-glow-1 {
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(230,57,70,0.07) 0%, transparent 65%);
+    top: -300px; right: -200px;
+    animation: drift 12s ease-in-out infinite;
+  }
+  .bg-glow-2 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(244,162,97,0.05) 0%, transparent 65%);
+    bottom: -200px; left: -100px;
+    animation: drift 15s ease-in-out infinite reverse;
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate(0,0); }
+    50% { transform: translate(30px, 50px); }
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(8,12,20,0.88);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(230,57,70,0.14);
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto; padding: 0 36px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .nav-logo-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, #e63946, #f4a261);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 800; color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.05em;
+  }
+  .nav-logo-text {
+    font-size: 15px; font-weight: 700; color: #f1f5f9;
+    letter-spacing: -0.01em;
+  }
+  .nav-logo-sub {
+    font-size: 10px; color: var(--muted); letter-spacing: 0.08em;
+    text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+  }
+  .nav-links { display: flex; gap: 4px; align-items: center; }
+  .nav-links a {
+    font-size: 13.5px; color: var(--muted);
+    text-decoration: none; padding: 6px 14px; border-radius: 7px;
+    transition: all 0.2s; font-weight: 500;
+  }
+  .nav-links a:hover { color: #f1f5f9; background: rgba(255,255,255,0.06); }
+  .nav-cta {
+    background: linear-gradient(135deg, #e63946, #c1121f) !important;
+    color: #fff !important; margin-left: 8px;
+    font-weight: 600 !important;
+    box-shadow: 0 0 18px rgba(230,57,70,0.3);
+  }
+  .nav-cta:hover {
+    box-shadow: 0 0 28px rgba(230,57,70,0.5) !important;
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #f04553, #e63946) !important;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 120px 36px 100px;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--red-dim); border: 1px solid rgba(230,57,70,0.35);
+    color: #fca5a5; font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; padding: 7px 16px; border-radius: 100px;
+    margin-bottom: 32px; font-family: 'JetBrains Mono', monospace;
+    animation: fadeUp 0.6s ease both;
+  }
+  .pulse-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #e63946; box-shadow: 0 0 8px rgba(230,57,70,0.9);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(230,57,70,0.9); }
+    50% { box-shadow: 0 0 2px rgba(230,57,70,0.3); }
+  }
+
+  .hero-layout { display: grid; grid-template-columns: 1fr auto; gap: 60px; align-items: center; }
+  .hero h1 {
+    font-size: clamp(40px, 5.5vw, 68px);
+    font-weight: 800; line-height: 1.06;
+    letter-spacing: -0.03em; margin-bottom: 10px;
+    animation: fadeUp 0.6s ease 0.08s both;
+  }
+  .hero-name { color: #f1f5f9; display: block; }
+  .hero-role {
+    display: block;
+    background: linear-gradient(90deg, #e63946 0%, #f4a261 60%, #e63946 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    background-size: 200% 100%;
+    animation: shimmer 4s linear infinite, fadeUp 0.6s ease 0.08s both;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .hero-desc {
+    font-size: 17px; color: var(--muted); line-height: 1.78;
+    max-width: 540px; margin: 24px 0 40px;
+    animation: fadeUp 0.6s ease 0.16s both;
+  }
+  .hero-desc strong { color: rgba(226,232,240,0.8); font-weight: 600; }
+  .hero-btns {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    animation: fadeUp 0.6s ease 0.22s both;
+  }
+  .btn-red {
+    background: linear-gradient(135deg, #e63946, #c1121f);
+    color: #fff; border: none; padding: 14px 30px;
+    border-radius: 9px; font-size: 14.5px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; box-shadow: 0 0 22px rgba(230,57,70,0.35);
+    font-family: 'Inter', sans-serif; letter-spacing: 0.01em;
+  }
+  .btn-red:hover { transform: translateY(-3px); box-shadow: 0 0 38px rgba(230,57,70,0.55); }
+  .btn-outline {
+    background: transparent; color: var(--silver);
+    border: 1px solid var(--border2); padding: 14px 30px;
+    border-radius: 9px; font-size: 14.5px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; font-family: 'Inter', sans-serif;
+  }
+  .btn-outline:hover { border-color: rgba(230,57,70,0.5); color: #f1f5f9; background: var(--red-dim); }
+
+  /* Hero card panel */
+  .hero-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border2);
+    border-radius: 18px; padding: 28px 24px;
+    min-width: 220px; animation: fadeUp 0.6s ease 0.3s both;
+  }
+  .hero-card-item {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .hero-card-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .hero-card-item:first-child { padding-top: 0; }
+  .hci-val {
+    font-size: 26px; font-weight: 800; color: #f1f5f9;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em;
+  }
+  .hci-val span { color: #e63946; }
+  .hci-label {
+    font-size: 10.5px; color: var(--muted); letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTION SCAFFOLD ── */
+  .section { padding: 90px 36px; max-width: 1100px; margin: 0 auto; }
+  .section-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #e63946; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-tag::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(230,57,70,0.4), transparent);
+    max-width: 80px;
+  }
+  .section-title {
+    font-size: 36px; font-weight: 800; color: #f1f5f9;
+    letter-spacing: -0.03em; margin-bottom: 16px;
+  }
+  .section-title span { color: #e63946; }
+  .section-sub {
+    font-size: 15px; color: var(--muted); max-width: 560px;
+    line-height: 1.75; margin-bottom: 56px;
+  }
+  .divider {
+    border: none; border-top: 1px solid rgba(255,255,255,0.06);
+    max-width: 1100px; margin: 0 auto;
+  }
+
+  /* ── COMPETENCY CARDS ── */
+  .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+  .comp-card {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 14px; padding: 26px;
+    transition: all 0.3s; position: relative; overflow: hidden;
+    cursor: default;
+  }
+  .comp-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #e63946, #f4a261);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.3s;
+  }
+  .comp-card:hover { border-color: rgba(230,57,70,0.3); transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35); }
+  .comp-card:hover::before { transform: scaleX(1); }
+  .comp-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-bottom: 16px;
+    background: var(--red-dim); border: 1px solid rgba(230,57,70,0.22);
+  }
+  .comp-title { font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+  .comp-abbr {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: #e63946; letter-spacing: 0.08em; margin-bottom: 10px; text-transform: uppercase;
+  }
+  .comp-desc { font-size: 12.5px; color: var(--muted); line-height: 1.65; }
+
+  /* ── EXPERIENCE TIMELINE ── */
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #e63946 0%, rgba(230,57,70,0.1) 100%);
+  }
+  .tl-item { position: relative; margin-bottom: 48px; }
+  .tl-item:last-child { margin-bottom: 0; }
+  .tl-dot {
+    position: absolute; left: -38px; top: 6px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #e63946; border: 3px solid var(--bg);
+    box-shadow: 0 0 10px rgba(230,57,70,0.6);
+  }
+  .tl-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
+  .tl-title { font-size: 17px; font-weight: 700; color: #f1f5f9; }
+  .tl-company { font-size: 13px; color: #e63946; font-weight: 600; margin-top: 3px; }
+  .tl-date {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--muted); background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border2); padding: 4px 12px; border-radius: 100px;
+    white-space: nowrap;
+  }
+  .tl-desc { font-size: 13.5px; color: var(--muted); line-height: 1.75; margin-top: 12px; }
+  .tl-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+  .tl-tag {
+    font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
+    background: rgba(230,57,70,0.08); color: rgba(230,57,70,0.85);
+    border: 1px solid rgba(230,57,70,0.2); padding: 3px 10px; border-radius: 4px;
+    letter-spacing: 0.04em;
+  }
+  .tl-achievements { margin-top: 14px; list-style: none; }
+  .tl-achievements li {
+    font-size: 13px; color: var(--muted); padding: 5px 0;
+    display: flex; align-items: flex-start; gap: 10px; line-height: 1.6;
+  }
+  .tl-achievements li::before {
+    content: '▸'; color: #e63946; flex-shrink: 0; margin-top: 1px; font-size: 11px;
+  }
+
+  /* ── SKILLS ── */
+  .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+  .skill-group {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 14px; padding: 24px;
+  }
+  .skill-group-title {
+    font-size: 11px; font-family: 'JetBrains Mono', monospace;
+    color: #e63946; letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+  }
+  .skill-group-title::after { content: ''; flex: 1; height: 1px; background: rgba(230,57,70,0.2); }
+  .skill-item { margin-bottom: 14px; }
+  .skill-item:last-child { margin-bottom: 0; }
+  .skill-top { display: flex; justify-content: space-between; margin-bottom: 7px; }
+  .skill-name { font-size: 13px; font-weight: 500; color: rgba(226,232,240,0.78); }
+  .skill-pct { font-size: 10.5px; font-family: 'JetBrains Mono', monospace; color: #e63946; }
+  .skill-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 100px; overflow: hidden; }
+  .skill-fill {
+    height: 100%; border-radius: 100px; width: 0%;
+    background: linear-gradient(90deg, #e63946, #f4a261);
+    transition: width 1.4s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 0 6px rgba(230,57,70,0.4);
+  }
+
+  /* ── CERTIFICATIONS ── */
+  .cert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .cert-card {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 14px; padding: 24px 20px; text-align: center;
+    transition: all 0.3s; position: relative; overflow: hidden;
+  }
+  .cert-card:hover { border-color: rgba(230,57,70,0.3); transform: translateY(-3px); }
+  .cert-icon { font-size: 34px; margin-bottom: 14px; display: block; }
+  .cert-name { font-size: 13px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; line-height: 1.4; }
+  .cert-body {
+    font-size: 11px; color: var(--muted); letter-spacing: 0.04em;
+    margin-bottom: 12px;
+  }
+  .cert-badge {
+    display: inline-block; font-size: 10px; font-family: 'JetBrains Mono', monospace;
+    padding: 3px 10px; border-radius: 100px; letter-spacing: 0.05em;
+  }
+  .cert-active { background: rgba(52,211,153,0.1); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.25); }
+  .cert-progress { background: rgba(244,162,97,0.1); color: #fcd34d; border: 1px solid rgba(244,162,97,0.25); }
+
+  /* ── TOOLS ── */
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+  .tool-chip {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 16px 12px; text-align: center;
+    transition: all 0.2s; cursor: default;
+  }
+  .tool-chip:hover { border-color: rgba(230,57,70,0.35); background: rgba(230,57,70,0.05); transform: translateY(-2px); }
+  .tool-icon { font-size: 24px; margin-bottom: 8px; display: block; }
+  .tool-name { font-size: 12px; font-weight: 600; color: rgba(226,232,240,0.72); }
+  .tool-cat { font-size: 9.5px; color: var(--muted); margin-top: 3px; letter-spacing: 0.04em; }
+
+  /* ── CONTACT ── */
+  .contact-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 32px; align-items: start; }
+  .contact-info { display: flex; flex-direction: column; gap: 18px; }
+  .contact-block {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 14px; padding: 22px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .contact-block-icon {
+    width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0;
+    background: var(--red-dim); border: 1px solid rgba(230,57,70,0.25);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .contact-block-label { font-size: 10.5px; color: var(--muted); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 4px; }
+  .contact-block-val { font-size: 14px; font-weight: 600; color: #f1f5f9; }
+  .contact-form {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 36px;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+  .form-label {
+    font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
+    color: rgba(230,57,70,0.75); letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .form-input, .form-textarea {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border2);
+    border-radius: 8px; color: #e2e8f0; font-size: 14px;
+    font-family: 'Inter', sans-serif; padding: 12px 16px;
+    transition: border-color 0.2s, background 0.2s; outline: none;
+  }
+  .form-input:focus, .form-textarea:focus {
+    border-color: rgba(230,57,70,0.5);
+    background: rgba(230,57,70,0.04);
+    box-shadow: 0 0 0 3px rgba(230,57,70,0.08);
+  }
+  .form-textarea { resize: vertical; min-height: 120px; }
+  .form-input::placeholder, .form-textarea::placeholder { color: rgba(226,232,240,0.18); }
+  .submit-btn {
+    width: 100%; background: linear-gradient(135deg, #e63946, #c1121f);
+    color: #fff; border: none; padding: 15px;
+    border-radius: 9px; font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; font-family: 'Inter', sans-serif;
+    box-shadow: 0 0 24px rgba(230,57,70,0.3); letter-spacing: 0.02em;
+  }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(230,57,70,0.5); }
+  .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+  .success-msg {
+    display: none; text-align: center; padding: 18px;
+    background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 9px; color: #6ee7b7; font-size: 13px; margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding: 36px;
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 1100px; margin: 0 auto;
+    color: var(--muted); font-size: 13px;
+    flex-wrap: wrap; gap: 16px;
+  }
+  .footer-brand {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    color: rgba(226,232,240,0.35); letter-spacing: 0.04em;
+  }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-links a { color: var(--muted); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+  .footer-links a:hover { color: #e63946; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .hero-layout { grid-template-columns: 1fr; }
+    .hero-card { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; }
+    .hero-card-item { border-bottom: none; border-right: 1px solid rgba(255,255,255,0.06); padding: 14px; text-align: center; }
+    .hero-card-item:last-child { border-right: none; }
+    .contact-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .section { padding: 64px 20px; }
+    .hero { padding: 80px 20px 70px; }
+    .nav-inner { padding: 0 20px; }
+    footer { padding: 28px 20px; flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 480px) {
+    .nav-links a:not(.nav-cta) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-carbon"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <div class="nav-logo-icon">MC</div>
+      <div>
+        <div class="nav-logo-text">Marcus Cole</div>
+        <div class="nav-logo-sub">Quality Engineer</div>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="#about">About</a>
+      <a href="#experience">Experience</a>
+      <a href="#skills">Skills</a>
+      <a href="#certifications">Certs</a>
+      <a href="#contact">Contact</a>
+      <a href="#contact" class="nav-cta">Hire Me</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="about">
+  <div class="hero-eyebrow">
+    <span class="pulse-dot"></span>
+    Open to New Opportunities · IATF 16949 Certified
+  </div>
+  <div class="hero-layout">
+    <div>
+      <h1>
+        <span class="hero-name">Marcus Cole</span>
+        <span class="hero-role">Automotive Quality<br>Engineer</span>
+      </h1>
+      <p class="hero-desc">
+        10+ years driving <strong>zero-defect manufacturing</strong> across Tier 1 & OEM automotive suppliers. Expert in APQP, PPAP, FMEA, and IATF 16949 compliance — turning quality challenges into competitive advantages.
+      </p>
+      <div class="hero-btns">
+        <button class="btn-red" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Get In Touch</button>
+        <button class="btn-outline" onclick="document.getElementById('experience').scrollIntoView({behavior:'smooth'})">View Experience</button>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-card-item">
+        <div class="hci-val">10<span>+</span></div>
+        <div class="hci-label">Years in Auto QE</div>
+      </div>
+      <div class="hero-card-item">
+        <div class="hci-val">98<span>%</span></div>
+        <div class="hci-label">First-Pass Yield</div>
+      </div>
+      <div class="hero-card-item">
+        <div class="hci-val">3<span>×</span></div>
+        <div class="hci-label">IATF Audits Led</div>
+      </div>
+      <div class="hero-card-item">
+        <div class="hci-val">$2<span>M</span></div>
+        <div class="hci-label">Cost Savings</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- CORE COMPETENCIES -->
+<section class="section" id="competencies">
+  <div class="section-tag">// Core Competencies</div>
+  <div class="section-title">Quality <span>Tools & Frameworks</span></div>
+  <p class="section-sub">Proficient in the full suite of AIAG automotive quality core tools, applied across product development, manufacturing, and supplier quality.</p>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📋</div>
+      <div class="comp-abbr">APQP</div>
+      <div class="comp-title">Advanced Product Quality Planning</div>
+      <div class="comp-desc">Structured process for defining and establishing the steps necessary to ensure a product satisfies the customer from launch to mass production.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📦</div>
+      <div class="comp-abbr">PPAP</div>
+      <div class="comp-title">Production Part Approval Process</div>
+      <div class="comp-desc">Level 1–5 PPAP submissions across 18 elements. Extensive OEM portal experience with GM, Ford, Stellantis, and BMW.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚠️</div>
+      <div class="comp-abbr">FMEA</div>
+      <div class="comp-title">Failure Mode & Effects Analysis</div>
+      <div class="comp-desc">Design and Process FMEA development using AIAG-VDA 2019 methodology. RPN reduction and risk mitigation planning.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📐</div>
+      <div class="comp-abbr">SPC</div>
+      <div class="comp-title">Statistical Process Control</div>
+      <div class="comp-desc">Control chart implementation (Xbar-R, P, U charts), Cpk/Ppk analysis, and process capability studies for critical dimensions.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📏</div>
+      <div class="comp-abbr">MSA</div>
+      <div class="comp-title">Measurement System Analysis</div>
+      <div class="comp-desc">Gauge R&R studies, Attribute Agreement Analysis, linearity and bias studies to validate measurement systems.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔍</div>
+      <div class="comp-abbr">8D / RCA</div>
+      <div class="comp-title">8D Problem Solving & Root Cause Analysis</div>
+      <div class="comp-desc">Structured 8D reports with 5-Why, Fishbone, and Fault Tree Analysis. Driving permanent corrective actions.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🏭</div>
+      <div class="comp-abbr">IATF 16949</div>
+      <div class="comp-title">IATF 16949 Quality Management</div>
+      <div class="comp-desc">Internal auditor certified. Led surveillance and recertification audits. Gap analysis and management review facilitation.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📊</div>
+      <div class="comp-abbr">Control Plan</div>
+      <div class="comp-title">Control Plan Development</div>
+      <div class="comp-desc">Prototype, pre-launch, and production control plans linked to PFMEAs. Reaction plan development and operator instruction sheets.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- EXPERIENCE -->
+<section class="section" id="experience">
+  <div class="section-tag">// Work History</div>
+  <div class="section-title">Professional <span>Experience</span></div>
+  <p class="section-sub">Over a decade of progressive quality engineering roles across Tier 1 suppliers and OEM environments.</p>
+
+  <div class="timeline">
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-header">
+        <div>
+          <div class="tl-title">Senior Quality Engineer</div>
+          <div class="tl-company">Magna International — Body & Chassis Division</div>
+        </div>
+        <div class="tl-date">2021 – Present</div>
+      </div>
+      <ul class="tl-achievements">
+        <li>Led APQP and PPAP submissions for 12 new programs across Ford F-150 and GM Silverado platforms, achieving 100% on-time launch.</li>
+        <li>Implemented SPC control charts across 40+ critical characteristics, improving Cpk from 1.08 to 1.67 plant-wide.</li>
+        <li>Managed supplier quality for 28 Tier 2 suppliers — reduced incoming PPM by 62% over 18 months.</li>
+        <li>Facilitated IATF 16949 recertification audit with zero major non-conformances recorded.</li>
+      </ul>
+      <div class="tl-tags">
+        <span class="tl-tag">APQP</span><span class="tl-tag">PPAP</span><span class="tl-tag">SPC</span>
+        <span class="tl-tag">IATF 16949</span><span class="tl-tag">Supplier Quality</span>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-header">
+        <div>
+          <div class="tl-title">Quality Engineer II</div>
+          <div class="tl-company">Martinrea International — Stamping & Assembly</div>
+        </div>
+        <div class="tl-date">2017 – 2021</div>
+      </div>
+      <ul class="tl-achievements">
+        <li>Developed PFMEA and control plans for 6 new stamping lines, reducing detection reaction time by 40%.</li>
+        <li>Drove 8D problem-solving on 3 critical customer complaints (Stellantis), achieving 0 repeat issues within 12 months.</li>
+        <li>Executed CMM programming and GD&T layout inspections for complex structural assemblies.</li>
+        <li>Generated $850K in cost savings through scrap reduction and process optimization initiatives.</li>
+      </ul>
+      <div class="tl-tags">
+        <span class="tl-tag">FMEA</span><span class="tl-tag">8D</span><span class="tl-tag">CMM</span>
+        <span class="tl-tag">GD&T</span><span class="tl-tag">Lean</span>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-header">
+        <div>
+          <div class="tl-title">Quality Engineer I</div>
+          <div class="tl-company">Shiloh Industries — Lightweighting Solutions</div>
+        </div>
+        <div class="tl-date">2014 – 2017</div>
+      </div>
+      <ul class="tl-achievements">
+        <li>Supported PPAP submissions for aluminum castings and laser-welded blanks on BMW 3 Series program.</li>
+        <li>Performed MSA studies and gauge calibration across 120+ instruments in the metrology lab.</li>
+        <li>Managed internal audit schedule and corrective action tracking for ISO/TS 16949 compliance.</li>
+      </ul>
+      <div class="tl-tags">
+        <span class="tl-tag">PPAP</span><span class="tl-tag">MSA</span><span class="tl-tag">ISO/TS 16949</span>
+        <span class="tl-tag">Internal Audits</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- SKILLS -->
+<section class="section" id="skills">
+  <div class="section-tag">// Proficiency</div>
+  <div class="section-title">Technical <span>Skills</span></div>
+  <p class="section-sub">A broad range of quality engineering competencies spanning standards, analysis methods, software, and manufacturing processes.</p>
+
+  <div class="skills-grid">
+    <div class="skill-group">
+      <div class="skill-group-title">Quality Standards</div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">IATF 16949 / ISO 9001</span><span class="skill-pct">97%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="97"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">AIAG Core Tools (APQP/PPAP/FMEA)</span><span class="skill-pct">95%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="95"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">Customer Specific Requirements</span><span class="skill-pct">90%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="90"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">VDA 6.3 Process Audit</span><span class="skill-pct">82%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="82"></div></div>
+      </div>
+    </div>
+
+    <div class="skill-group">
+      <div class="skill-group-title">Analysis & Problem Solving</div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">Statistical Process Control (SPC)</span><span class="skill-pct">93%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="93"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">Measurement System Analysis (MSA)</span><span class="skill-pct">91%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="91"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">8D / Root Cause Analysis</span><span class="skill-pct">96%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="96"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">Design of Experiments (DOE)</span><span class="skill-pct">78%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="78"></div></div>
+      </div>
+    </div>
+
+    <div class="skill-group">
+      <div class="skill-group-title">Inspection & Metrology</div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">GD&T (ASME Y14.5)</span><span class="skill-pct">94%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="94"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">CMM Operation & Programming</span><span class="skill-pct">88%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="88"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">Optical & Vision Systems</span><span class="skill-pct">75%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="75"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-top"><span class="skill-name">Gauge Design & Calibration</span><span class="skill-pct">85%</span></div>
+        <div class="skill-bar"><div class="skill-fill" data-pct="85"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- TOOLS -->
+<section class="section" id="tools">
+  <div class="section-tag">// Software & Tools</div>
+  <div class="section-title">My <span>Toolkit</span></div>
+  <p class="section-sub">Industry-standard software and measurement tools used across daily quality engineering activities.</p>
+
+  <div class="tools-grid">
+    <div class="tool-chip"><span class="tool-icon">📊</span><div class="tool-name">Minitab</div><div class="tool-cat">Statistics</div></div>
+    <div class="tool-chip"><span class="tool-icon">📋</span><div class="tool-name">AIAG Forms</div><div class="tool-cat">Core Tools</div></div>
+    <div class="tool-chip"><span class="tool-icon">📐</span><div class="tool-name">PC-DMIS</div><div class="tool-cat">CMM Software</div></div>
+    <div class="tool-chip"><span class="tool-icon">🔧</span><div class="tool-name">CATIA V5</div><div class="tool-cat">3D / GD&T</div></div>
+    <div class="tool-chip"><span class="tool-icon">📦</span><div class="tool-name">Teamcenter</div><div class="tool-cat">PLM / PPAP</div></div>
+    <div class="tool-chip"><span class="tool-icon">🚗</span><div class="tool-name">GM Covisint</div><div class="tool-cat">OEM Portal</div></div>
+    <div class="tool-chip"><span class="tool-icon">🔵</span><div class="tool-name">Ford GPIRS</div><div class="tool-cat">OEM Portal</div></div>
+    <div class="tool-chip"><span class="tool-icon">⚙️</span><div class="tool-name">SAP QM</div><div class="tool-cat">ERP Quality</div></div>
+    <div class="tool-chip"><span class="tool-icon">📈</span><div class="tool-name">MS Excel</div><div class="tool-cat">Data Analysis</div></div>
+    <div class="tool-chip"><span class="tool-icon">🗂️</span><div class="tool-name">Jira / Confluence</div><div class="tool-cat">Tracking</div></div>
+    <div class="tool-chip"><span class="tool-icon">📷</span><div class="tool-name">Cognex Vision</div><div class="tool-cat">Inspection</div></div>
+    <div class="tool-chip"><span class="tool-icon">🔍</span><div class="tool-name">Zeiss Calypso</div><div class="tool-cat">CMM Software</div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CERTIFICATIONS -->
+<section class="section" id="certifications">
+  <div class="section-tag">// Credentials</div>
+  <div class="section-title">Certifications & <span>Training</span></div>
+  <p class="section-sub">Formal qualifications that validate expertise in automotive quality management systems and methodologies.</p>
+
+  <div class="cert-grid">
+    <div class="cert-card">
+      <span class="cert-icon">🏆</span>
+      <div class="cert-name">IATF 16949 Internal Auditor</div>
+      <div class="cert-body">Exemplar Global · 2022</div>
+      <span class="cert-badge cert-active">● Active</span>
+    </div>
+    <div class="cert-card">
+      <span class="cert-icon">🎯</span>
+      <div class="cert-name">Six Sigma Green Belt</div>
+      <div class="cert-body">ASQ Certified · 2020</div>
+      <span class="cert-badge cert-active">● Active</span>
+    </div>
+    <div class="cert-card">
+      <span class="cert-icon">📋</span>
+      <div class="cert-name">AIAG APQP & PPAP</div>
+      <div class="cert-body">AIAG Training · 2019</div>
+      <span class="cert-badge cert-active">● Active</span>
+    </div>
+    <div class="cert-card">
+      <span class="cert-icon">⚠️</span>
+      <div class="cert-name">AIAG-VDA FMEA</div>
+      <div class="cert-body">AIAG Training · 2021</div>
+      <span class="cert-badge cert-active">● Active</span>
+    </div>
+    <div class="cert-card">
+      <span class="cert-icon">📐</span>
+      <div class="cert-name">GD&T ASME Y14.5</div>
+      <div class="cert-body">Effective Training Inc. · 2018</div>
+      <span class="cert-badge cert-active">● Active</span>
+    </div>
+    <div class="cert-card">
+      <span class="cert-icon">🔬</span>
+      <div class="cert-name">VDA 6.3 Process Auditor</div>
+      <div class="cert-body">TÜV SÜD · In Progress</div>
+      <span class="cert-badge cert-progress">⬡ In Progress</span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CONTACT -->
+<section class="section" id="contact">
+  <div class="section-tag">// Let's Connect</div>
+  <div class="section-title">Start a <span>Conversation</span></div>
+  <p class="section-sub">Available for full-time roles, contract engagements, and consulting. Typically respond within 24 hours.</p>
+
+  <div class="contact-grid">
+    <div class="contact-info">
+      <div class="contact-block">
+        <div class="contact-block-icon">✉️</div>
+        <div>
+          <div class="contact-block-label">Email</div>
+          <div class="contact-block-val">marcus.cole@qualityeng.io</div>
+        </div>
+      </div>
+      <div class="contact-block">
+        <div class="contact-block-icon">📍</div>
+        <div>
+          <div class="contact-block-label">Location</div>
+          <div class="contact-block-val">Detroit Metro Area, MI</div>
+        </div>
+      </div>
+      <div class="contact-block">
+        <div class="contact-block-icon">🔗</div>
+        <div>
+          <div class="contact-block-label">LinkedIn</div>
+          <div class="contact-block-val">linkedin.com/in/marcus-cole-qe</div>
+        </div>
+      </div>
+      <div class="contact-block">
+        <div class="contact-block-icon">💼</div>
+        <div>
+          <div class="contact-block-label">Availability</div>
+          <div class="contact-block-val">Open to Opportunities</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="contact-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          <input class="form-input" type="text" placeholder="Jane Smith" id="fname">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" placeholder="jane@company.com" id="femail">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Company / Organization</label>
+        <input class="form-input" type="text" placeholder="Tier 1 Supplier, OEM, Consulting Firm..." id="fcompany">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea class="form-textarea" placeholder="Describe the role, project, or inquiry..." id="fmsg"></textarea>
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Send Message →</button>
+      <div class="success-msg" id="smsg">✓ Message received! I'll respond within 24 hours.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-brand">// MARCUS COLE · AUTOMOTIVE QUALITY ENGINEER</div>
+  <div class="footer-links">
+    <a href="#about">About</a>
+    <a href="#experience">Experience</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <div style="color: var(--muted); font-size: 12px;">© 2026 · All Rights Reserved</div>
+</footer>
+
+<script>
+  // ── SKILL BARS ON SCROLL ──
+  const fills = document.querySelectorAll('.skill-fill');
+  let triggered = false;
+  function triggerBars() {
+    if (triggered) return;
+    const sec = document.getElementById('skills');
+    if (!sec) return;
+    if (sec.getBoundingClientRect().top < window.innerHeight * 0.88) {
+      triggered = true;
+      fills.forEach(f => { f.style.width = f.dataset.pct + '%'; });
+    }
+  }
+  window.addEventListener('scroll', triggerBars, { passive: true });
+  triggerBars();
+
+  // ── COUNTER ANIMATION ──
+  function animCounter(el, target, prefix, suffix) {
+    const dur = 1800, steps = target;
+    const iv = dur / steps;
+    let cur = 0;
+    const t = setInterval(() => {
+      cur++;
+      el.innerHTML = (prefix || '') + cur + '<span>' + (suffix || '') + '</span>';
+      if (cur >= target) clearInterval(t);
+    }, iv);
+  }
+  setTimeout(() => {
+    const s1 = document.querySelector('.hci-val');
+    const cards = document.querySelectorAll('.hci-val');
+    if (cards[0]) animCounter(cards[0], 10, '', '+');
+    if (cards[1]) animCounter(cards[1], 98, '', '%');
+    if (cards[2]) animCounter(cards[2], 3, '', '×');
+  }, 600);
+
+  // ── FORM SUBMIT ──
+  function handleSubmit() {
+    const name  = document.getElementById('fname').value.trim();
+    const email = document.getElementById('femail').value.trim();
+    if (!name || !email) {
+      alert('Please enter your name and email address.');
+      return;
+    }
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.style.display = 'none';
+      document.getElementById('smsg').style.display = 'block';
+    }, 1200);
+  }
+
+  // ── REVEAL ON SCROLL ──
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.comp-card, .tl-item, .cert-card, .tool-chip, .skill-group, .contact-block').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
