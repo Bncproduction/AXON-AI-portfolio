@@ -3,25 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>John — Automotive Quality Engineer</title>
+<title>PULSE X1 — Premium Wireless Earbuds</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --red:     #e63946;
-    --red-dim: rgba(230,57,70,0.15);
-    --amber:   #f4a261;
-    --silver:  #94a3b8;
-    --bg:      #080c14;
-    --bg2:     #0d1220;
-    --surface: rgba(255,255,255,0.03);
-    --border:  rgba(230,57,70,0.18);
-    --border2: rgba(255,255,255,0.07);
-    --text:    #e2e8f0;
-    --muted:   rgba(226,232,240,0.45);
+    --pink:   #f72585;
+    --violet: #7209b7;
+    --blue:   #4361ee;
+    --cyan:   #4cc9f0;
+    --yellow: #f8c537;
+    --bg:     #07070f;
+    --text:   #f0f0ff;
+    --muted:  rgba(240,240,255,0.5);
   }
 
   html { scroll-behavior: smooth; }
@@ -30,905 +27,737 @@
     color: var(--text);
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
-    min-height: 100vh;
   }
 
-  /* ── BACKGROUND ── */
-  .bg-carbon {
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
-    background-size: 40px 40px;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
-  }
-  .bg-glow {
-    position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
-  }
-  .bg-glow-1 {
-    width: 800px; height: 800px;
-    background: radial-gradient(circle, rgba(230,57,70,0.07) 0%, transparent 65%);
-    top: -300px; right: -200px;
-    animation: drift 12s ease-in-out infinite;
-  }
-  .bg-glow-2 {
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(244,162,97,0.05) 0%, transparent 65%);
-    bottom: -200px; left: -100px;
-    animation: drift 15s ease-in-out infinite reverse;
-  }
-  @keyframes drift {
-    0%, 100% { transform: translate(0,0); }
-    50% { transform: translate(30px, 50px); }
+    opacity: 0.032;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
   }
 
   /* ── NAV ── */
   nav {
-    position: sticky; top: 0; z-index: 200;
-    background: rgba(8,12,20,0.88);
-    backdrop-filter: blur(24px);
-    border-bottom: 1px solid rgba(230,57,70,0.14);
-  }
-  .nav-inner {
-    max-width: 1100px; margin: 0 auto; padding: 0 36px;
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    padding: 0 40px; height: 68px;
     display: flex; align-items: center; justify-content: space-between;
-    height: 64px;
+    background: rgba(7,7,15,0.8); backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(247,37,133,0.12);
   }
   .nav-logo {
-    display: flex; align-items: center; gap: 12px;
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: 20px; letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #f72585, #4cc9f0);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-  .nav-logo-icon {
-    width: 36px; height: 36px; border-radius: 8px;
-    background: linear-gradient(135deg, #e63946, #f4a261);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px; font-weight: 800; color: #fff;
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: -0.05em;
-  }
-  .nav-logo-text {
-    font-size: 15px; font-weight: 700; color: #f1f5f9;
-    letter-spacing: -0.01em;
-  }
-  .nav-logo-sub {
-    font-size: 10px; color: var(--muted); letter-spacing: 0.08em;
-    text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
-  }
-  .nav-links { display: flex; gap: 4px; align-items: center; }
+  .nav-links { display: flex; gap: 32px; align-items: center; }
   .nav-links a {
-    font-size: 13.5px; color: var(--muted);
-    text-decoration: none; padding: 6px 14px; border-radius: 7px;
-    transition: all 0.2s; font-weight: 500;
+    color: var(--muted); text-decoration: none;
+    font-size: 13.5px; font-weight: 500; transition: color 0.2s;
   }
-  .nav-links a:hover { color: #f1f5f9; background: rgba(255,255,255,0.06); }
-  .nav-cta {
-    background: linear-gradient(135deg, #e63946, #c1121f) !important;
-    color: #fff !important; margin-left: 8px;
-    font-weight: 600 !important;
-    box-shadow: 0 0 18px rgba(230,57,70,0.3);
+  .nav-links a:hover { color: #f72585; }
+  .nav-btn {
+    background: linear-gradient(135deg, #f72585, #7209b7);
+    color: #fff; border: none; padding: 10px 24px;
+    border-radius: 100px; font-size: 13.5px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: all 0.2s; box-shadow: 0 0 20px rgba(247,37,133,0.35);
   }
-  .nav-cta:hover {
-    box-shadow: 0 0 28px rgba(230,57,70,0.5) !important;
-    transform: translateY(-1px);
-    background: linear-gradient(135deg, #f04553, #e63946) !important;
-  }
+  .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 0 32px rgba(247,37,133,0.55); }
 
   /* ── HERO ── */
   .hero {
+    min-height: 100vh; display: flex; align-items: center;
+    padding: 100px 40px 60px;
     position: relative; overflow: hidden;
-    padding: 120px 36px 100px;
-    max-width: 1100px; margin: 0 auto;
   }
-  .hero-eyebrow {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: var(--red-dim); border: 1px solid rgba(230,57,70,0.35);
-    color: #fca5a5; font-size: 11px; letter-spacing: 0.12em;
-    text-transform: uppercase; padding: 7px 16px; border-radius: 100px;
-    margin-bottom: 32px; font-family: 'JetBrains Mono', monospace;
-    animation: fadeUp 0.6s ease both;
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 70% at 70% 50%, rgba(114,9,183,0.28) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 20% 60%, rgba(247,37,133,0.18) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 40% at 50% 10%, rgba(76,201,240,0.12) 0%, transparent 50%);
   }
-  .pulse-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #e63946; box-shadow: 0 0 8px rgba(230,57,70,0.9);
-    animation: pulse 2s ease-in-out infinite;
+  .hero-grid-lines {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(247,37,133,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(247,37,133,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
   }
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 8px rgba(230,57,70,0.9); }
-    50% { box-shadow: 0 0 2px rgba(230,57,70,0.3); }
+  .hero-inner {
+    position: relative; z-index: 1;
+    max-width: 1200px; margin: 0 auto; width: 100%;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
   }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(247,37,133,0.1); border: 1px solid rgba(247,37,133,0.3);
+    color: #f72585; font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; padding: 6px 16px; border-radius: 100px;
+    font-weight: 600; margin-bottom: 24px;
+    animation: fadeUp 0.7s ease both;
+  }
+  .hero-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: #f72585; animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  .hero-layout { display: grid; grid-template-columns: 1fr auto; gap: 60px; align-items: center; }
   .hero h1 {
-    font-size: clamp(40px, 5.5vw, 68px);
-    font-weight: 800; line-height: 1.06;
-    letter-spacing: -0.03em; margin-bottom: 10px;
-    animation: fadeUp 0.6s ease 0.08s both;
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(48px, 6vw, 82px);
+    font-weight: 800; line-height: 1.02; letter-spacing: -0.04em;
+    margin-bottom: 22px;
+    animation: fadeUp 0.7s ease 0.1s both;
   }
-  .hero-name { color: #f1f5f9; display: block; }
-  .hero-role {
+  .hero h1 .line-white { color: #f0f0ff; display: block; }
+  .hero h1 .line-grad {
     display: block;
-    background: linear-gradient(90deg, #e63946 0%, #f4a261 60%, #e63946 100%);
+    background: linear-gradient(90deg, #f72585 0%, #7209b7 40%, #4cc9f0 80%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    background-size: 200% 100%;
-    animation: shimmer 4s linear infinite, fadeUp 0.6s ease 0.08s both;
   }
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+  .hero-sub {
+    font-size: 16px; color: var(--muted); line-height: 1.8;
+    max-width: 420px; margin-bottom: 40px;
+    animation: fadeUp 0.7s ease 0.18s both;
   }
-  .hero-desc {
-    font-size: 17px; color: var(--muted); line-height: 1.78;
-    max-width: 540px; margin: 24px 0 40px;
-    animation: fadeUp 0.6s ease 0.16s both;
-  }
-  .hero-desc strong { color: rgba(226,232,240,0.8); font-weight: 600; }
-  .hero-btns {
+  .hero-actions {
     display: flex; gap: 14px; flex-wrap: wrap;
-    animation: fadeUp 0.6s ease 0.22s both;
+    animation: fadeUp 0.7s ease 0.25s both;
   }
-  .btn-red {
-    background: linear-gradient(135deg, #e63946, #c1121f);
-    color: #fff; border: none; padding: 14px 30px;
-    border-radius: 9px; font-size: 14.5px; font-weight: 600; cursor: pointer;
-    transition: all 0.2s; box-shadow: 0 0 22px rgba(230,57,70,0.35);
-    font-family: 'Inter', sans-serif; letter-spacing: 0.01em;
+  .btn-glow {
+    background: linear-gradient(135deg, #f72585, #7209b7);
+    color: #fff; border: none; padding: 16px 36px;
+    border-radius: 100px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+    box-shadow: 0 0 30px rgba(247,37,133,0.4);
+    transition: all 0.25s; letter-spacing: 0.01em;
   }
-  .btn-red:hover { transform: translateY(-3px); box-shadow: 0 0 38px rgba(230,57,70,0.55); }
-  .btn-outline {
-    background: transparent; color: var(--silver);
-    border: 1px solid var(--border2); padding: 14px 30px;
-    border-radius: 9px; font-size: 14.5px; font-weight: 500; cursor: pointer;
-    transition: all 0.2s; font-family: 'Inter', sans-serif;
+  .btn-glow:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 0 50px rgba(247,37,133,0.65); }
+  .btn-ghost {
+    background: transparent; color: var(--text);
+    border: 1px solid rgba(240,240,255,0.15);
+    padding: 16px 36px; border-radius: 100px; font-size: 15px; font-weight: 500;
+    cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.25s;
   }
-  .btn-outline:hover { border-color: rgba(230,57,70,0.5); color: #f1f5f9; background: var(--red-dim); }
+  .btn-ghost:hover { border-color: rgba(247,37,133,0.5); color: #f72585; background: rgba(247,37,133,0.06); }
 
-  /* Hero card panel */
-  .hero-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border2);
-    border-radius: 18px; padding: 28px 24px;
-    min-width: 220px; animation: fadeUp 0.6s ease 0.3s both;
+  .hero-badges {
+    display: flex; gap: 24px; margin-top: 44px;
+    animation: fadeUp 0.7s ease 0.32s both;
   }
-  .hero-card-item {
-    display: flex; flex-direction: column; gap: 4px;
-    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+  .hero-badge { text-align: center; }
+  .hero-badge-val {
+    font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800;
+    background: linear-gradient(135deg, #f72585, #4cc9f0);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-  .hero-card-item:last-child { border-bottom: none; padding-bottom: 0; }
-  .hero-card-item:first-child { padding-top: 0; }
-  .hci-val {
-    font-size: 26px; font-weight: 800; color: #f1f5f9;
-    font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em;
+  .hero-badge-label { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; margin-top: 2px; }
+
+  /* Hero Product Visual */
+  .hero-visual {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    animation: fadeUp 0.7s ease 0.15s both;
   }
-  .hci-val span { color: #e63946; }
-  .hci-label {
-    font-size: 10.5px; color: var(--muted); letter-spacing: 0.07em;
-    text-transform: uppercase;
+  .product-orb {
+    width: 420px; height: 420px; border-radius: 50%; position: relative;
+    background: radial-gradient(circle at 35% 35%, rgba(247,37,133,0.22), rgba(114,9,183,0.3) 50%, rgba(76,201,240,0.15) 100%);
+    display: flex; align-items: center; justify-content: center;
+    animation: float 5s ease-in-out infinite;
+    box-shadow: 0 0 80px rgba(247,37,133,0.2), 0 0 160px rgba(114,9,183,0.15);
+  }
+  .product-orb::before {
+    content: ''; position: absolute; inset: -2px; border-radius: 50%;
+    background: conic-gradient(from 0deg, #f72585, #7209b7, #4361ee, #4cc9f0, #f72585);
+    opacity: 0.4; z-index: -1;
+    animation: spin 8s linear infinite;
+  }
+  .product-orb::after {
+    content: ''; position: absolute; inset: 2px; border-radius: 50%;
+    background: #0d0d1a; z-index: -1;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-18px) rotate(2deg); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .product-emoji { font-size: 140px; filter: drop-shadow(0 0 30px rgba(247,37,133,0.6)); z-index: 1; }
+  .product-ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid rgba(247,37,133,0.15);
+    animation: pulse-ring 3s ease-in-out infinite;
+  }
+  .ring-1 { width: 460px; height: 460px; animation-delay: 0s; }
+  .ring-2 { width: 520px; height: 520px; animation-delay: 0.8s; opacity: 0.5; }
+  .ring-3 { width: 580px; height: 580px; animation-delay: 1.6s; opacity: 0.25; }
+  @keyframes pulse-ring {
+    0%,100% { transform: scale(1); opacity: inherit; }
+    50% { transform: scale(1.04); opacity: 0.05; }
   }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(24px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ── SECTION SCAFFOLD ── */
-  .section { padding: 90px 36px; max-width: 1100px; margin: 0 auto; }
-  .section-tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: #e63946; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+  /* ── MARQUEE ── */
+  .marquee-wrap {
+    background: linear-gradient(135deg, #f72585, #7209b7);
+    padding: 14px 0; overflow: hidden; position: relative; z-index: 1;
   }
-  .section-tag::after {
-    content: ''; flex: 1; height: 1px;
-    background: linear-gradient(90deg, rgba(230,57,70,0.4), transparent);
-    max-width: 80px;
-  }
-  .section-title {
-    font-size: 36px; font-weight: 800; color: #f1f5f9;
-    letter-spacing: -0.03em; margin-bottom: 16px;
-  }
-  .section-title span { color: #e63946; }
-  .section-sub {
-    font-size: 15px; color: var(--muted); max-width: 560px;
-    line-height: 1.75; margin-bottom: 56px;
-  }
-  .divider {
-    border: none; border-top: 1px solid rgba(255,255,255,0.06);
-    max-width: 1100px; margin: 0 auto;
-  }
-
-  /* ── COMPETENCY CARDS ── */
-  .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
-  .comp-card {
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: 14px; padding: 26px;
-    transition: all 0.3s; position: relative; overflow: hidden;
-    cursor: default;
-  }
-  .comp-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #e63946, #f4a261);
-    transform: scaleX(0); transform-origin: left;
-    transition: transform 0.3s;
-  }
-  .comp-card:hover { border-color: rgba(230,57,70,0.3); transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.35); }
-  .comp-card:hover::before { transform: scaleX(1); }
-  .comp-icon {
-    width: 48px; height: 48px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; margin-bottom: 16px;
-    background: var(--red-dim); border: 1px solid rgba(230,57,70,0.22);
-  }
-  .comp-title { font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
-  .comp-abbr {
-    font-family: 'JetBrains Mono', monospace; font-size: 10px;
-    color: #e63946; letter-spacing: 0.08em; margin-bottom: 10px; text-transform: uppercase;
-  }
-  .comp-desc { font-size: 12.5px; color: var(--muted); line-height: 1.65; }
-
-  /* ── EXPERIENCE TIMELINE ── */
-  .timeline { position: relative; padding-left: 32px; }
-  .timeline::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 0;
-    width: 2px;
-    background: linear-gradient(180deg, #e63946 0%, rgba(230,57,70,0.1) 100%);
-  }
-  .tl-item { position: relative; margin-bottom: 48px; }
-  .tl-item:last-child { margin-bottom: 0; }
-  .tl-dot {
-    position: absolute; left: -38px; top: 6px;
-    width: 14px; height: 14px; border-radius: 50%;
-    background: #e63946; border: 3px solid var(--bg);
-    box-shadow: 0 0 10px rgba(230,57,70,0.6);
-  }
-  .tl-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
-  .tl-title { font-size: 17px; font-weight: 700; color: #f1f5f9; }
-  .tl-company { font-size: 13px; color: #e63946; font-weight: 600; margin-top: 3px; }
-  .tl-date {
-    font-family: 'JetBrains Mono', monospace; font-size: 11px;
-    color: var(--muted); background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border2); padding: 4px 12px; border-radius: 100px;
+  .marquee-track {
+    display: flex; gap: 0;
+    animation: marquee 18s linear infinite;
     white-space: nowrap;
   }
-  .tl-desc { font-size: 13.5px; color: var(--muted); line-height: 1.75; margin-top: 12px; }
-  .tl-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
-  .tl-tag {
-    font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
-    background: rgba(230,57,70,0.08); color: rgba(230,57,70,0.85);
-    border: 1px solid rgba(230,57,70,0.2); padding: 3px 10px; border-radius: 4px;
-    letter-spacing: 0.04em;
+  .marquee-item {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+    color: rgba(255,255,255,0.9); letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0 32px; flex-shrink: 0;
   }
-  .tl-achievements { margin-top: 14px; list-style: none; }
-  .tl-achievements li {
-    font-size: 13px; color: var(--muted); padding: 5px 0;
-    display: flex; align-items: flex-start; gap: 10px; line-height: 1.6;
+  .marquee-sep { color: rgba(255,255,255,0.4); }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ── SECTIONS ── */
+  section { position: relative; z-index: 1; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+  .section-label {
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: #f72585; font-weight: 600; margin-bottom: 12px;
   }
-  .tl-achievements li::before {
-    content: '▸'; color: #e63946; flex-shrink: 0; margin-top: 1px; font-size: 11px;
+  .section-title {
+    font-family: 'Syne', sans-serif; font-size: clamp(32px, 4vw, 52px);
+    font-weight: 800; letter-spacing: -0.03em; color: #f0f0ff;
+    line-height: 1.1; margin-bottom: 18px;
+  }
+  .section-title span {
+    background: linear-gradient(90deg, #f72585, #4cc9f0);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .section-sub { font-size: 16px; color: var(--muted); line-height: 1.75; max-width: 500px; }
+
+  /* ── FEATURES ── */
+  .features-section { padding: 100px 0; }
+  .features-header { text-align: center; margin-bottom: 70px; }
+  .features-header .section-sub { margin: 0 auto; }
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .feat-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px; padding: 32px 28px;
+    position: relative; overflow: hidden;
+    transition: all 0.3s; cursor: default;
+  }
+  .feat-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(247,37,133,0.06), transparent 60%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feat-card:hover { border-color: rgba(247,37,133,0.3); transform: translateY(-6px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+  .feat-card:hover::before { opacity: 1; }
+  .feat-number {
+    font-family: 'Syne', sans-serif; font-size: 60px; font-weight: 800;
+    color: rgba(247,37,133,0.08); position: absolute; top: 16px; right: 20px;
+    line-height: 1; letter-spacing: -0.05em;
+  }
+  .feat-icon {
+    width: 54px; height: 54px; border-radius: 15px; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: center; font-size: 26px;
+    background: linear-gradient(135deg, rgba(247,37,133,0.15), rgba(114,9,183,0.15));
+    border: 1px solid rgba(247,37,133,0.2);
+  }
+  .feat-title {
+    font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700;
+    color: #f0f0ff; margin-bottom: 10px; letter-spacing: -0.02em;
+  }
+  .feat-desc { font-size: 14px; color: var(--muted); line-height: 1.72; }
+
+  /* ── SPECS ── */
+  .specs-section { padding: 100px 0; background: rgba(255,255,255,0.015); }
+  .specs-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .specs-visual {
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .spec-orb {
+    width: 320px; height: 320px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, rgba(76,201,240,0.2), rgba(67,97,238,0.2) 50%, rgba(114,9,183,0.15));
+    display: flex; align-items: center; justify-content: center; font-size: 120px;
+    animation: float 6s ease-in-out infinite 1s;
+    box-shadow: 0 0 60px rgba(76,201,240,0.2);
+  }
+  .specs-list { display: flex; flex-direction: column; gap: 0; }
+  .spec-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-key { font-size: 13.5px; color: var(--muted); font-weight: 500; }
+  .spec-val {
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    color: #f0f0ff; text-align: right;
+  }
+  .spec-val.highlight {
+    background: linear-gradient(90deg, #f72585, #4cc9f0);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
 
-  /* ── SKILLS ── */
-  .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-  .skill-group {
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 14px; padding: 24px;
+  /* ── COLORS ── */
+  .colors-section { padding: 100px 0; }
+  .colors-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .colors-display {
+    display: flex; align-items: center; justify-content: center;
   }
-  .skill-group-title {
-    font-size: 11px; font-family: 'JetBrains Mono', monospace;
-    color: #e63946; letter-spacing: 0.1em; text-transform: uppercase;
-    margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+  .color-showcase {
+    width: 340px; height: 340px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 130px; transition: all 0.5s ease;
+    animation: float 5s ease-in-out infinite 0.5s;
   }
-  .skill-group-title::after { content: ''; flex: 1; height: 1px; background: rgba(230,57,70,0.2); }
-  .skill-item { margin-bottom: 14px; }
-  .skill-item:last-child { margin-bottom: 0; }
-  .skill-top { display: flex; justify-content: space-between; margin-bottom: 7px; }
-  .skill-name { font-size: 13px; font-weight: 500; color: rgba(226,232,240,0.78); }
-  .skill-pct { font-size: 10.5px; font-family: 'JetBrains Mono', monospace; color: #e63946; }
-  .skill-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 100px; overflow: hidden; }
-  .skill-fill {
-    height: 100%; border-radius: 100px; width: 0%;
-    background: linear-gradient(90deg, #e63946, #f4a261);
-    transition: width 1.4s cubic-bezier(0.4,0,0.2,1);
-    box-shadow: 0 0 6px rgba(230,57,70,0.4);
+  .color-picks { display: flex; flex-direction: column; gap: 18px; }
+  .color-pick {
+    display: flex; align-items: center; gap: 18px;
+    padding: 16px 20px; border-radius: 14px;
+    border: 2px solid transparent; cursor: pointer;
+    background: rgba(255,255,255,0.03); transition: all 0.25s;
   }
+  .color-pick:hover { background: rgba(255,255,255,0.06); border-color: rgba(247,37,133,0.3); }
+  .color-pick.active { border-color: #f72585; background: rgba(247,37,133,0.07); }
+  .color-swatch { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; border: 3px solid rgba(255,255,255,0.2); }
+  .color-pick-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: #f0f0ff; }
+  .color-pick-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-  /* ── CERTIFICATIONS ── */
-  .cert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-  .cert-card {
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 14px; padding: 24px 20px; text-align: center;
+  /* ── TESTIMONIALS ── */
+  .testimonials-section { padding: 100px 0; background: rgba(255,255,255,0.015); }
+  .testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 60px; }
+  .testi-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 18px; padding: 28px 24px; transition: all 0.3s;
+  }
+  .testi-card:hover { border-color: rgba(247,37,133,0.25); transform: translateY(-4px); }
+  .testi-stars { color: #f8c537; font-size: 14px; letter-spacing: 2px; margin-bottom: 16px; }
+  .testi-text { font-size: 14px; color: rgba(240,240,255,0.72); line-height: 1.78; margin-bottom: 22px; font-style: italic; }
+  .testi-author { display: flex; align-items: center; gap: 12px; }
+  .testi-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .testi-name { font-size: 14px; font-weight: 700; color: #f0f0ff; }
+  .testi-handle { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+  /* ── PRICING ── */
+  .pricing-section { padding: 100px 0; }
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 60px; }
+  .price-card {
+    border-radius: 22px; padding: 36px 28px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
     transition: all 0.3s; position: relative; overflow: hidden;
   }
-  .cert-card:hover { border-color: rgba(230,57,70,0.3); transform: translateY(-3px); }
-  .cert-icon { font-size: 34px; margin-bottom: 14px; display: block; }
-  .cert-name { font-size: 13px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; line-height: 1.4; }
-  .cert-body {
-    font-size: 11px; color: var(--muted); letter-spacing: 0.04em;
-    margin-bottom: 12px;
+  .price-card.featured {
+    background: linear-gradient(135deg, rgba(247,37,133,0.12), rgba(114,9,183,0.12));
+    border-color: rgba(247,37,133,0.4);
+    box-shadow: 0 0 60px rgba(247,37,133,0.15);
+    transform: scale(1.04);
   }
-  .cert-badge {
-    display: inline-block; font-size: 10px; font-family: 'JetBrains Mono', monospace;
-    padding: 3px 10px; border-radius: 100px; letter-spacing: 0.05em;
+  .price-card:hover { transform: translateY(-6px); box-shadow: 0 24px 60px rgba(0,0,0,0.4); }
+  .price-card.featured:hover { transform: scale(1.04) translateY(-6px); }
+  .popular-badge {
+    position: absolute; top: 0; right: 24px;
+    background: linear-gradient(135deg, #f72585, #7209b7);
+    color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 5px 14px 6px; border-radius: 0 0 10px 10px;
   }
-  .cert-active { background: rgba(52,211,153,0.1); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.25); }
-  .cert-progress { background: rgba(244,162,97,0.1); color: #fcd34d; border: 1px solid rgba(244,162,97,0.25); }
+  .price-tier { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 10px; }
+  .price-amount {
+    font-family: 'Syne', sans-serif; font-size: 52px; font-weight: 800;
+    color: #f0f0ff; letter-spacing: -0.04em; line-height: 1;
+    margin-bottom: 6px;
+  }
+  .price-amount sup { font-size: 24px; vertical-align: super; }
+  .price-desc { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .price-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .price-features li { font-size: 13.5px; color: rgba(240,240,255,0.7); display: flex; align-items: center; gap: 10px; }
+  .price-features li::before { content: '✓'; color: #f72585; font-weight: 800; flex-shrink: 0; }
+  .price-features li.dim::before { content: '✗'; color: rgba(255,255,255,0.2); }
+  .price-features li.dim { color: rgba(240,240,255,0.25); }
+  .price-btn {
+    width: 100%; padding: 14px; border-radius: 100px;
+    font-size: 14.5px; font-weight: 700; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: all 0.25s; letter-spacing: 0.02em;
+    border: none;
+  }
+  .price-btn-grad {
+    background: linear-gradient(135deg, #f72585, #7209b7); color: #fff;
+    box-shadow: 0 0 24px rgba(247,37,133,0.35);
+  }
+  .price-btn-grad:hover { box-shadow: 0 0 44px rgba(247,37,133,0.6); transform: translateY(-2px); }
+  .price-btn-outline {
+    background: transparent; color: var(--text);
+    border: 1px solid rgba(255,255,255,0.15) !important;
+  }
+  .price-btn-outline:hover { border-color: rgba(247,37,133,0.5) !important; color: #f72585; background: rgba(247,37,133,0.05); }
 
-  /* ── TOOLS ── */
-  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
-  .tool-chip {
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 10px; padding: 16px 12px; text-align: center;
-    transition: all 0.2s; cursor: default;
+  /* ── CTA BANNER ── */
+  .cta-section { padding: 100px 0; }
+  .cta-box {
+    border-radius: 28px; padding: 80px 60px; text-align: center;
+    background: linear-gradient(135deg, rgba(247,37,133,0.14), rgba(114,9,183,0.18), rgba(76,201,240,0.1));
+    border: 1px solid rgba(247,37,133,0.25);
+    position: relative; overflow: hidden;
+    box-shadow: 0 0 100px rgba(247,37,133,0.1);
   }
-  .tool-chip:hover { border-color: rgba(230,57,70,0.35); background: rgba(230,57,70,0.05); transform: translateY(-2px); }
-  .tool-icon { font-size: 24px; margin-bottom: 8px; display: block; }
-  .tool-name { font-size: 12px; font-weight: 600; color: rgba(226,232,240,0.72); }
-  .tool-cat { font-size: 9.5px; color: var(--muted); margin-top: 3px; letter-spacing: 0.04em; }
-
-  /* ── CONTACT ── */
-  .contact-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 32px; align-items: start; }
-  .contact-info { display: flex; flex-direction: column; gap: 18px; }
-  .contact-block {
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 14px; padding: 22px;
-    display: flex; align-items: center; gap: 16px;
+  .cta-box::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 0%, rgba(247,37,133,0.15), transparent 60%);
   }
-  .contact-block-icon {
-    width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0;
-    background: var(--red-dim); border: 1px solid rgba(230,57,70,0.25);
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  .cta-box h2 {
+    font-family: 'Syne', sans-serif; font-size: clamp(32px, 4vw, 56px);
+    font-weight: 800; letter-spacing: -0.03em;
+    color: #f0f0ff; margin-bottom: 18px; position: relative;
   }
-  .contact-block-label { font-size: 10.5px; color: var(--muted); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 4px; }
-  .contact-block-val { font-size: 14px; font-weight: 600; color: #f1f5f9; }
-  .contact-form {
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 16px; padding: 36px;
-  }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .form-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
-  .form-label {
-    font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
-    color: rgba(230,57,70,0.75); letter-spacing: 0.08em; text-transform: uppercase;
-  }
-  .form-input, .form-textarea {
-    background: rgba(255,255,255,0.04); border: 1px solid var(--border2);
-    border-radius: 8px; color: #e2e8f0; font-size: 14px;
-    font-family: 'Inter', sans-serif; padding: 12px 16px;
-    transition: border-color 0.2s, background 0.2s; outline: none;
-  }
-  .form-input:focus, .form-textarea:focus {
-    border-color: rgba(230,57,70,0.5);
-    background: rgba(230,57,70,0.04);
-    box-shadow: 0 0 0 3px rgba(230,57,70,0.08);
-  }
-  .form-textarea { resize: vertical; min-height: 120px; }
-  .form-input::placeholder, .form-textarea::placeholder { color: rgba(226,232,240,0.18); }
-  .submit-btn {
-    width: 100%; background: linear-gradient(135deg, #e63946, #c1121f);
-    color: #fff; border: none; padding: 15px;
-    border-radius: 9px; font-size: 15px; font-weight: 700; cursor: pointer;
-    transition: all 0.2s; font-family: 'Inter', sans-serif;
-    box-shadow: 0 0 24px rgba(230,57,70,0.3); letter-spacing: 0.02em;
-  }
-  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(230,57,70,0.5); }
-  .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
-  .success-msg {
-    display: none; text-align: center; padding: 18px;
-    background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2);
-    border-radius: 9px; color: #6ee7b7; font-size: 13px; margin-top: 12px;
-    font-family: 'JetBrains Mono', monospace;
-  }
+  .cta-box p { font-size: 16px; color: var(--muted); margin-bottom: 40px; position: relative; }
+  .cta-box .btn-glow { position: relative; font-size: 16px; padding: 18px 48px; }
 
   /* ── FOOTER ── */
   footer {
-    border-top: 1px solid rgba(255,255,255,0.05);
-    padding: 36px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 48px 40px;
     display: flex; align-items: center; justify-content: space-between;
-    max-width: 1100px; margin: 0 auto;
-    color: var(--muted); font-size: 13px;
-    flex-wrap: wrap; gap: 16px;
+    max-width: 1200px; margin: 0 auto; flex-wrap: wrap; gap: 20px;
+    position: relative; z-index: 1;
   }
-  .footer-brand {
-    font-family: 'JetBrains Mono', monospace; font-size: 13px;
-    color: rgba(226,232,240,0.35); letter-spacing: 0.04em;
+  .footer-logo {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px;
+    background: linear-gradient(90deg, #f72585, #4cc9f0);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-  .footer-links { display: flex; gap: 20px; }
+  .footer-links { display: flex; gap: 24px; }
   .footer-links a { color: var(--muted); text-decoration: none; font-size: 13px; transition: color 0.2s; }
-  .footer-links a:hover { color: #e63946; }
+  .footer-links a:hover { color: #f72585; }
+  .footer-copy { color: rgba(240,240,255,0.2); font-size: 12.5px; }
 
   /* ── RESPONSIVE ── */
-  @media (max-width: 768px) {
-    .hero-layout { grid-template-columns: 1fr; }
-    .hero-card { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; }
-    .hero-card-item { border-bottom: none; border-right: 1px solid rgba(255,255,255,0.06); padding: 14px; text-align: center; }
-    .hero-card-item:last-child { border-right: none; }
-    .contact-grid { grid-template-columns: 1fr; }
-    .form-row { grid-template-columns: 1fr; }
-    .section { padding: 64px 20px; }
-    .hero { padding: 80px 20px 70px; }
-    .nav-inner { padding: 0 20px; }
-    footer { padding: 28px 20px; flex-direction: column; align-items: flex-start; }
-  }
-  @media (max-width: 480px) {
-    .nav-links a:not(.nav-cta) { display: none; }
+  @media (max-width: 900px) {
+    .hero-inner, .specs-inner, .colors-inner { grid-template-columns: 1fr; }
+    .features-grid, .testi-grid, .pricing-grid { grid-template-columns: 1fr; }
+    .hero-visual { display: none; }
+    .price-card.featured { transform: scale(1); }
+    nav { padding: 0 20px; }
+    .nav-links a:not(.nav-btn) { display: none; }
+    .container { padding: 0 20px; }
+    .cta-box { padding: 50px 28px; }
+    footer { padding: 36px 20px; flex-direction: column; }
   }
 </style>
 </head>
 <body>
 
-<div class="bg-carbon"></div>
-<div class="bg-glow bg-glow-1"></div>
-<div class="bg-glow bg-glow-2"></div>
-
 <!-- NAV -->
 <nav>
-  <div class="nav-inner">
-    <div class="nav-logo">
-      <div class="nav-logo-icon">MC</div>
-      <div>
-        <div class="nav-logo-text">John</div>
-        <div class="nav-logo-sub">Quality Engineer</div>
-      </div>
-    </div>
-    <div class="nav-links">
-      <a href="#about">About</a>
-      <a href="#experience">Experience</a>
-      <a href="#skills">Skills</a>
-      <a href="#certifications">Certs</a>
-      <a href="#contact">Contact</a>
-      <a href="#contact" class="nav-cta">Hire Me</a>
-    </div>
+  <div class="nav-logo">PULSE X1</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#specs">Specs</a>
+    <a href="#colors">Colors</a>
+    <a href="#pricing">Pricing</a>
+    <button class="nav-btn" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Buy Now</button>
   </div>
 </nav>
 
 <!-- HERO -->
-<div class="hero" id="about">
-  <div class="hero-eyebrow">
-    <span class="pulse-dot"></span>
-    Open to New Opportunities · IATF 16949 Certified
-  </div>
-  <div class="hero-layout">
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid-lines"></div>
+  <div class="hero-inner">
     <div>
+      <div class="hero-tag"><span class="hero-tag-dot"></span> New Drop — Limited Edition</div>
       <h1>
-        <span class="hero-name">John</span>
-        <span class="hero-role">Automotive Quality<br>Engineer</span>
+        <span class="line-white">Sound That</span>
+        <span class="line-grad">Hits Different.</span>
       </h1>
-      <p class="hero-desc">
-        10+ years driving <strong>zero-defect manufacturing</strong> across Tier 1 & OEM automotive suppliers. Expert in APQP, PPAP, FMEA, and IATF 16949 compliance — turning quality challenges into competitive advantages.
-      </p>
-      <div class="hero-btns">
-        <button class="btn-red" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Get In Touch</button>
-        <button class="btn-outline" onclick="document.getElementById('experience').scrollIntoView({behavior:'smooth'})">View Experience</button>
+      <p class="hero-sub">PULSE X1 delivers studio-grade audio in a featherlight form. 50Hr battery, active noise cancellation, and spatial audio — reimagined from the ground up.</p>
+      <div class="hero-actions">
+        <button class="btn-glow" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Shop Now — $179</button>
+        <button class="btn-ghost" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Explore Features ↓</button>
+      </div>
+      <div class="hero-badges">
+        <div class="hero-badge"><div class="hero-badge-val">50Hr</div><div class="hero-badge-label">Battery Life</div></div>
+        <div class="hero-badge"><div class="hero-badge-val">-42dB</div><div class="hero-badge-label">Noise Cancel</div></div>
+        <div class="hero-badge"><div class="hero-badge-val">4.9★</div><div class="hero-badge-label">Avg Rating</div></div>
       </div>
     </div>
-    <div class="hero-card">
-      <div class="hero-card-item">
-        <div class="hci-val">10<span>+</span></div>
-        <div class="hci-label">Years in Auto QE</div>
-      </div>
-      <div class="hero-card-item">
-        <div class="hci-val">98<span>%</span></div>
-        <div class="hci-label">First-Pass Yield</div>
-      </div>
-      <div class="hero-card-item">
-        <div class="hci-val">3<span>×</span></div>
-        <div class="hci-label">IATF Audits Led</div>
-      </div>
-      <div class="hero-card-item">
-        <div class="hci-val">$2<span>M</span></div>
-        <div class="hci-label">Cost Savings</div>
+    <div class="hero-visual">
+      <div class="product-ring ring-3"></div>
+      <div class="product-ring ring-2"></div>
+      <div class="product-ring ring-1"></div>
+      <div class="product-orb">
+        <div class="product-emoji">🎧</div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="marquee-item">50Hr Battery <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Active Noise Cancellation <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Spatial Audio <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">IPX5 Water Resistant <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Wireless Charging <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Hi-Res Audio Certified <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">50Hr Battery <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Active Noise Cancellation <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Spatial Audio <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">IPX5 Water Resistant <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Wireless Charging <span class="marquee-sep">✦</span></span>
+    <span class="marquee-item">Hi-Res Audio Certified <span class="marquee-sep">✦</span></span>
   </div>
 </div>
 
-<hr class="divider">
-
-<!-- CORE COMPETENCIES -->
-<section class="section" id="competencies">
-  <div class="section-tag">// Core Competencies</div>
-  <div class="section-title">Quality <span>Tools & Frameworks</span></div>
-  <p class="section-sub">Proficient in the full suite of AIAG automotive quality core tools, applied across product development, manufacturing, and supplier quality.</p>
-
-  <div class="comp-grid">
-    <div class="comp-card">
-      <div class="comp-icon">📋</div>
-      <div class="comp-abbr">APQP</div>
-      <div class="comp-title">Advanced Product Quality Planning</div>
-      <div class="comp-desc">Structured process for defining and establishing the steps necessary to ensure a product satisfies the customer from launch to mass production.</div>
+<!-- FEATURES -->
+<section class="features-section" id="features">
+  <div class="container">
+    <div class="features-header">
+      <div class="section-label">// Why PULSE X1</div>
+      <div class="section-title">Built for <span>Obsessives.</span></div>
+      <p class="section-sub">Every detail engineered for people who refuse to compromise on sound, comfort, or style.</p>
     </div>
-    <div class="comp-card">
-      <div class="comp-icon">📦</div>
-      <div class="comp-abbr">PPAP</div>
-      <div class="comp-title">Production Part Approval Process</div>
-      <div class="comp-desc">Level 1–5 PPAP submissions across 18 elements. Extensive OEM portal experience with GM, Ford, Stellantis, and BMW.</div>
-    </div>
-    <div class="comp-card">
-      <div class="comp-icon">⚠️</div>
-      <div class="comp-abbr">FMEA</div>
-      <div class="comp-title">Failure Mode & Effects Analysis</div>
-      <div class="comp-desc">Design and Process FMEA development using AIAG-VDA 2019 methodology. RPN reduction and risk mitigation planning.</div>
-    </div>
-    <div class="comp-card">
-      <div class="comp-icon">📐</div>
-      <div class="comp-abbr">SPC</div>
-      <div class="comp-title">Statistical Process Control</div>
-      <div class="comp-desc">Control chart implementation (Xbar-R, P, U charts), Cpk/Ppk analysis, and process capability studies for critical dimensions.</div>
-    </div>
-    <div class="comp-card">
-      <div class="comp-icon">📏</div>
-      <div class="comp-abbr">MSA</div>
-      <div class="comp-title">Measurement System Analysis</div>
-      <div class="comp-desc">Gauge R&R studies, Attribute Agreement Analysis, linearity and bias studies to validate measurement systems.</div>
-    </div>
-    <div class="comp-card">
-      <div class="comp-icon">🔍</div>
-      <div class="comp-abbr">8D / RCA</div>
-      <div class="comp-title">8D Problem Solving & Root Cause Analysis</div>
-      <div class="comp-desc">Structured 8D reports with 5-Why, Fishbone, and Fault Tree Analysis. Driving permanent corrective actions.</div>
-    </div>
-    <div class="comp-card">
-      <div class="comp-icon">🏭</div>
-      <div class="comp-abbr">IATF 16949</div>
-      <div class="comp-title">IATF 16949 Quality Management</div>
-      <div class="comp-desc">Internal auditor certified. Led surveillance and recertification audits. Gap analysis and management review facilitation.</div>
-    </div>
-    <div class="comp-card">
-      <div class="comp-icon">📊</div>
-      <div class="comp-abbr">Control Plan</div>
-      <div class="comp-title">Control Plan Development</div>
-      <div class="comp-desc">Prototype, pre-launch, and production control plans linked to PFMEAs. Reaction plan development and operator instruction sheets.</div>
-    </div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- EXPERIENCE -->
-<section class="section" id="experience">
-  <div class="section-tag">// Work History</div>
-  <div class="section-title">Professional <span>Experience</span></div>
-  <p class="section-sub">Over a decade of progressive quality engineering roles across Tier 1 suppliers and OEM environments.</p>
-
-  <div class="timeline">
-
-    <div class="tl-item">
-      <div class="tl-dot"></div>
-      <div class="tl-header">
-        <div>
-          <div class="tl-title">Senior Quality Engineer</div>
-          <div class="tl-company">Magna International — Body & Chassis Division</div>
-        </div>
-        <div class="tl-date">2021 – Present</div>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-number">01</div>
+        <div class="feat-icon">🔊</div>
+        <div class="feat-title">40mm Titanium Drivers</div>
+        <div class="feat-desc">Custom titanium-coated diaphragms deliver crystal-clear highs, rich mids, and thundering bass with zero distortion at any volume.</div>
       </div>
-      <ul class="tl-achievements">
-        <li>Led APQP and PPAP submissions for 12 new programs across Ford F-150 and GM Silverado platforms, achieving 100% on-time launch.</li>
-        <li>Implemented SPC control charts across 40+ critical characteristics, improving Cpk from 1.08 to 1.67 plant-wide.</li>
-        <li>Managed supplier quality for 28 Tier 2 suppliers — reduced incoming PPM by 62% over 18 months.</li>
-        <li>Facilitated IATF 16949 recertification audit with zero major non-conformances recorded.</li>
-      </ul>
-      <div class="tl-tags">
-        <span class="tl-tag">APQP</span><span class="tl-tag">PPAP</span><span class="tl-tag">SPC</span>
-        <span class="tl-tag">IATF 16949</span><span class="tl-tag">Supplier Quality</span>
+      <div class="feat-card">
+        <div class="feat-number">02</div>
+        <div class="feat-icon">🚫</div>
+        <div class="feat-title">Hybrid ANC — 42dB</div>
+        <div class="feat-desc">Dual-microphone feedforward + feedback ANC kills up to 42dB of ambient noise. Focus mode for transparent listening when you need it.</div>
       </div>
-    </div>
-
-    <div class="tl-item">
-      <div class="tl-dot"></div>
-      <div class="tl-header">
-        <div>
-          <div class="tl-title">Quality Engineer II</div>
-          <div class="tl-company">Martinrea International — Stamping & Assembly</div>
-        </div>
-        <div class="tl-date">2017 – 2021</div>
+      <div class="feat-card">
+        <div class="feat-number">03</div>
+        <div class="feat-icon">⚡</div>
+        <div class="feat-title">50-Hour Marathon Battery</div>
+        <div class="feat-desc">Go five full days on a single charge. 10-minute quick charge gives 3 hours of playback. Wireless Qi charging built in.</div>
       </div>
-      <ul class="tl-achievements">
-        <li>Developed PFMEA and control plans for 6 new stamping lines, reducing detection reaction time by 40%.</li>
-        <li>Drove 8D problem-solving on 3 critical customer complaints (Stellantis), achieving 0 repeat issues within 12 months.</li>
-        <li>Executed CMM programming and GD&T layout inspections for complex structural assemblies.</li>
-        <li>Generated $850K in cost savings through scrap reduction and process optimization initiatives.</li>
-      </ul>
-      <div class="tl-tags">
-        <span class="tl-tag">FMEA</span><span class="tl-tag">8D</span><span class="tl-tag">CMM</span>
-        <span class="tl-tag">GD&T</span><span class="tl-tag">Lean</span>
+      <div class="feat-card">
+        <div class="feat-number">04</div>
+        <div class="feat-icon">🌐</div>
+        <div class="feat-title">Spatial Audio Engine</div>
+        <div class="feat-desc">Immersive 3D soundstage with head-tracking. Movies, games, and music feel like you're inside the experience.</div>
       </div>
-    </div>
-
-    <div class="tl-item">
-      <div class="tl-dot"></div>
-      <div class="tl-header">
-        <div>
-          <div class="tl-title">Quality Engineer I</div>
-          <div class="tl-company">Shiloh Industries — Lightweighting Solutions</div>
-        </div>
-        <div class="tl-date">2014 – 2017</div>
+      <div class="feat-card">
+        <div class="feat-number">05</div>
+        <div class="feat-icon">💧</div>
+        <div class="feat-title">IPX5 Water Resistant</div>
+        <div class="feat-desc">Sweat, rain, splash — PULSE X1 handles it all. Nano-coated components protect every circuit from moisture ingress.</div>
       </div>
-      <ul class="tl-achievements">
-        <li>Supported PPAP submissions for aluminum castings and laser-welded blanks on BMW 3 Series program.</li>
-        <li>Performed MSA studies and gauge calibration across 120+ instruments in the metrology lab.</li>
-        <li>Managed internal audit schedule and corrective action tracking for ISO/TS 16949 compliance.</li>
-      </ul>
-      <div class="tl-tags">
-        <span class="tl-tag">PPAP</span><span class="tl-tag">MSA</span><span class="tl-tag">ISO/TS 16949</span>
-        <span class="tl-tag">Internal Audits</span>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- SKILLS -->
-<section class="section" id="skills">
-  <div class="section-tag">// Proficiency</div>
-  <div class="section-title">Technical <span>Skills</span></div>
-  <p class="section-sub">A broad range of quality engineering competencies spanning standards, analysis methods, software, and manufacturing processes.</p>
-
-  <div class="skills-grid">
-    <div class="skill-group">
-      <div class="skill-group-title">Quality Standards</div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">IATF 16949 / ISO 9001</span><span class="skill-pct">97%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="97"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">AIAG Core Tools (APQP/PPAP/FMEA)</span><span class="skill-pct">95%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="95"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">Customer Specific Requirements</span><span class="skill-pct">90%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="90"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">VDA 6.3 Process Audit</span><span class="skill-pct">82%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="82"></div></div>
-      </div>
-    </div>
-
-    <div class="skill-group">
-      <div class="skill-group-title">Analysis & Problem Solving</div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">Statistical Process Control (SPC)</span><span class="skill-pct">93%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="93"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">Measurement System Analysis (MSA)</span><span class="skill-pct">91%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="91"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">8D / Root Cause Analysis</span><span class="skill-pct">96%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="96"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">Design of Experiments (DOE)</span><span class="skill-pct">78%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="78"></div></div>
-      </div>
-    </div>
-
-    <div class="skill-group">
-      <div class="skill-group-title">Inspection & Metrology</div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">GD&T (ASME Y14.5)</span><span class="skill-pct">94%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="94"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">CMM Operation & Programming</span><span class="skill-pct">88%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="88"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">Optical & Vision Systems</span><span class="skill-pct">75%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="75"></div></div>
-      </div>
-      <div class="skill-item">
-        <div class="skill-top"><span class="skill-name">Gauge Design & Calibration</span><span class="skill-pct">85%</span></div>
-        <div class="skill-bar"><div class="skill-fill" data-pct="85"></div></div>
+      <div class="feat-card">
+        <div class="feat-number">06</div>
+        <div class="feat-icon">🎙️</div>
+        <div class="feat-title">6-Mic Call Clarity</div>
+        <div class="feat-desc">Six beamforming microphones with AI voice isolation ensure crystal-clear calls even in crowded cafes or city streets.</div>
       </div>
     </div>
   </div>
 </section>
 
-<hr class="divider">
-
-<!-- TOOLS -->
-<section class="section" id="tools">
-  <div class="section-tag">// Software & Tools</div>
-  <div class="section-title">My <span>Toolkit</span></div>
-  <p class="section-sub">Industry-standard software and measurement tools used across daily quality engineering activities.</p>
-
-  <div class="tools-grid">
-    <div class="tool-chip"><span class="tool-icon">📊</span><div class="tool-name">Minitab</div><div class="tool-cat">Statistics</div></div>
-    <div class="tool-chip"><span class="tool-icon">📋</span><div class="tool-name">AIAG Forms</div><div class="tool-cat">Core Tools</div></div>
-    <div class="tool-chip"><span class="tool-icon">📐</span><div class="tool-name">PC-DMIS</div><div class="tool-cat">CMM Software</div></div>
-    <div class="tool-chip"><span class="tool-icon">🔧</span><div class="tool-name">CATIA V5</div><div class="tool-cat">3D / GD&T</div></div>
-    <div class="tool-chip"><span class="tool-icon">📦</span><div class="tool-name">Teamcenter</div><div class="tool-cat">PLM / PPAP</div></div>
-    <div class="tool-chip"><span class="tool-icon">🚗</span><div class="tool-name">GM Covisint</div><div class="tool-cat">OEM Portal</div></div>
-    <div class="tool-chip"><span class="tool-icon">🔵</span><div class="tool-name">Ford GPIRS</div><div class="tool-cat">OEM Portal</div></div>
-    <div class="tool-chip"><span class="tool-icon">⚙️</span><div class="tool-name">SAP QM</div><div class="tool-cat">ERP Quality</div></div>
-    <div class="tool-chip"><span class="tool-icon">📈</span><div class="tool-name">MS Excel</div><div class="tool-cat">Data Analysis</div></div>
-    <div class="tool-chip"><span class="tool-icon">🗂️</span><div class="tool-name">Jira / Confluence</div><div class="tool-cat">Tracking</div></div>
-    <div class="tool-chip"><span class="tool-icon">📷</span><div class="tool-name">Cognex Vision</div><div class="tool-cat">Inspection</div></div>
-    <div class="tool-chip"><span class="tool-icon">🔍</span><div class="tool-name">Zeiss Calypso</div><div class="tool-cat">CMM Software</div></div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- CERTIFICATIONS -->
-<section class="section" id="certifications">
-  <div class="section-tag">// Credentials</div>
-  <div class="section-title">Certifications & <span>Training</span></div>
-  <p class="section-sub">Formal qualifications that validate expertise in automotive quality management systems and methodologies.</p>
-
-  <div class="cert-grid">
-    <div class="cert-card">
-      <span class="cert-icon">🏆</span>
-      <div class="cert-name">IATF 16949 Internal Auditor</div>
-      <div class="cert-body">Exemplar Global · 2022</div>
-      <span class="cert-badge cert-active">● Active</span>
-    </div>
-    <div class="cert-card">
-      <span class="cert-icon">🎯</span>
-      <div class="cert-name">Six Sigma Green Belt</div>
-      <div class="cert-body">ASQ Certified · 2020</div>
-      <span class="cert-badge cert-active">● Active</span>
-    </div>
-    <div class="cert-card">
-      <span class="cert-icon">📋</span>
-      <div class="cert-name">AIAG APQP & PPAP</div>
-      <div class="cert-body">AIAG Training · 2019</div>
-      <span class="cert-badge cert-active">● Active</span>
-    </div>
-    <div class="cert-card">
-      <span class="cert-icon">⚠️</span>
-      <div class="cert-name">AIAG-VDA FMEA</div>
-      <div class="cert-body">AIAG Training · 2021</div>
-      <span class="cert-badge cert-active">● Active</span>
-    </div>
-    <div class="cert-card">
-      <span class="cert-icon">📐</span>
-      <div class="cert-name">GD&T ASME Y14.5</div>
-      <div class="cert-body">Effective Training Inc. · 2018</div>
-      <span class="cert-badge cert-active">● Active</span>
-    </div>
-    <div class="cert-card">
-      <span class="cert-icon">🔬</span>
-      <div class="cert-name">VDA 6.3 Process Auditor</div>
-      <div class="cert-body">TÜV SÜD · In Progress</div>
-      <span class="cert-badge cert-progress">⬡ In Progress</span>
+<!-- SPECS -->
+<section class="specs-section" id="specs">
+  <div class="container">
+    <div class="specs-inner">
+      <div>
+        <div class="section-label">// Technical Specs</div>
+        <div class="section-title">Numbers That <span>Speak.</span></div>
+        <p class="section-sub" style="margin-bottom:40px;">Precision engineering behind every pair — because specs matter when sound is everything.</p>
+        <div class="specs-list">
+          <div class="spec-row"><span class="spec-key">Driver Size</span><span class="spec-val highlight">40mm Titanium</span></div>
+          <div class="spec-row"><span class="spec-key">Frequency Response</span><span class="spec-val">10Hz – 40kHz</span></div>
+          <div class="spec-row"><span class="spec-key">Noise Cancellation</span><span class="spec-val highlight">-42 dB ANC</span></div>
+          <div class="spec-row"><span class="spec-key">Battery Life</span><span class="spec-val">50 Hours</span></div>
+          <div class="spec-row"><span class="spec-key">Quick Charge</span><span class="spec-val highlight">10 min → 3 hrs</span></div>
+          <div class="spec-row"><span class="spec-key">Connectivity</span><span class="spec-val">Bluetooth 5.4</span></div>
+          <div class="spec-row"><span class="spec-key">Microphones</span><span class="spec-val">6 Beamforming Mics</span></div>
+          <div class="spec-row"><span class="spec-key">Weight</span><span class="spec-val highlight">218g</span></div>
+          <div class="spec-row"><span class="spec-key">Water Resistance</span><span class="spec-val">IPX5</span></div>
+        </div>
+      </div>
+      <div class="specs-visual">
+        <div class="spec-orb">🎧</div>
+      </div>
     </div>
   </div>
 </section>
 
-<hr class="divider">
-
-<!-- CONTACT -->
-<section class="section" id="contact">
-  <div class="section-tag">// Let's Connect</div>
-  <div class="section-title">Start a <span>Conversation</span></div>
-  <p class="section-sub">Available for full-time roles, contract engagements, and consulting. Typically respond within 24 hours.</p>
-
-  <div class="contact-grid">
-    <div class="contact-info">
-      <div class="contact-block">
-        <div class="contact-block-icon">✉️</div>
-        <div>
-          <div class="contact-block-label">Email</div>
-          <div class="contact-block-val">marcus.cole@qualityeng.io</div>
+<!-- COLORS -->
+<section class="colors-section" id="colors">
+  <div class="container">
+    <div class="colors-inner">
+      <div class="colors-display">
+        <div class="color-showcase" id="colorShowcase"
+          style="background: radial-gradient(circle at 35% 35%, rgba(247,37,133,0.3), rgba(114,9,183,0.4) 60%);">
+          🎧
         </div>
       </div>
-      <div class="contact-block">
-        <div class="contact-block-icon">📍</div>
-        <div>
-          <div class="contact-block-label">Location</div>
-          <div class="contact-block-val">Detroit Metro Area, MI</div>
+      <div>
+        <div class="section-label">// Colorways</div>
+        <div class="section-title">Pick Your <span>Vibe.</span></div>
+        <p class="section-sub" style="margin-bottom:36px;">Five exclusive colorways, each with custom accents and matching case. All limited edition.</p>
+        <div class="color-picks">
+          <div class="color-pick active" onclick="switchColor(this,'radial-gradient(circle at 35% 35%, rgba(247,37,133,0.3), rgba(114,9,183,0.4) 60%)','#f72585')">
+            <div class="color-swatch" style="background:linear-gradient(135deg,#f72585,#7209b7)"></div>
+            <div><div class="color-pick-name">Neon Fuchsia</div><div class="color-pick-desc">Bold · Signature Edition</div></div>
+          </div>
+          <div class="color-pick" onclick="switchColor(this,'radial-gradient(circle at 35% 35%, rgba(76,201,240,0.3), rgba(67,97,238,0.4) 60%)','#4cc9f0')">
+            <div class="color-swatch" style="background:linear-gradient(135deg,#4cc9f0,#4361ee)"></div>
+            <div><div class="color-pick-name">Arctic Blue</div><div class="color-pick-desc">Cool · Clean</div></div>
+          </div>
+          <div class="color-pick" onclick="switchColor(this,'radial-gradient(circle at 35% 35%, rgba(248,197,55,0.3), rgba(255,130,0,0.4) 60%)','#f8c537')">
+            <div class="color-swatch" style="background:linear-gradient(135deg,#f8c537,#ff8200)"></div>
+            <div><div class="color-pick-name">Solar Gold</div><div class="color-pick-desc">Warm · Premium</div></div>
+          </div>
+          <div class="color-pick" onclick="switchColor(this,'radial-gradient(circle at 35% 35%, rgba(52,211,153,0.3), rgba(6,182,212,0.4) 60%)','#34d399')">
+            <div class="color-swatch" style="background:linear-gradient(135deg,#34d399,#06b6d4)"></div>
+            <div><div class="color-pick-name">Mint Chrome</div><div class="color-pick-desc">Fresh · Minimal</div></div>
+          </div>
+          <div class="color-pick" onclick="switchColor(this,'radial-gradient(circle at 35% 35%, rgba(148,163,184,0.3), rgba(71,85,105,0.4) 60%)','#94a3b8')">
+            <div class="color-swatch" style="background:linear-gradient(135deg,#94a3b8,#475569)"></div>
+            <div><div class="color-pick-name">Slate Black</div><div class="color-pick-desc">Dark · Stealth</div></div>
+          </div>
         </div>
       </div>
-      <div class="contact-block">
-        <div class="contact-block-icon">🔗</div>
-        <div>
-          <div class="contact-block-label">LinkedIn</div>
-          <div class="contact-block-val">linkedin.com/in/john-qe</div>
-        </div>
-      </div>
-      <div class="contact-block">
-        <div class="contact-block-icon">💼</div>
-        <div>
-          <div class="contact-block-label">Availability</div>
-          <div class="contact-block-val">Open to Opportunities</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="contact-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Your Name</label>
-          <input class="form-input" type="text" placeholder="Jane Smith" id="fname">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input class="form-input" type="email" placeholder="jane@company.com" id="femail">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Company / Organization</label>
-        <input class="form-input" type="text" placeholder="Tier 1 Supplier, OEM, Consulting Firm..." id="fcompany">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Message</label>
-        <textarea class="form-textarea" placeholder="Describe the role, project, or inquiry..." id="fmsg"></textarea>
-      </div>
-      <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Send Message →</button>
-      <div class="success-msg" id="smsg">✓ Message received! I'll respond within 24 hours.</div>
     </div>
   </div>
 </section>
 
+<!-- TESTIMONIALS -->
+<section class="testimonials-section" id="reviews">
+  <div class="container">
+    <div class="section-label">// What They Say</div>
+    <div class="section-title">Real People. <span>Real Sound.</span></div>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"The ANC on these is absolutely insane. I work from a coffee shop every day and I literally forget the world exists. Best purchase I've made this year."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:rgba(247,37,133,0.15)">👩</div>
+          <div><div class="testi-name">Sophia R.</div><div class="testi-handle">@sophiasoundcloud</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"50 hours is not a typo. I used these for an entire week of commuting, workouts, and calls before I needed to charge. The battery life is unreal."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:rgba(76,201,240,0.15)">👨</div>
+          <div><div class="testi-name">Marcus T.</div><div class="testi-handle">@techwithmarcus</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"I've tried Bose, Sony, Apple — PULSE X1 beats them all for the price. The spatial audio made my home theater system feel obsolete. Seriously impressive."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:rgba(248,197,55,0.15)">🎧</div>
+          <div><div class="testi-name">Jordan K.</div><div class="testi-handle">@audiophilejordan</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="container">
+    <div style="text-align:center; margin-bottom:0">
+      <div class="section-label">// Choose Your Bundle</div>
+      <div class="section-title">Simple <span>Pricing.</span></div>
+      <p class="section-sub" style="margin:0 auto 0">No subscriptions. No gimmicks. Just great audio.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier">Solo</div>
+        <div class="price-amount"><sup>$</sup>129</div>
+        <div class="price-desc">Headphones only · 1 color</div>
+        <ul class="price-features">
+          <li>PULSE X1 Headphones</li>
+          <li>USB-C Charging Cable</li>
+          <li>Standard Carry Pouch</li>
+          <li>1-Year Warranty</li>
+          <li class="dim">Wireless Charging Case</li>
+          <li class="dim">Premium Hard Case</li>
+        </ul>
+        <button class="price-btn price-btn-outline" onclick="alert('Added to cart!')">Add to Cart</button>
+      </div>
+      <div class="price-card featured">
+        <div class="popular-badge">Most Popular</div>
+        <div class="price-tier">Pro</div>
+        <div class="price-amount"><sup>$</sup>179</div>
+        <div class="price-desc">Headphones + Wireless Case</div>
+        <ul class="price-features">
+          <li>PULSE X1 Headphones</li>
+          <li>USB-C Charging Cable</li>
+          <li>Wireless Qi Charging Case</li>
+          <li>2-Year Warranty</li>
+          <li>Premium Hard Case</li>
+          <li class="dim">Engraving Service</li>
+        </ul>
+        <button class="price-btn price-btn-grad" onclick="alert('Added to cart!')">Buy Now — Best Value</button>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">Elite</div>
+        <div class="price-amount"><sup>$</sup>229</div>
+        <div class="price-desc">Everything + Custom Engraving</div>
+        <ul class="price-features">
+          <li>PULSE X1 Headphones</li>
+          <li>USB-C Charging Cable</li>
+          <li>Wireless Qi Charging Case</li>
+          <li>3-Year Warranty</li>
+          <li>Premium Hard Case</li>
+          <li>Free Engraving Service</li>
+        </ul>
+        <button class="price-btn price-btn-outline" onclick="alert('Added to cart!')">Add to Cart</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box">
+      <h2>Ready to Hear Everything?</h2>
+      <p>Join 50,000+ listeners who made the switch. Free shipping. 30-day returns.</p>
+      <button class="btn-glow" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Get Your PULSE X1 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
 <footer>
-  <div class="footer-brand">// MARCUS COLE · AUTOMOTIVE QUALITY ENGINEER</div>
+  <div class="footer-logo">PULSE X1</div>
   <div class="footer-links">
-    <a href="#about">About</a>
-    <a href="#experience">Experience</a>
-    <a href="#contact">Contact</a>
+    <a href="#">Features</a>
+    <a href="#">Support</a>
+    <a href="#">Returns</a>
+    <a href="#">Contact</a>
   </div>
-  <div style="color: var(--muted); font-size: 12px;">© 2026 · All Rights Reserved</div>
+  <div class="footer-copy">© 2026 PULSE Audio. All rights reserved.</div>
 </footer>
 
 <script>
-  // ── SKILL BARS ON SCROLL ──
-  const fills = document.querySelectorAll('.skill-fill');
-  let triggered = false;
-  function triggerBars() {
-    if (triggered) return;
-    const sec = document.getElementById('skills');
-    if (!sec) return;
-    if (sec.getBoundingClientRect().top < window.innerHeight * 0.88) {
-      triggered = true;
-      fills.forEach(f => { f.style.width = f.dataset.pct + '%'; });
-    }
-  }
-  window.addEventListener('scroll', triggerBars, { passive: true });
-  triggerBars();
-
-  // ── COUNTER ANIMATION ──
-  function animCounter(el, target, prefix, suffix) {
-    const dur = 1800, steps = target;
-    const iv = dur / steps;
-    let cur = 0;
-    const t = setInterval(() => {
-      cur++;
-      el.innerHTML = (prefix || '') + cur + '<span>' + (suffix || '') + '</span>';
-      if (cur >= target) clearInterval(t);
-    }, iv);
-  }
-  setTimeout(() => {
-    const s1 = document.querySelector('.hci-val');
-    const cards = document.querySelectorAll('.hci-val');
-    if (cards[0]) animCounter(cards[0], 10, '', '+');
-    if (cards[1]) animCounter(cards[1], 98, '', '%');
-    if (cards[2]) animCounter(cards[2], 3, '', '×');
-  }, 600);
-
-  // ── FORM SUBMIT ──
-  function handleSubmit() {
-    const name  = document.getElementById('fname').value.trim();
-    const email = document.getElementById('femail').value.trim();
-    if (!name || !email) {
-      alert('Please enter your name and email address.');
-      return;
-    }
-    const btn = document.getElementById('submitBtn');
-    btn.textContent = 'Sending...';
-    btn.disabled = true;
-    setTimeout(() => {
-      btn.style.display = 'none';
-      document.getElementById('smsg').style.display = 'block';
-    }, 1200);
+  // Color switcher
+  function switchColor(el, bg, accent) {
+    document.querySelectorAll('.color-pick').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    const showcase = document.getElementById('colorShowcase');
+    showcase.style.background = bg;
+    showcase.style.boxShadow = `0 0 60px ${accent}40`;
   }
 
-  // ── REVEAL ON SCROLL ──
+  // Scroll reveal
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
@@ -936,12 +765,12 @@
         e.target.style.transform = 'translateY(0)';
       }
     });
-  }, { threshold: 0.1 });
+  }, { threshold: 0.08 });
 
-  document.querySelectorAll('.comp-card, .tl-item, .cert-card, .tool-chip, .skill-group, .contact-block').forEach(el => {
+  document.querySelectorAll('.feat-card, .testi-card, .price-card, .spec-row, .color-pick').forEach(el => {
     el.style.opacity = '0';
-    el.style.transform = 'translateY(24px)';
-    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    el.style.transform = 'translateY(28px)';
+    el.style.transition = 'opacity 0.55s ease, transform 0.55s ease';
     observer.observe(el);
   });
 </script>
