@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -155,29 +155,36 @@
   }
   .hero-badge-label { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; margin-top: 2px; }
 
-  /* Hero 3D Visual */
+  /* Hero Spline Visual */
   .hero-visual {
     position: relative; display: flex; align-items: center; justify-content: center;
     animation: fadeUp 0.7s ease 0.15s both;
     width: 100%; height: 520px;
   }
-  .threejs-wrap {
-    width: 100%; height: 100%; border-radius: 28px; overflow: hidden;
+  .spline-wrap {
+    width: 100%; height: 100%; border-radius: 24px; overflow: hidden;
     position: relative;
-    background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(20,10,40,0.95) 0%, rgba(7,7,15,1) 100%);
-    box-shadow:
-      0 0 0 1px rgba(247,37,133,0.12),
-      0 0 60px rgba(247,37,133,0.12),
-      0 0 120px rgba(114,9,183,0.1);
+    box-shadow: 0 0 80px rgba(247,37,133,0.15), 0 0 160px rgba(114,9,183,0.1);
   }
-  #heroCanvas {
-    width: 100% !important; height: 100% !important; display: block;
+  .spline-wrap::before {
+    content: ''; position: absolute; inset: 0; border-radius: 24px; z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(247,37,133,0.06) 0%, transparent 50%),
+                linear-gradient(to bottom, transparent 70%, rgba(7,7,15,0.6) 100%);
   }
-  .canvas-glow {
-    position: absolute; inset: 0; pointer-events: none; border-radius: 28px;
-    background:
-      radial-gradient(ellipse 70% 40% at 50% 100%, rgba(247,37,133,0.08) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 30% at 50% 0%, rgba(76,201,240,0.06) 0%, transparent 60%);
+  spline-viewer {
+    width: 100%; height: 100%; display: block;
+    --progress-bar-color: #f72585;
+  }
+  .spline-loader {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(7,7,15,0.8); border-radius: 24px; z-index: 0;
+  }
+  .spline-loader-inner {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 3px solid rgba(247,37,133,0.15);
+    border-top-color: #f72585;
+    animation: spin 0.9s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -474,9 +481,12 @@
       </div>
     </div>
     <div class="hero-visual">
-      <div class="threejs-wrap">
-        <canvas id="heroCanvas"></canvas>
-        <div class="canvas-glow"></div>
+      <div class="spline-wrap">
+        <div class="spline-loader"><div class="spline-loader-inner"></div></div>
+        <spline-viewer
+          url="https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode"
+          loading="lazy">
+        </spline-viewer>
       </div>
     </div>
   </div>
@@ -731,172 +741,6 @@
 </footer>
 
 <script>
-  // ── THREE.JS 3D HEADPHONE ──
-  (function() {
-    const canvas = document.getElementById('heroCanvas');
-    if (!canvas || !window.THREE) return;
-    const wrap = canvas.parentElement;
-
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.4;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-    camera.position.set(0, 0.4, 5.5);
-
-    function resize() {
-      const w = wrap.clientWidth, h = wrap.clientHeight;
-      renderer.setSize(w, h, false);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    // Materials
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x111118, metalness: 0.85, roughness: 0.18,
-      envMapIntensity: 1.2
-    });
-    const accentMat = new THREE.MeshStandardMaterial({
-      color: 0xf72585, metalness: 0.6, roughness: 0.3, emissive: 0xf72585, emissiveIntensity: 0.15
-    });
-    const cushionMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a2a, metalness: 0.1, roughness: 0.85
-    });
-    const silvMat = new THREE.MeshStandardMaterial({
-      color: 0x888899, metalness: 0.95, roughness: 0.1
-    });
-
-    // Group to hold entire headphone
-    const headphone = new THREE.Group();
-    scene.add(headphone);
-
-    // ── HEADBAND ARC ──
-    const bandCurve = new THREE.TorusGeometry(1.28, 0.055, 20, 120, Math.PI);
-    const band = new THREE.Mesh(bandCurve, bodyMat);
-    band.rotation.z = Math.PI;
-    band.castShadow = true;
-    headphone.add(band);
-
-    // Headband padding
-    const padGeo = new THREE.TorusGeometry(1.28, 0.095, 14, 120, Math.PI * 0.55);
-    const pad = new THREE.Mesh(padGeo, cushionMat);
-    pad.rotation.z = Math.PI * 0.72;
-    pad.position.y = 0.02;
-    headphone.add(pad);
-
-    // ── HELPER: build one ear cup side ──
-    function buildEarSide(side) {
-      const g = new THREE.Group();
-
-      // Stem (slider)
-      const stemGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.55, 16);
-      const stem = new THREE.Mesh(stemGeo, silvMat);
-      stem.castShadow = true;
-      g.add(stem);
-
-      // Cup housing – outer shell
-      const cupGeo = new THREE.CylinderGeometry(0.48, 0.44, 0.26, 40);
-      const cup = new THREE.Mesh(cupGeo, bodyMat);
-      cup.rotation.z = Math.PI / 2;
-      cup.position.set(side * 0.26, -0.28, 0);
-      cup.castShadow = true;
-      g.add(cup);
-
-      // Cup face (inner dark ring)
-      const faceGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.04, 40);
-      const face = new THREE.Mesh(faceGeo, cushionMat);
-      face.rotation.z = Math.PI / 2;
-      face.position.set(side * 0.39, -0.28, 0);
-      g.add(face);
-
-      // Accent ring
-      const ringGeo = new THREE.TorusGeometry(0.43, 0.022, 12, 60);
-      const ring = new THREE.Mesh(ringGeo, accentMat);
-      ring.rotation.y = Math.PI / 2;
-      ring.position.set(side * 0.255, -0.28, 0);
-      g.add(ring);
-
-      // Ear cushion
-      const cushGeo = new THREE.TorusGeometry(0.32, 0.095, 14, 50);
-      const cush = new THREE.Mesh(cushGeo, cushionMat);
-      cush.rotation.y = Math.PI / 2;
-      cush.position.set(side * 0.35, -0.28, 0);
-      g.add(cush);
-
-      // Logo dot
-      const dotGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.01, 20);
-      const dot = new THREE.Mesh(dotGeo, accentMat);
-      dot.rotation.z = Math.PI / 2;
-      dot.position.set(side * 0.42, -0.28, 0);
-      g.add(dot);
-
-      return g;
-    }
-
-    // Left side
-    const leftSide = buildEarSide(-1);
-    leftSide.position.set(-1.28, -1.0, 0);
-    headphone.add(leftSide);
-
-    // Right side
-    const rightSide = buildEarSide(1);
-    rightSide.position.set(1.28, -1.0, 0);
-    headphone.add(rightSide);
-
-    // ── LIGHTING ──
-    // Ambient
-    const ambient = new THREE.AmbientLight(0x8888cc, 0.5);
-    scene.add(ambient);
-
-    // Key light (top-front pink)
-    const keyLight = new THREE.DirectionalLight(0xff4da6, 3.5);
-    keyLight.position.set(3, 5, 4);
-    keyLight.castShadow = true;
-    scene.add(keyLight);
-
-    // Fill light (cyan)
-    const fillLight = new THREE.DirectionalLight(0x4cc9f0, 2.5);
-    fillLight.position.set(-4, 2, 3);
-    scene.add(fillLight);
-
-    // Rim light (back violet)
-    const rimLight = new THREE.PointLight(0x7209b7, 4, 12);
-    rimLight.position.set(0, -2, -3);
-    scene.add(rimLight);
-
-    // Bottom bounce
-    const bounceLight = new THREE.PointLight(0xf72585, 1.5, 8);
-    bounceLight.position.set(0, -4, 2);
-    scene.add(bounceLight);
-
-    // ── ANIMATE ──
-    let mouse = { x: 0, y: 0 };
-    document.addEventListener('mousemove', e => {
-      mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
-      mouse.y = -(e.clientY / window.innerHeight - 0.5) * 2;
-    });
-
-    const clock = new THREE.Clock();
-    function animate() {
-      requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
-
-      // Slow auto-rotation + subtle mouse parallax
-      headphone.rotation.y = t * 0.35 + mouse.x * 0.18;
-      headphone.rotation.x = Math.sin(t * 0.22) * 0.12 + mouse.y * 0.08;
-      headphone.position.y = Math.sin(t * 0.6) * 0.06;
-
-      renderer.render(scene, camera);
-    }
-    animate();
-  })();
-
   // Color switcher
   function switchColor(el, bg, accent) {
     document.querySelectorAll('.color-pick').forEach(p => p.classList.remove('active'));
