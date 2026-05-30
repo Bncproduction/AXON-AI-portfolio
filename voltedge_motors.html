@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BNC Motors – India's Electric Two-Wheeler Brand</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        navy: '#0A1628',
+        'navy-light': '#0F2040',
+        electric: '#00D4FF',
+        lime: '#7FFF00',
+      }
+    }
+  }
+}
+</script>
+<style>
+  :root { scroll-behavior: smooth; }
+  body { background: #0A1628; color: #fff; font-family: Inter, sans-serif; }
+  nav { backdrop-filter: blur(16px); background: rgba(10,22,40,0.88); }
+  .grad { background: linear-gradient(90deg,#00D4FF,#7FFF00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(12px); border-radius: 1rem; }
+  #heroCanvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .bar-fill { transition: width 1.4s cubic-bezier(.4,0,.2,1); }
+  .fade-section { opacity:0; transform:translateY(28px); transition: opacity .7s ease, transform .7s ease; }
+  .fade-section.visible { opacity:1; transform:none; }
+  .step-dot { width:2rem; height:2rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.8rem; }
+  .step-active { background:linear-gradient(135deg,#00D4FF,#7FFF00); color:#0A1628; }
+  .step-done   { background:#00D4FF22; border:1px solid #00D4FF; color:#00D4FF; }
+  .step-idle   { background:#ffffff11; border:1px solid #ffffff22; color:#888; }
+  input[type=range] { accent-color:#00D4FF; width:100%; }
+  .tl-dot { width:13px; height:13px; background:#00D4FF; border-radius:50%; flex-shrink:0; margin-top:5px; box-shadow:0 0 10px #00D4FF88; }
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:#0A1628; } ::-webkit-scrollbar-thumb { background:#00D4FF44; border-radius:3px; }
+  #mobileMenu { max-height:0; overflow:hidden; transition:max-height .4s ease; }
+  #mobileMenu.open { max-height:400px; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+  .float { animation: float 3.5s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/10">
+  <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
+    <a href="#home" class="flex items-center gap-2 font-black text-xl tracking-tight">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="13" stroke="#00D4FF" stroke-width="2"/>
+        <path d="M7 15l3-5 4 3 4-5 3 2" stroke="#7FFF00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="grad">BNC</span><span class="text-white/60 font-light ml-1">Motors</span>
+    </a>
+    <ul class="hidden md:flex items-center gap-5 text-sm text-white/70">
+      <li><a href="#home"     class="hover:text-electric transition">Home</a></li>
+      <li><a href="#vehicles" class="hover:text-electric transition">Models</a></li>
+      <li><a href="#tech"     class="hover:text-electric transition">Technology</a></li>
+      <li><a href="#charging" class="hover:text-electric transition">Charging</a></li>
+      <li><a href="#sustain"  class="hover:text-electric transition">Sustainability</a></li>
+      <li><a href="#fleet"    class="hover:text-electric transition">Fleet</a></li>
+      <li><a href="#about"    class="hover:text-electric transition">About</a></li>
+      <li><a href="#testdrive" class="px-4 py-1.5 rounded-full text-navy font-semibold" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Book Test Ride</a></li>
+    </ul>
+    <button onclick="document.getElementById('mobileMenu').classList.toggle('open')" class="md:hidden text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" class="md:hidden px-4 pb-4 bg-navy/95">
+    <div class="flex flex-col gap-3 text-sm text-white/70 pt-2">
+      <a href="#home"     onclick="closeMobile()">Home</a>
+      <a href="#vehicles" onclick="closeMobile()">Our Models</a>
+      <a href="#tech"     onclick="closeMobile()">Technology</a>
+      <a href="#charging" onclick="closeMobile()">Charging</a>
+      <a href="#sustain"  onclick="closeMobile()">Sustainability</a>
+      <a href="#fleet"    onclick="closeMobile()">Fleet</a>
+      <a href="#about"    onclick="closeMobile()">About</a>
+      <a href="#testdrive" onclick="closeMobile()" class="px-4 py-2 rounded-full text-navy font-semibold text-center mt-1" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Book Test Ride</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section id="home" class="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+  <canvas id="heroCanvas"></canvas>
+  <div class="relative z-10 max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center py-20">
+    <div>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-5 border border-electric/30 text-electric" style="background:#00D4FF11">
+        <span class="w-1.5 h-1.5 rounded-full bg-electric animate-pulse"></span>
+        India's #1 Electric Two-Wheeler Brand
+      </div>
+      <h1 class="text-5xl md:text-7xl font-black leading-tight mb-5">
+        Ride<br/><span class="grad">Electric.</span><br/>
+        <span class="text-white/80 text-4xl md:text-5xl font-extrabold">Ride Smart.</span>
+      </h1>
+      <p class="text-white/55 text-lg mb-8 max-w-md leading-relaxed">
+        BNC Motors builds electric scooters and performance e-bikes engineered for every road in India. Zero fuel. Zero guilt. Pure thrill.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a href="#vehicles" class="px-7 py-3 rounded-full font-bold text-navy text-sm" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Explore Models</a>
+        <a href="#testdrive" class="px-7 py-3 rounded-full font-bold border border-electric text-electric hover:bg-electric/10 transition text-sm">Book Free Test Ride</a>
+      </div>
+      <div class="flex gap-6 mt-8 text-sm">
+        <div><span class="font-black text-electric text-lg">₹79,999</span><span class="text-white/40 text-xs ml-1">starting</span></div>
+        <div class="w-px bg-white/10"></div>
+        <div><span class="font-black text-lime text-lg">180 km</span><span class="text-white/40 text-xs ml-1">true range</span></div>
+        <div class="w-px bg-white/10"></div>
+        <div><span class="font-black text-electric text-lg">3s</span><span class="text-white/40 text-xs ml-1">0–60 km/h</span></div>
+      </div>
+    </div>
+
+    <!-- Scooter Hero Image -->
+    <div class="flex justify-center items-center float">
+      <img src="https://bncmotors.in/assets_v4/img/BNC-Home-image/perfetto_slider.jpg"
+           alt="BNC Motors Prefetto Electric Scooter"
+           class="w-full max-w-lg rounded-2xl object-contain"
+           style="filter:drop-shadow(0 0 50px #00D4FF44)"
+           onerror="this.style.display='none';document.getElementById('heroSvgFallback').style.display='block'"/>
+      <!-- SVG fallback if image fails to load -->
+      <svg id="heroSvgFallback" viewBox="0 0 440 280" style="display:none;filter:drop-shadow(0 0 50px #00D4FF33)" class="w-full max-w-lg">
+        <defs>
+          <linearGradient id="sg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#00D4FF"/>
+            <stop offset="100%" stop-color="#7FFF00"/>
+          </linearGradient>
+          <linearGradient id="sg2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00D4FF" stop-opacity=".3"/>
+            <stop offset="100%" stop-color="#00D4FF" stop-opacity=".05"/>
+          </linearGradient>
+        </defs>
+        <!-- Shadow -->
+        <ellipse cx="220" cy="265" rx="120" ry="10" fill="#00D4FF" opacity=".08"/>
+        <!-- Rear wheel -->
+        <circle cx="130" cy="210" r="52" fill="none" stroke="url(#sg)" stroke-width="3"/>
+        <circle cx="130" cy="210" r="36" fill="none" stroke="#00D4FF" stroke-width="1" opacity=".3"/>
+        <circle cx="130" cy="210" r="14" fill="#0A1628" stroke="#7FFF00" stroke-width="2.5"/>
+        <!-- Spokes rear -->
+        <g stroke="#00D4FF" stroke-width="1" opacity=".4">
+          <line x1="130" y1="158" x2="130" y2="262"/><line x1="78" y1="210" x2="182" y2="210"/>
+          <line x1="93" y1="173" x2="167" y2="247"/><line x1="167" y1="173" x2="93" y2="247"/>
+        </g>
+        <!-- Front wheel -->
+        <circle cx="320" cy="210" r="52" fill="none" stroke="url(#sg)" stroke-width="3"/>
+        <circle cx="320" cy="210" r="36" fill="none" stroke="#00D4FF" stroke-width="1" opacity=".3"/>
+        <circle cx="320" cy="210" r="14" fill="#0A1628" stroke="#7FFF00" stroke-width="2.5"/>
+        <!-- Spokes front -->
+        <g stroke="#00D4FF" stroke-width="1" opacity=".4">
+          <line x1="320" y1="158" x2="320" y2="262"/><line x1="268" y1="210" x2="372" y2="210"/>
+          <line x1="283" y1="173" x2="357" y2="247"/><line x1="357" y1="173" x2="283" y2="247"/>
+        </g>
+        <!-- Body frame -->
+        <path d="M130 210 L155 145 L220 100 L295 105 L320 155 L320 210" fill="none" stroke="url(#sg)" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- Body panels -->
+        <path d="M155 145 L220 100 L295 105 L310 140 L240 145 Z" fill="url(#sg2)" stroke="#00D4FF" stroke-width="1.5"/>
+        <path d="M155 145 L240 145 L310 140 L320 155 L320 210 L180 210 L130 210 L155 145 Z" fill="url(#sg2)"/>
+        <!-- Seat -->
+        <rect x="175" y="95" width="100" height="18" rx="9" fill="#00D4FF" opacity=".25" stroke="#00D4FF" stroke-width="1"/>
+        <!-- Handlebar -->
+        <line x1="295" y1="105" x2="330" y2="80" stroke="#00D4FF" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+        <line x1="320" y1="75" x2="340" y2="75" stroke="url(#sg)" stroke-width="4" stroke-linecap="round"/>
+        <!-- Headlight -->
+        <ellipse cx="335" cy="118" rx="10" ry="7" fill="#7FFF00" opacity=".9"/>
+        <ellipse cx="335" cy="118" rx="6" ry="4" fill="#fff" opacity=".6"/>
+        <!-- Tail light -->
+        <ellipse cx="145" cy="160" rx="7" ry="4" fill="#ff4455" opacity=".8"/>
+        <!-- Battery indicator -->
+        <rect x="190" y="155" width="50" height="22" rx="4" fill="#00D4FF" opacity=".12" stroke="#00D4FF" stroke-width="1"/>
+        <rect x="193" y="158" width="15" height="16" rx="2" fill="#7FFF00" opacity=".8"/>
+        <rect x="210" y="158" width="15" height="16" rx="2" fill="#7FFF00" opacity=".5"/>
+        <rect x="227" y="158" width="10" height="16" rx="2" fill="#7FFF00" opacity=".2"/>
+        <!-- BNC badge -->
+        <text x="190" y="135" font-family="Inter,sans-serif" font-size="13" font-weight="900" fill="url(#sg)" opacity=".8">BNC SPARK</text>
+        <!-- Ground -->
+        <line x1="60" y1="262" x2="380" y2="262" stroke="#00D4FF" stroke-width="1" opacity=".2"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="absolute bottom-0 left-0 right-0 border-t border-white/10" style="background:rgba(10,22,40,0.85);backdrop-filter:blur(12px)">
+    <div class="max-w-7xl mx-auto px-4 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      <div><div class="text-2xl font-black grad" id="c1">0</div><div class="text-xs text-white/50 mt-1">Scooters on Road</div></div>
+      <div><div class="text-2xl font-black grad" id="c2">0</div><div class="text-xs text-white/50 mt-1">Tonnes CO₂ Saved</div></div>
+      <div><div class="text-2xl font-black grad" id="c3">0</div><div class="text-xs text-white/50 mt-1">Charging Points</div></div>
+      <div><div class="text-2xl font-black grad" id="c4">0</div><div class="text-xs text-white/50 mt-1">Cities Served</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- USP Strip -->
+<div class="bg-navy-light border-y border-white/10 py-8">
+  <div class="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+    <div class="flex flex-col items-center gap-2">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background:#00D4FF1A">
+        <svg class="w-5 h-5" fill="none" stroke="#00D4FF" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <div class="font-bold text-sm">180 km Range</div><div class="text-xs text-white/40">True real-world range</div>
+    </div>
+    <div class="flex flex-col items-center gap-2">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background:#7FFF001A">
+        <svg class="w-5 h-5" fill="none" stroke="#7FFF00" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14" stroke="#7FFF00" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="font-bold text-sm">0–60 in 3s</div><div class="text-xs text-white/40">Sport riding mode</div>
+    </div>
+    <div class="flex flex-col items-center gap-2">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background:#00D4FF1A">
+        <svg class="w-5 h-5" fill="none" stroke="#00D4FF" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </div>
+      <div class="font-bold text-sm">Fast Swap Battery</div><div class="text-xs text-white/40">90-sec battery swap</div>
+    </div>
+    <div class="flex flex-col items-center gap-2">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background:#7FFF001A">
+        <svg class="w-5 h-5" fill="none" stroke="#7FFF00" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <div class="font-bold text-sm">5-Year Warranty</div><div class="text-xs text-white/40">Battery + motor covered</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ VEHICLES ═══════════ -->
+<section id="vehicles" class="py-24 max-w-7xl mx-auto px-4 fade-section">
+  <div class="text-center mb-14">
+    <p class="text-electric text-sm tracking-widest uppercase mb-2">Our Lineup</p>
+    <h2 class="text-4xl md:text-5xl font-black mb-3">Three Bikes. <span class="grad">One Revolution.</span></h2>
+    <p class="text-white/50 max-w-xl mx-auto">From urban commuters to performance riders — BNC Motors has a two-wheeler for every road and every rider.</p>
+  </div>
+  <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-7">
+
+    <!-- Challenger S110 -->
+    <div class="glass p-6 flex flex-col hover:border-electric/50 transition-all duration-300 hover:-translate-y-1">
+      <div class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 self-start border border-electric/30 text-electric" style="background:#00D4FF11">Challenger Series</div>
+      <div class="w-full h-40 mb-4 rounded-xl overflow-hidden flex items-center justify-center" style="background:rgba(255,255,255,0.03)">
+        <img src="https://bncmotors.in/assets_v4/img/Bike Blue R_1.png"
+             alt="BNC Challenger S110 Blue"
+             class="w-full h-full object-contain p-2"
+             style="filter:drop-shadow(0 4px 16px #00D4FF33)"
+             onerror="this.parentElement.innerHTML='<div class=\'text-white/20 text-xs text-center p-4\'>Challenger S110</div>'"/>
+      </div>
+      <h3 class="text-lg font-black mb-1">Challenger S110</h3>
+      <p class="text-white/50 text-xs mb-4">Entry-level urban commuter with a refined ride, lightweight build, and reliable daily range.</p>
+      <div class="grid grid-cols-3 gap-1.5 mb-4">
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-electric font-bold text-xs">110cc</div><div class="text-xs text-white/40">Motor</div></div>
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-electric font-bold text-xs">90 km/h</div><div class="text-xs text-white/40">Top Speed</div></div>
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-electric font-bold text-xs">110 km</div><div class="text-xs text-white/40">Range</div></div>
+      </div>
+      <div class="text-xl font-black grad mb-4">₹89,999</div>
+      <div class="flex gap-2 mt-auto">
+        <button onclick="showConfig('Challenger S110')" class="flex-1 py-2 rounded-lg text-xs font-semibold border border-electric text-electric hover:bg-electric/10 transition">Configure</button>
+        <button onclick="goTo('#testdrive')" class="flex-1 py-2 rounded-lg text-xs font-semibold text-navy" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Test Ride</button>
+      </div>
+    </div>
+
+    <!-- Challenger S125 -->
+    <div class="glass p-6 flex flex-col hover:border-electric/50 transition-all duration-300 hover:-translate-y-1">
+      <div class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 self-start border border-electric/30 text-electric" style="background:#00D4FF11">Challenger Series</div>
+      <div class="w-full h-40 mb-4 rounded-xl overflow-hidden flex items-center justify-center" style="background:rgba(255,255,255,0.03)">
+        <img src="https://bncmotors.in/assets_v4/img/Bike Red R_1.png"
+             alt="BNC Challenger S125 Red"
+             class="w-full h-full object-contain p-2"
+             style="filter:drop-shadow(0 4px 16px #ff443344)"
+             onerror="this.parentElement.innerHTML='<div class=\'text-white/20 text-xs text-center p-4\'>Challenger S125</div>'"/>
+      </div>
+      <h3 class="text-lg font-black mb-1">Challenger S125</h3>
+      <p class="text-white/50 text-xs mb-4">Upgraded power and extended range over S110 — the sweet spot for performance commuters.</p>
+      <div class="grid grid-cols-3 gap-1.5 mb-4">
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-electric font-bold text-xs">125cc</div><div class="text-xs text-white/40">Motor</div></div>
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-electric font-bold text-xs">105 km/h</div><div class="text-xs text-white/40">Top Speed</div></div>
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-electric font-bold text-xs">140 km</div><div class="text-xs text-white/40">Range</div></div>
+      </div>
+      <div class="text-xl font-black grad mb-4">₹1,09,999</div>
+      <div class="flex gap-2 mt-auto">
+        <button onclick="showConfig('Challenger S125')" class="flex-1 py-2 rounded-lg text-xs font-semibold border border-electric text-electric hover:bg-electric/10 transition">Configure</button>
+        <button onclick="goTo('#testdrive')" class="flex-1 py-2 rounded-lg text-xs font-semibold text-navy" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Test Ride</button>
+      </div>
+    </div>
+
+    <!-- Prefetto -->
+    <div class="glass p-6 flex flex-col hover:border-electric/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-0.5" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)"></div>
+      <div class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 self-start text-navy" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">⭐ Best Seller</div>
+      <div class="w-full h-40 mb-4 rounded-xl overflow-hidden flex items-center justify-center" style="background:rgba(255,255,255,0.03)">
+        <img src="https://bncmotors.in/assets_v4/img/perfetto_v2/perfetto_red.png"
+             alt="BNC Prefetto Electric Scooter"
+             class="w-full h-full object-contain p-2"
+             style="filter:drop-shadow(0 4px 20px #00D4FF44)"
+             onerror="this.src='https://bncmotors.in/assets_v4/img/BNC-Home-image/perfetto_card.png'"/>
+      </div>
+      <h3 class="text-lg font-black mb-1">Prefetto</h3>
+      <p class="text-white/50 text-xs mb-4">Premium flagship scooter — elegant Italian-inspired design, smart connectivity, and long-range confidence.</p>
+      <div class="grid grid-cols-3 gap-1.5 mb-4">
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-lime font-bold text-xs">3.5 kWh</div><div class="text-xs text-white/40">Battery</div></div>
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-lime font-bold text-xs">115 km/h</div><div class="text-xs text-white/40">Top Speed</div></div>
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-lime font-bold text-xs">160 km</div><div class="text-xs text-white/40">Range</div></div>
+      </div>
+      <div class="text-xl font-black grad mb-4">₹1,34,999</div>
+      <div class="flex gap-2 mt-auto">
+        <button onclick="showConfig('Prefetto')" class="flex-1 py-2 rounded-lg text-xs font-semibold border border-electric text-electric hover:bg-electric/10 transition">Configure</button>
+        <button onclick="goTo('#testdrive')" class="flex-1 py-2 rounded-lg text-xs font-semibold text-navy" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Test Ride</button>
+      </div>
+    </div>
+
+    <!-- Prefetto EX -->
+    <div class="glass p-6 flex flex-col hover:border-lime/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-0.5" style="background:linear-gradient(90deg,#7FFF00,#00D4FF)"></div>
+      <div class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 self-start border border-lime/40 text-lime" style="background:#7FFF0015">Dual Battery</div>
+      <div class="w-full h-40 mb-4 rounded-xl overflow-hidden flex items-center justify-center" style="background:rgba(255,255,255,0.03)">
+        <img src="https://bncmotors.in/assets_v4/img/perfetto_v2/perfetto_green_scroll.png"
+             alt="BNC Prefetto EX Dual Battery Scooter"
+             class="w-full h-full object-contain p-2"
+             style="filter:drop-shadow(0 4px 20px #7FFF0044)"
+             onerror="this.src='https://bncmotors.in/assets_v4/img/BNC-Home-image/perfetto_card.png'"/>
+      </div>
+      <h3 class="text-lg font-black mb-1">Prefetto EX</h3>
+      <p class="text-white/50 text-xs mb-4">Dual-battery variant of the Prefetto. Double the range, same elegance — for riders who go the extra mile.</p>
+      <div class="grid grid-cols-3 gap-1.5 mb-4">
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-lime font-bold text-xs">7.0 kWh</div><div class="text-xs text-white/40">Dual Battery</div></div>
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-lime font-bold text-xs">115 km/h</div><div class="text-xs text-white/40">Top Speed</div></div>
+        <div class="text-center p-2 rounded-lg bg-white/5"><div class="text-lime font-bold text-xs">300 km</div><div class="text-xs text-white/40">Range</div></div>
+      </div>
+      <div class="text-xl font-black grad mb-4">₹1,74,999</div>
+      <div class="flex gap-2 mt-auto">
+        <button onclick="showConfig('Prefetto EX')" class="flex-1 py-2 rounded-lg text-xs font-semibold border border-lime text-lime hover:bg-lime/10 transition">Configure</button>
+        <button onclick="goTo('#testdrive')" class="flex-1 py-2 rounded-lg text-xs font-semibold text-navy" style="background:linear-gradient(90deg,#7FFF00,#00D4FF)">Test Ride</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Config Modal -->
+<div id="configModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,.75);backdrop-filter:blur(8px)">
+  <div class="glass max-w-md w-full p-8">
+    <h3 class="text-2xl font-black mb-1">Configure <span id="configModel" class="grad">Challenger S110</span></h3>
+    <p class="text-white/50 text-sm mb-6">Choose your colour, variant, and riding mode.</p>
+    <div class="mb-4">
+      <label class="text-xs text-white/60 mb-2 block tracking-widest">COLOUR</label>
+      <div class="flex gap-3">
+        <button onclick="selColor(this,'#00D4FF')" class="w-9 h-9 rounded-full border-2 border-white/60 transition" style="background:#00D4FF"></button>
+        <button onclick="selColor(this,'#7FFF00')" class="w-9 h-9 rounded-full border-2 border-transparent transition" style="background:#7FFF00"></button>
+        <button onclick="selColor(this,'#ff4455')" class="w-9 h-9 rounded-full border-2 border-transparent transition" style="background:#ff4455"></button>
+        <button onclick="selColor(this,'#fff')"    class="w-9 h-9 rounded-full border-2 border-transparent transition" style="background:#fff"></button>
+        <button onclick="selColor(this,'#1c1c1c')" class="w-9 h-9 rounded-full border-2 border-transparent transition" style="background:#1c1c1c;outline:1px solid #555"></button>
+      </div>
+    </div>
+    <div class="mb-4">
+      <label class="text-xs text-white/60 mb-2 block tracking-widest">VARIANT</label>
+      <select class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm">
+        <option>Standard (2.9 kWh)</option><option>Long Range (3.8 kWh)</option><option>Pro Performance</option>
+      </select>
+    </div>
+    <div class="mb-6">
+      <label class="text-xs text-white/60 mb-2 block tracking-widest">RIDING MODE</label>
+      <div class="grid grid-cols-3 gap-2">
+        <button class="mode-btn py-2 rounded-lg text-xs border border-electric/60 text-electric bg-electric/10">Eco</button>
+        <button class="mode-btn py-2 rounded-lg text-xs border border-white/20 text-white/60 hover:border-electric/40 transition">City</button>
+        <button class="mode-btn py-2 rounded-lg text-xs border border-white/20 text-white/60 hover:border-electric/40 transition">Sport</button>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="closeConfig()" class="flex-1 py-2.5 rounded-lg border border-white/20 text-white/60 text-sm">Cancel</button>
+      <button onclick="closeConfig();goTo('#testdrive')" class="flex-1 py-2.5 rounded-lg font-bold text-navy text-sm" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Book This Config</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TECHNOLOGY ═══════════ -->
+<section id="tech" class="py-24 bg-navy-light fade-section">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="text-center mb-14">
+      <p class="text-electric text-sm tracking-widest uppercase mb-2">Engineering Excellence</p>
+      <h2 class="text-4xl md:text-5xl font-black mb-3"><span class="grad">Technology</span> Built for India</h2>
+      <p class="text-white/50 max-w-xl mx-auto">Every component engineered for Indian roads, weather, and riding habits.</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-14 items-start">
+      <div>
+        <h3 class="text-lg font-bold mb-6 text-white/80">Battery & Motor Performance</h3>
+        <div class="space-y-5" id="techBars">
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span class="text-white/65">Cell Energy Density</span><span class="text-electric font-bold">94%</span></div>
+            <div class="h-2 rounded-full bg-white/10"><div class="h-full rounded-full bar-fill" style="width:0;background:linear-gradient(90deg,#00D4FF,#7FFF00)" data-target="94"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span class="text-white/65">Fast Charge Speed (0→80% in 45 min)</span><span class="text-electric font-bold">89%</span></div>
+            <div class="h-2 rounded-full bg-white/10"><div class="h-full rounded-full bar-fill" style="width:0;background:linear-gradient(90deg,#00D4FF,#7FFF00)" data-target="89"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span class="text-white/65">Cycle Life (2000+ cycles)</span><span class="text-electric font-bold">96%</span></div>
+            <div class="h-2 rounded-full bg-white/10"><div class="h-full rounded-full bar-fill" style="width:0;background:linear-gradient(90deg,#00D4FF,#7FFF00)" data-target="96"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span class="text-white/65">Motor Efficiency (BLDC Hub)</span><span class="text-electric font-bold">91%</span></div>
+            <div class="h-2 rounded-full bg-white/10"><div class="h-full rounded-full bar-fill" style="width:0;background:linear-gradient(90deg,#00D4FF,#7FFF00)" data-target="91"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span class="text-white/65">Monsoon & Heat Resistance</span><span class="text-electric font-bold">97%</span></div>
+            <div class="h-2 rounded-full bg-white/10"><div class="h-full rounded-full bar-fill" style="width:0;background:linear-gradient(90deg,#00D4FF,#7FFF00)" data-target="97"></div></div>
+          </div>
+        </div>
+        <!-- Tech spec chips -->
+        <div class="flex flex-wrap gap-2 mt-6">
+          <span class="px-3 py-1 rounded-full text-xs border border-electric/30 text-electric bg-electric/5">IP67 Waterproof</span>
+          <span class="px-3 py-1 rounded-full text-xs border border-electric/30 text-electric bg-electric/5">BLDC Hub Motor</span>
+          <span class="px-3 py-1 rounded-full text-xs border border-lime/30 text-lime bg-lime/5">OTA Updates</span>
+          <span class="px-3 py-1 rounded-full text-xs border border-lime/30 text-lime bg-lime/5">ABS + CBS</span>
+          <span class="px-3 py-1 rounded-full text-xs border border-electric/30 text-electric bg-electric/5">Regen Braking</span>
+          <span class="px-3 py-1 rounded-full text-xs border border-electric/30 text-electric bg-electric/5">Smart BMS</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="glass p-4">
+          <div class="text-2xl mb-2">📱</div>
+          <div class="font-bold text-sm mb-1">BNC Connect App</div>
+          <div class="text-white/45 text-xs">Track battery, speed, ride history. Remote immobilise. Anti-theft geofence alerts on your phone.</div>
+        </div>
+        <div class="glass p-4">
+          <div class="text-2xl mb-2">🔋</div>
+          <div class="font-bold text-sm mb-1">Swappable Battery</div>
+          <div class="text-white/45 text-xs">Hot-swap compatible battery on Spark & Bolt Pro. Swap in 90 seconds at any BNC swap station.</div>
+        </div>
+        <div class="glass p-4">
+          <div class="text-2xl mb-2">🛡️</div>
+          <div class="font-bold text-sm mb-1">IP67 Rated</div>
+          <div class="text-white/45 text-xs">Motor, battery, and electronics fully sealed for heavy monsoon rain and dusty highways.</div>
+        </div>
+        <div class="glass p-4">
+          <div class="text-2xl mb-2">⚡</div>
+          <div class="font-bold text-sm mb-1">4-Mode Riding</div>
+          <div class="text-white/45 text-xs">Eco / City / Sport / Turbo. Tune acceleration, regen level, and top-speed limit with one swipe.</div>
+        </div>
+        <div class="glass p-4">
+          <div class="text-2xl mb-2">🗺️</div>
+          <div class="font-bold text-sm mb-1">Turn-by-Turn Nav</div>
+          <div class="text-white/45 text-xs">Built-in 5-inch TFT cluster with Google Maps turn-by-turn via Bluetooth phone pairing.</div>
+        </div>
+        <div class="glass p-4">
+          <div class="text-2xl mb-2">🔧</div>
+          <div class="font-bold text-sm mb-1">Predictive Service</div>
+          <div class="text-white/45 text-xs">AI diagnostics detect issues before they happen. Service alerts pushed directly to your phone.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ CHARGING ═══════════ -->
+<section id="charging" class="py-24 max-w-7xl mx-auto px-4 fade-section">
+  <div class="text-center mb-14">
+    <p class="text-electric text-sm tracking-widest uppercase mb-2">Never Run Dry</p>
+    <h2 class="text-4xl md:text-5xl font-black mb-3">Charge <span class="grad">Anywhere</span></h2>
+    <p class="text-white/50 max-w-xl mx-auto">3,500+ charge points and swap stations across India — plus charge at home overnight.</p>
+  </div>
+  <div class="grid md:grid-cols-2 gap-12 items-center">
+    <div class="glass p-4 relative overflow-hidden" style="height:300px">
+      <div class="absolute inset-0 opacity-15" style="background:radial-gradient(circle at 35% 45%,#00D4FF,transparent 55%),radial-gradient(circle at 68% 62%,#7FFF00,transparent 55%)"></div>
+      <div class="relative z-10 h-full flex flex-col">
+        <div class="text-xs text-white/40 mb-2 font-mono tracking-wider">BNC CHARGE NETWORK — INDIA</div>
+        <div class="relative flex-1">
+          <svg viewBox="0 0 400 240" class="w-full h-full opacity-65">
+            <path d="M150 20 L200 15 L250 25 L300 50 L330 90 L340 130 L330 170 L310 210 L280 240 L250 250 L220 240 L200 220 L190 240 L170 230 L140 200 L120 170 L110 140 L100 110 L110 70 L130 40 Z" fill="none" stroke="#00D4FF" stroke-width="1" opacity=".25"/>
+            <g fill="#00D4FF">
+              <circle cx="185" cy="75" r="5" opacity=".9"/><circle cx="225" cy="68" r="4"/>
+              <circle cx="255" cy="95" r="5" opacity=".85"/><circle cx="205" cy="118" r="5"/>
+              <circle cx="162" cy="128" r="4" opacity=".7"/><circle cx="235" cy="138" r="5"/>
+              <circle cx="272" cy="125" r="3" opacity=".8"/><circle cx="195" cy="158" r="6" opacity=".9"/>
+              <circle cx="242" cy="168" r="4" opacity=".8"/><circle cx="215" cy="188" r="4" opacity=".7"/>
+              <circle cx="172" cy="173" r="3" opacity=".65"/>
+            </g>
+            <g fill="#7FFF00">
+              <circle cx="265" cy="78" r="4" opacity=".8"/><circle cx="292" cy="108" r="5" opacity=".85"/>
+              <circle cx="148" cy="98" r="4" opacity=".75"/><circle cx="315" cy="148" r="3"/>
+              <circle cx="142" cy="152" r="4" opacity=".8"/>
+            </g>
+            <!-- Swap station markers (diamond) -->
+            <g fill="#ff9900" opacity=".8">
+              <polygon points="205,108 211,118 205,128 199,118"/><polygon points="255,138 261,148 255,158 249,148"/>
+            </g>
+            <!-- Pulse -->
+            <circle cx="205" cy="118" r="10" fill="none" stroke="#00D4FF" stroke-width="1" opacity=".5"><animate attributeName="r" from="10" to="22" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" from=".5" to="0" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="255" cy="148" r="10" fill="none" stroke="#7FFF00" stroke-width="1" opacity=".5"><animate attributeName="r" from="10" to="22" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" from=".5" to="0" dur="2.4s" repeatCount="indefinite"/></circle>
+          </svg>
+        </div>
+        <div class="flex gap-4 text-xs mt-1">
+          <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-electric"></span>Fast Charger</span>
+          <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:#7FFF00"></span>Partner Point</span>
+          <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:#ff9900"></span>Swap Station</span>
+        </div>
+      </div>
+    </div>
+    <div class="space-y-5">
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="glass p-4"><div class="text-xl font-black grad">3500+</div><div class="text-xs text-white/50 mt-1">Points</div></div>
+        <div class="glass p-4"><div class="text-xl font-black grad">45 min</div><div class="text-xs text-white/50 mt-1">Fast Charge</div></div>
+        <div class="glass p-4"><div class="text-xl font-black grad">90 sec</div><div class="text-xs text-white/50 mt-1">Battery Swap</div></div>
+      </div>
+      <div class="glass overflow-hidden">
+        <table class="w-full text-sm">
+          <thead><tr style="background:rgba(0,212,255,.08)"><th class="text-left p-3 text-white/60 text-xs">Option</th><th class="p-3 text-white/60 text-xs">Power</th><th class="p-3 text-white/60 text-xs">Time</th><th class="p-3 text-electric text-xs font-semibold">Cost</th></tr></thead>
+          <tbody>
+            <tr class="border-t border-white/10"><td class="p-3 font-medium text-sm">Home Charger</td><td class="p-3 text-center text-white/55 text-xs">750W</td><td class="p-3 text-center text-white/55 text-xs">3.5 h</td><td class="p-3 text-center text-lime font-bold text-xs">₹5–7/unit</td></tr>
+            <tr class="border-t border-white/10" style="background:rgba(255,255,255,.02)"><td class="p-3 font-medium text-sm">BNC Fast Charge</td><td class="p-3 text-center text-white/55 text-xs">3.3 kW</td><td class="p-3 text-center text-white/55 text-xs">45 min</td><td class="p-3 text-center text-lime font-bold text-xs">₹12/unit</td></tr>
+            <tr class="border-t border-white/10"><td class="p-3 font-medium text-sm">Battery Swap</td><td class="p-3 text-center text-white/55 text-xs">Full pack</td><td class="p-3 text-center text-white/55 text-xs">90 sec</td><td class="p-3 text-center text-lime font-bold text-xs">₹35/swap</td></tr>
+            <tr class="border-t border-white/10" style="background:rgba(255,255,255,.02)"><td class="p-3 font-medium text-sm">Depot (Fleet)</td><td class="p-3 text-center text-white/55 text-xs">15 kW</td><td class="p-3 text-center text-white/55 text-xs">20 min</td><td class="p-3 text-center text-lime font-bold text-xs">Custom</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ SUSTAINABILITY ═══════════ -->
+<section id="sustain" class="py-24 bg-navy-light fade-section">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="text-center mb-14">
+      <p class="text-lime text-sm tracking-widest uppercase mb-2">Clean by Design</p>
+      <h2 class="text-4xl md:text-5xl font-black mb-3">Green at <span class="grad">Every Mile</span></h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8 mb-12">
+      <div class="glass p-6 text-center">
+        <div class="text-4xl font-black grad mb-2" id="co2Counter">0</div>
+        <div class="text-white/55 text-sm">Tonnes CO₂ Avoided</div>
+        <div class="text-xs text-white/35 mt-2">Equal to planting 1.8M trees annually</div>
+      </div>
+      <div class="glass p-6 text-center">
+        <div class="text-4xl font-black mb-2" style="color:#7FFF00">₹0</div>
+        <div class="text-white/55 text-sm">Fuel Cost per km</div>
+        <div class="text-xs text-white/35 mt-2">Avg ₹0.45/km vs ₹3.8/km for petrol scooter</div>
+      </div>
+      <div class="glass p-6 text-center">
+        <div class="text-4xl font-black text-electric mb-2">100%</div>
+        <div class="text-white/55 text-sm">Solar-Powered Factory</div>
+        <div class="text-xs text-white/35 mt-2">180 MW rooftop solar at Pune plant</div>
+      </div>
+    </div>
+    <h3 class="text-base font-bold mb-5 text-white/70">2030 ESG Roadmap</h3>
+    <div class="grid md:grid-cols-2 gap-5" id="esgBars">
+      <div><div class="flex justify-between text-sm mb-1"><span class="text-white/65">Carbon-Neutral Manufacturing</span><span class="text-lime font-bold">78%</span></div><div class="h-2 rounded-full bg-white/10"><div class="h-full rounded-full bar-fill" style="width:0;background:linear-gradient(90deg,#7FFF00,#00D4FF)" data-target="78"></div></div></div>
+      <div><div class="flex justify-between text-sm mb-1"><span class="text-white/65">Battery Recycling & 2nd Life</span><span class="text-lime font-bold">65%</span></div><div class="h-2 rounded-full bg-white/10"><div class="h-full rounded-full bar-fill" style="width:0;background:linear-gradient(90deg,#7FFF00,#00D4FF)" data-target="65"></div></div></div>
+      <div><div class="flex justify-between text-sm mb-1"><span class="text-white/65">Recycled Plastics in Body Panels</span><span class="text-lime font-bold">55%</span></div><div class="h-2 rounded-full bg-white/10"><div class="h-full rounded-full bar-fill" style="width:0;background:linear-gradient(90deg,#7FFF00,#00D4FF)" data-target="55"></div></div></div>
+      <div><div class="flex justify-between text-sm mb-1"><span class="text-white/65">Women in Workforce</span><span class="text-lime font-bold">42%</span></div><div class="h-2 rounded-full bg-white/10"><div class="h-full rounded-full bar-fill" style="width:0;background:linear-gradient(90deg,#7FFF00,#00D4FF)" data-target="42"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FLEET / B2B ═══════════ -->
+<section id="fleet" class="py-24 max-w-7xl mx-auto px-4 fade-section">
+  <div class="text-center mb-14">
+    <p class="text-electric text-sm tracking-widest uppercase mb-2">Business Solutions</p>
+    <h2 class="text-4xl md:text-5xl font-black mb-3"><span class="grad">Fleet</span> & Delivery</h2>
+    <p class="text-white/50 max-w-xl mx-auto">From 10 to 10,000 scooters — BNC Motors powers India's delivery revolution.</p>
+  </div>
+  <div class="grid md:grid-cols-2 gap-12 items-start">
+    <div class="space-y-4">
+      <div class="glass p-5 flex gap-4 items-start">
+        <div class="text-3xl">🛵</div>
+        <div><div class="font-bold mb-1">E-Commerce Delivery</div><div class="text-white/50 text-sm">Zomato, Swiggy, Amazon-style last-mile fleets. Bolt Pro handles 200+ km/day with swappable battery depots at every hub.</div></div>
+      </div>
+      <div class="glass p-5 flex gap-4 items-start">
+        <div class="text-3xl">🏫</div>
+        <div><div class="font-bold mb-1">Campus & School</div><div class="text-white/50 text-sm">Electric scooter fleets for university campuses, hospital staff, and school admin. Geofenced zone control and speed limits.</div></div>
+      </div>
+      <div class="glass p-5 flex gap-4 items-start">
+        <div class="text-3xl">🏢</div>
+        <div><div class="font-bold mb-1">Corporate Commute</div><div class="text-white/50 text-sm">Employee last-mile connectivity between metro stations and offices. Managed fleet dashboard, expense integration, and 24×7 support.</div></div>
+      </div>
+      <div class="glass p-5 flex gap-4 items-start">
+        <div class="text-3xl">🏥</div>
+        <div><div class="font-bold mb-1">Healthcare & Pharma</div><div class="text-white/50 text-sm">Cold-chain last-mile delivery scooters with insulated cargo boxes. Real-time temperature and location monitoring.</div></div>
+      </div>
+      <button onclick="goTo('#testdrive')" class="w-full py-3 rounded-xl font-bold text-navy text-sm" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Request Fleet Quotation →</button>
+    </div>
+    <!-- TCO Calculator -->
+    <div class="glass p-7">
+      <h3 class="font-bold text-lg mb-1">5-Year Fleet TCO Calculator</h3>
+      <p class="text-white/40 text-xs mb-5">Compare petrol scooter fleet vs BNC electric fleet</p>
+      <div class="space-y-5">
+        <div>
+          <div class="flex justify-between text-sm mb-2"><label class="text-white/65">Fleet Size</label><span class="text-electric font-bold" id="fleetSizeVal">30 scooters</span></div>
+          <input type="range" min="5" max="500" value="30" id="fleetSize" oninput="calcTCO()"/>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-2"><label class="text-white/65">Daily km per scooter</label><span class="text-electric font-bold" id="kmVal">60 km</span></div>
+          <input type="range" min="20" max="200" value="60" id="dailyKm" oninput="calcTCO()"/>
+        </div>
+        <div class="grid grid-cols-2 gap-4 pt-3 border-t border-white/10">
+          <div class="glass p-3 text-center">
+            <div class="text-xs text-white/45 mb-1">Petrol Fleet</div>
+            <div class="text-lg font-black text-white/55" id="dieselCost">₹0</div>
+          </div>
+          <div class="glass p-3 text-center">
+            <div class="text-xs text-white/45 mb-1">BNC Electric Fleet</div>
+            <div class="text-lg font-black grad" id="evCost">₹0</div>
+          </div>
+        </div>
+        <div class="rounded-xl p-4 text-center" style="background:linear-gradient(135deg,#00D4FF0D,#7FFF000D);border:1px solid #7FFF0030">
+          <div class="text-xs text-white/50 mb-1">Total 5-Year Savings</div>
+          <div class="text-3xl font-black grad" id="savings">₹0</div>
+          <div class="text-xs text-white/30 mt-1">Plus: ₹0 fuel cost + lower maintenance</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ TEST DRIVE ═══════════ -->
+<section id="testdrive" class="py-24 bg-navy-light fade-section">
+  <div class="max-w-2xl mx-auto px-4">
+    <div class="text-center mb-10">
+      <p class="text-electric text-sm tracking-widest uppercase mb-2">Free Test Ride</p>
+      <h2 class="text-4xl md:text-5xl font-black mb-3">Feel the <span class="grad">Difference</span></h2>
+      <p class="text-white/45 text-sm">No pressure. No commitment. Just ride and fall in love.</p>
+    </div>
+    <div class="flex items-center mb-8">
+      <div id="s1dot" class="step-dot step-active">1</div><div class="flex-1 h-px bg-white/15" id="l12"></div>
+      <div id="s2dot" class="step-dot step-idle">2</div><div class="flex-1 h-px bg-white/15"></div>
+      <div id="s3dot" class="step-dot step-idle">3</div><div class="flex-1 h-px bg-white/15"></div>
+      <div id="s4dot" class="step-dot step-idle">4</div>
+    </div>
+    <div class="glass p-8">
+      <!-- Step 1 -->
+      <div id="step1">
+        <h3 class="font-bold text-lg mb-1">Select your scooter</h3>
+        <p class="text-white/40 text-xs mb-5">Which BNC model would you like to ride?</p>
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          <button onclick="selectVehicle(this,'Challenger S110')" class="veh-opt glass p-3 text-center text-sm border border-transparent hover:border-electric/50 transition">
+            <div class="text-3xl mb-1.5">🛵</div><div class="font-semibold">Challenger S110</div><div class="text-xs text-white/40 mt-0.5">₹89,999</div>
+          </button>
+          <button onclick="selectVehicle(this,'Challenger S125')" class="veh-opt glass p-3 text-center text-sm border border-transparent hover:border-electric/50 transition">
+            <div class="text-3xl mb-1.5">🛵</div><div class="font-semibold">Challenger S125</div><div class="text-xs text-white/40 mt-0.5">₹1,09,999</div>
+          </button>
+          <button onclick="selectVehicle(this,'Prefetto')" class="veh-opt glass p-3 text-center text-sm border border-transparent hover:border-electric/50 transition">
+            <div class="text-3xl mb-1.5">⚡</div><div class="font-semibold">Prefetto</div><div class="text-xs text-white/40 mt-0.5">₹1,34,999</div>
+          </button>
+          <button onclick="selectVehicle(this,'Prefetto EX')" class="veh-opt glass p-3 text-center text-sm border border-transparent hover:border-electric/50 transition">
+            <div class="text-3xl mb-1.5">🔋</div><div class="font-semibold">Prefetto EX</div><div class="text-xs text-white/40 mt-0.5">₹1,74,999</div>
+          </button>
+        </div>
+        <button onclick="nextStep(2)" class="w-full py-3 rounded-xl font-bold text-navy text-sm" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Continue →</button>
+      </div>
+      <!-- Step 2 -->
+      <div id="step2" class="hidden">
+        <h3 class="font-bold text-lg mb-1">Choose city & dealer</h3>
+        <p class="text-white/40 text-xs mb-5">Pick the nearest BNC experience centre.</p>
+        <div class="space-y-3 mb-6">
+          <select class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm" style="color-scheme:dark">
+            <option>Select City</option><option>Mumbai</option><option>Delhi-NCR</option><option>Bengaluru</option><option>Hyderabad</option><option>Pune</option><option>Chennai</option><option>Jaipur</option><option>Ahmedabad</option>
+          </select>
+          <select class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm" style="color-scheme:dark">
+            <option>Select Dealership</option><option>BNC Andheri West</option><option>BNC Thane</option><option>BNC Navi Mumbai</option>
+          </select>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="nextStep(1)" class="flex-1 py-2.5 rounded-xl border border-white/20 text-white/60 text-sm">← Back</button>
+          <button onclick="nextStep(3)" class="flex-1 py-2.5 rounded-xl font-bold text-navy text-sm" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Continue →</button>
+        </div>
+      </div>
+      <!-- Step 3 -->
+      <div id="step3" class="hidden">
+        <h3 class="font-bold text-lg mb-1">Pick date & time</h3>
+        <p class="text-white/40 text-xs mb-5">Available slots this week:</p>
+        <div class="space-y-3 mb-6">
+          <input type="date" class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm" style="color-scheme:dark"/>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="selSlot(this)" class="slot py-2 rounded-lg text-xs border border-white/20 hover:border-electric/50 transition">10:00 AM</button>
+            <button onclick="selSlot(this)" class="slot py-2 rounded-lg text-xs border border-white/20 hover:border-electric/50 transition">11:30 AM</button>
+            <button onclick="selSlot(this)" class="slot py-2 rounded-lg text-xs border border-white/20 hover:border-electric/50 transition">01:00 PM</button>
+            <button onclick="selSlot(this)" class="slot py-2 rounded-lg text-xs border border-white/20 hover:border-electric/50 transition">02:30 PM</button>
+            <button onclick="selSlot(this)" class="slot py-2 rounded-lg text-xs border border-white/20 hover:border-electric/50 transition">04:00 PM</button>
+            <button onclick="selSlot(this)" class="slot py-2 rounded-lg text-xs border border-white/20 hover:border-electric/50 transition">05:30 PM</button>
+          </div>
+          <input type="text" placeholder="Your Name" class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm placeholder-white/25"/>
+          <input type="tel" placeholder="Mobile Number" class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm placeholder-white/25"/>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="nextStep(2)" class="flex-1 py-2.5 rounded-xl border border-white/20 text-white/60 text-sm">← Back</button>
+          <button onclick="nextStep(4)" class="flex-1 py-2.5 rounded-xl font-bold text-navy text-sm" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">Confirm Booking →</button>
+        </div>
+      </div>
+      <!-- Step 4 -->
+      <div id="step4" class="hidden text-center py-4">
+        <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black text-navy" style="background:linear-gradient(135deg,#00D4FF,#7FFF00)">✓</div>
+        <h3 class="text-2xl font-black mb-2">Ride Booked!</h3>
+        <p class="text-white/50 text-sm mb-5">We'll WhatsApp you a reminder 24 hours before your ride. Bring your driving licence.</p>
+        <div class="glass p-4 mb-6 inline-block px-8">
+          <div class="text-xs text-white/45 mb-1">Booking ID</div>
+          <div class="text-xl font-black grad" id="bookingRef">BNC-2026-XXXXX</div>
+        </div>
+        <div class="flex justify-center gap-4 text-sm">
+          <a href="#" class="text-electric underline">Add to Calendar</a>
+          <button onclick="nextStep(1)" class="text-white/40 hover:text-white/70 transition">Book Another</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ ABOUT ═══════════ -->
+<section id="about" class="py-24 max-w-7xl mx-auto px-4 fade-section">
+  <div class="text-center mb-14">
+    <p class="text-electric text-sm tracking-widest uppercase mb-2">Our Journey</p>
+    <h2 class="text-4xl md:text-5xl font-black mb-3">About <span class="grad">BNC Motors</span></h2>
+  </div>
+  <div class="grid md:grid-cols-2 gap-16">
+    <div>
+      <h3 class="font-bold text-white/75 mb-6 text-base">Timeline</h3>
+      <div class="space-y-5">
+        <div class="flex gap-4"><div class="tl-dot"></div><div><div class="text-electric font-bold text-xs tracking-wide">2019 — Founded in Bengaluru</div><div class="text-white/50 text-sm mt-1">BNC Motors incorporated with ₹80 Cr seed funding. Battery R&D lab established at IISc campus.</div></div></div>
+        <div class="flex gap-4"><div class="tl-dot"></div><div><div class="text-electric font-bold text-xs tracking-wide">2021 — BNC Spark Prototype</div><div class="text-white/50 text-sm mt-1">Spark unveiled at Auto Expo Delhi. 25,000 pre-orders received in 72 hours.</div></div></div>
+        <div class="flex gap-4"><div class="tl-dot"></div><div><div class="text-electric font-bold text-xs tracking-wide">2022 — Manufacturing Plant</div><div class="text-white/50 text-sm mt-1">200,000-unit annual capacity plant inaugurated in Pune. Spark production begins.</div></div></div>
+        <div class="flex gap-4"><div class="tl-dot"></div><div><div class="text-electric font-bold text-xs tracking-wide">2023 — Storm E-Bike Launch</div><div class="text-white/50 text-sm mt-1">Performance segment entry with Storm. Series B funding: ₹900 Cr raised from Tiger Global.</div></div></div>
+        <div class="flex gap-4"><div class="tl-dot"></div><div><div class="text-electric font-bold text-xs tracking-wide">2024 — 2 Lakh Scooters on Road</div><div class="text-white/50 text-sm mt-1">200,000th BNC scooter delivered. Swap network crosses 1,500 stations. Fleet division launched.</div></div></div>
+        <div class="flex gap-4"><div class="tl-dot" style="background:#7FFF00;box-shadow:0 0 10px #7FFF0088"></div><div><div class="font-bold text-xs tracking-wide" style="color:#7FFF00">2026 — Bolt Pro & Global Expansion</div><div class="text-white/50 text-sm mt-1">Delivery-first Bolt Pro launched. Entering Vietnam and Indonesia. 3,500+ charge points live.</div></div></div>
+      </div>
+    </div>
+    <div>
+      <h3 class="font-bold text-white/75 mb-6 text-base">Leadership</h3>
+      <div class="grid grid-cols-2 gap-4 mb-8">
+        <div class="glass p-4 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl mx-auto mb-2" style="background:linear-gradient(135deg,#00D4FF22,#7FFF0022)">👨‍💼</div>
+          <div class="font-bold text-sm">Karan Bhatt</div>
+          <div class="text-electric text-xs mt-0.5">CEO & Co-Founder</div>
+          <div class="text-white/35 text-xs mt-1">Ex-Hero Electric, IIT Delhi</div>
+        </div>
+        <div class="glass p-4 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl mx-auto mb-2" style="background:linear-gradient(135deg,#00D4FF22,#7FFF0022)">👩‍🔬</div>
+          <div class="font-bold text-sm">Nisha Choudhary</div>
+          <div class="text-electric text-xs mt-0.5">CTO & Co-Founder</div>
+          <div class="text-white/35 text-xs mt-1">PhD Battery Chem, IISc</div>
+        </div>
+        <div class="glass p-4 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl mx-auto mb-2" style="background:linear-gradient(135deg,#00D4FF22,#7FFF0022)">👨‍🎨</div>
+          <div class="font-bold text-sm">Rohan Desai</div>
+          <div class="text-electric text-xs mt-0.5">Chief Design Officer</div>
+          <div class="text-white/35 text-xs mt-1">Ex-Ducati Design Studio</div>
+        </div>
+        <div class="glass p-4 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl mx-auto mb-2" style="background:linear-gradient(135deg,#00D4FF22,#7FFF0022)">👩‍💻</div>
+          <div class="font-bold text-sm">Preeti Joshi</div>
+          <div class="text-electric text-xs mt-0.5">CFO</div>
+          <div class="text-white/35 text-xs mt-1">Ex-Sequoia Capital, IIM-A</div>
+        </div>
+      </div>
+      <h3 class="font-bold text-white/75 mb-4 text-base">Awards & Recognition</h3>
+      <div class="space-y-2 text-sm">
+        <div class="flex items-center gap-3 text-white/60"><span class="text-yellow-400">🏆</span> Best Electric Scooter 2025 — ZigWheels</div>
+        <div class="flex items-center gap-3 text-white/60"><span class="text-yellow-400">🏆</span> India's Most Innovative 2W Brand — ET Auto 2025</div>
+        <div class="flex items-center gap-3 text-white/60"><span class="text-yellow-400">🏆</span> Fastest-Growing EV Startup — Inc. India 2024</div>
+        <div class="flex items-center gap-3 text-white/60"><span class="text-yellow-400">🏆</span> FAME-II Certified — All Models</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer class="border-t border-white/10" style="background:#060f1e">
+  <div class="max-w-7xl mx-auto px-4 py-12">
+    <div class="grid md:grid-cols-4 gap-8 mb-10">
+      <div>
+        <div class="flex items-center gap-2 font-black text-lg mb-3">
+          <svg width="22" height="22" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="13" stroke="#00D4FF" stroke-width="2"/><path d="M7 15l3-5 4 3 4-5 3 2" stroke="#7FFF00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="grad">BNC</span><span class="text-white/55 font-light ml-1 text-sm">Motors</span>
+        </div>
+        <p class="text-white/35 text-xs leading-relaxed mb-4">India's leading electric two-wheeler brand. Building a cleaner, quieter India — one scooter at a time.</p>
+        <div class="flex gap-2">
+          <a href="#" class="w-8 h-8 rounded-full flex items-center justify-center text-xs bg-white/8 hover:bg-electric/20 transition text-white/50 hover:text-electric border border-white/10">𝕏</a>
+          <a href="#" class="w-8 h-8 rounded-full flex items-center justify-center text-xs bg-white/8 hover:bg-electric/20 transition text-white/50 hover:text-electric border border-white/10">in</a>
+          <a href="#" class="w-8 h-8 rounded-full flex items-center justify-center text-xs bg-white/8 hover:bg-electric/20 transition text-white/50 hover:text-electric border border-white/10">yt</a>
+          <a href="#" class="w-8 h-8 rounded-full flex items-center justify-center text-xs bg-white/8 hover:bg-electric/20 transition text-white/50 hover:text-electric border border-white/10">ig</a>
+        </div>
+      </div>
+      <div>
+        <div class="font-semibold text-xs text-white/70 mb-4 tracking-widest uppercase">Vehicles</div>
+        <ul class="space-y-2 text-xs text-white/35">
+          <li><a href="#vehicles" class="hover:text-electric transition">Challenger S110</a></li>
+          <li><a href="#vehicles" class="hover:text-electric transition">Challenger S125</a></li>
+          <li><a href="#vehicles" class="hover:text-electric transition">Prefetto</a></li>
+          <li><a href="#vehicles" class="hover:text-electric transition">Prefetto EX</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="font-semibold text-xs text-white/70 mb-4 tracking-widest uppercase">Company</div>
+        <ul class="space-y-2 text-xs text-white/35">
+          <li><a href="#about"    class="hover:text-electric transition">About BNC</a></li>
+          <li><a href="#tech"     class="hover:text-electric transition">Technology</a></li>
+          <li><a href="#sustain"  class="hover:text-electric transition">Sustainability</a></li>
+          <li><a href="#charging" class="hover:text-electric transition">Charging Network</a></li>
+          <li><a href="#"         class="hover:text-electric transition">Careers</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="font-semibold text-xs text-white/70 mb-4 tracking-widest uppercase">Stay Updated</div>
+        <p class="text-xs text-white/35 mb-3">Get launch updates and exclusive offers.</p>
+        <div class="flex gap-2">
+          <input type="email" placeholder="your@email.com" class="flex-1 bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs text-white placeholder-white/25 focus:outline-none focus:border-electric transition"/>
+          <button class="px-3 py-2 rounded-lg text-xs font-bold text-navy" style="background:linear-gradient(90deg,#00D4FF,#7FFF00)">→</button>
+        </div>
+        <p class="text-white/25 text-xs mt-2">No spam. Unsubscribe anytime.</p>
+      </div>
+    </div>
+    <div class="border-t border-white/8 pt-6 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-white/25">
+      <div>© 2026 BNC Motors Pvt. Ltd. All rights reserved. | CIN: U35999KA2019PTC123456</div>
+      <div class="flex gap-5"><a href="#" class="hover:text-white/50 transition">Privacy</a><a href="#" class="hover:text-white/50 transition">Terms</a><a href="#" class="hover:text-white/50 transition">Cookies</a></div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+// Particle canvas
+const canvas = document.getElementById('heroCanvas');
+const ctx = canvas.getContext('2d');
+let pts = [];
+function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+resize(); window.addEventListener('resize', resize);
+for (let i = 0; i < 130; i++) pts.push({ x: Math.random()*9999, y: Math.random()*9999, dx: (Math.random()-.5)*.35, dy: (Math.random()-.5)*.35, r: Math.random()*1.4+.3, a: Math.random()*.65+.2, c: Math.random()>.5?'#00D4FF':'#7FFF00' });
+function drawPts() {
+  canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  pts.forEach(p => {
+    p.x = p.x % canvas.width; p.y = p.y % canvas.height;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=p.c; ctx.globalAlpha=p.a; ctx.fill();
+    p.x+=p.dx; p.y+=p.dy;
+  });
+  ctx.globalAlpha=1; requestAnimationFrame(drawPts);
+}
+drawPts();
+
+// Counters
+function animCount(el, end, sfx='', dur=1800) {
+  let s=0, step=end/(dur/16);
+  const t = setInterval(()=>{ s=Math.min(s+step,end); el.textContent=Math.floor(s).toLocaleString('en-IN')+sfx; if(s>=end) clearInterval(t); },16);
+}
+let cDone=false;
+function startCounts() {
+  if(cDone) return; cDone=true;
+  animCount(document.getElementById('c1'),220000,'+');
+  animCount(document.getElementById('c2'),48000,'+');
+  animCount(document.getElementById('c3'),3500,'+');
+  animCount(document.getElementById('c4'),120,'+');
+  animCount(document.getElementById('co2Counter'),48000,'+');
+}
+setTimeout(startCounts, 500);
+
+// Scroll fade + bar animations
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      e.target.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.target + '%');
+    }
+  });
+}, { threshold: 0.12 });
+document.querySelectorAll('.fade-section').forEach(s => io.observe(s));
+
+// Helpers
+function goTo(sel) { document.querySelector(sel).scrollIntoView({ behavior:'smooth' }); }
+function closeMobile() { document.getElementById('mobileMenu').classList.remove('open'); }
+
+// Config modal
+function showConfig(m) { document.getElementById('configModel').textContent = 'BNC '+m; document.getElementById('configModal').style.display='flex'; }
+function closeConfig() { document.getElementById('configModal').style.display='none'; }
+document.getElementById('configModal').addEventListener('click', e => { if(e.target===document.getElementById('configModal')) closeConfig(); });
+function selColor(btn) {
+  document.querySelectorAll('#configModal button[onclick*="selColor"]').forEach(b => b.style.borderColor='transparent');
+  btn.style.borderColor='#00D4FF';
+}
+
+// TCO Calculator
+function calcTCO() {
+  const fleet = +document.getElementById('fleetSize').value;
+  const km    = +document.getElementById('dailyKm').value;
+  document.getElementById('fleetSizeVal').textContent = fleet + ' scooters';
+  document.getElementById('kmVal').textContent        = km + ' km';
+  const yrs=5, days=365*yrs;
+  const petrolKmL=45, petrolPrice=104;
+  const evKmUnit=30, evPrice=7;
+  const petrolMaint=8000, evMaint=2500;
+  const petrolCost=85000, evCost=94999;
+  const totalKm = fleet*km*days;
+  const petrolTotal = (totalKm/petrolKmL)*petrolPrice + fleet*petrolMaint*yrs + fleet*petrolCost;
+  const evTotal     = (totalKm/evKmUnit)*evPrice     + fleet*evMaint*yrs     + fleet*evCost;
+  const saved = Math.max(0, petrolTotal - evTotal);
+  const fmt = n => n>=10000000 ? '₹'+(n/10000000).toFixed(1)+' Cr' : '₹'+(n/100000).toFixed(1)+' L';
+  document.getElementById('dieselCost').textContent = fmt(petrolTotal);
+  document.getElementById('evCost').textContent     = fmt(evTotal);
+  document.getElementById('savings').textContent    = fmt(saved);
+}
+calcTCO();
+
+// Test-ride steps
+let curStep = 1;
+function nextStep(n) {
+  document.getElementById('step'+curStep).classList.add('hidden');
+  curStep = n;
+  document.getElementById('step'+n).classList.remove('hidden');
+  [1,2,3,4].forEach(i => {
+    document.getElementById('s'+i+'dot').className = 'step-dot ' + (i<n?'step-done':i===n?'step-active':'step-idle');
+  });
+  if (n===4) document.getElementById('bookingRef').textContent = 'BNC-2026-'+Math.floor(10000+Math.random()*90000);
+}
+function selectVehicle(btn, name) {
+  document.querySelectorAll('.veh-opt').forEach(b => { b.style.borderColor='transparent'; b.style.background='rgba(255,255,255,.05)'; });
+  btn.style.borderColor='#00D4FF'; btn.style.background='rgba(0,212,255,.1)';
+}
+function selSlot(btn) {
+  document.querySelectorAll('.slot').forEach(b => { b.style.borderColor='rgba(255,255,255,.2)'; b.style.background=''; });
+  btn.style.borderColor='#00D4FF'; btn.style.background='rgba(0,212,255,.1)';
+}
+</script>
+</body>
+</html>
