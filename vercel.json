@@ -1,0 +1,20 @@
+{
+  "name": "bnc-motors-website",
+  "version": 2,
+  "builds": [
+    {
+      "src": "voltedge_motors.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/voltedge_motors.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/voltedge_motors.html"
+    }
+  ]
+}
