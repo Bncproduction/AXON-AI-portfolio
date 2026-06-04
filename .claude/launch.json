@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "future-tech-tamil",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-ExecutionPolicy", "Bypass", "-File", "serve-ftt.ps1"],
+      "port": 3001
+    },
+    {
+      "name": "automotive-portfolio",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-ExecutionPolicy", "Bypass", "-File", "repositories/serve.ps1"],
+      "port": 3000
+    }
+  ]
+}

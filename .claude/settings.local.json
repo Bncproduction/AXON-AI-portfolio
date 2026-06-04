@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Users\\\\Prakash-PDI\\\\Desktop\\\\Claude projects\\\\\")",
+      "PowerShell(New-Item -ItemType Directory -Path \"C:\\\\Users\\\\Prakash-PDI\\\\Desktop\\\\Claude projects\\\\repositories\" -Force)",
+      "PowerShell(Move-Item -Path \"C:\\\\Users\\\\Prakash-PDI\\\\Desktop\\\\Claude projects\\\\index.html\" -Destination \"C:\\\\Users\\\\Prakash-PDI\\\\Desktop\\\\Claude projects\\\\repositories\\\\index.html\")"
+    ]
+  }
+}
