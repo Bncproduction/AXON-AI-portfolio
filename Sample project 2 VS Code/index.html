@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BNC Motors – Electric Vehicle YouTube Channel</title>
+  <meta name="description" content="Subscribe to BNC Motors on YouTube — India's leading EV channel covering electric two-wheeler reviews, charging guides, tech deep dives, and the future of mobility." />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── THEME VARIABLES ── */
+    :root {
+      /* Accent colors */
+      --cyan:    #00D4FF;
+      --lime:    #7FFF00;
+      /* Raw RGB channels (for rgba() construction) */
+      --p-rgb:   0,212,255;
+      --s-rgb:   127,255,0;
+      --bg-rgb:  10,22,40;
+      /* Backgrounds */
+      --navy:    #0A1628;
+      --navy2:   #0D1E35;
+      --navy3:   #060E1C;
+      /* Surfaces */
+      --card:    rgba(255,255,255,0.05);
+      --border:  rgba(255,255,255,0.09);
+      --text:    #FFFFFF;
+      --muted:   #9BAEC8;
+    }
+
+    /* ── MIDNIGHT ── deep purple / pink on black */
+    body.theme-midnight {
+      --cyan:   #A855F7;
+      --lime:   #EC4899;
+      --p-rgb:  168,85,247;
+      --s-rgb:  236,72,153;
+      --bg-rgb: 9,9,11;
+      --navy:   #09090B;
+      --navy2:  #111113;
+      --navy3:  #040405;
+      --muted:  #A1A1AA;
+    }
+
+    /* ── SUNSET ── orange / amber on dark charcoal */
+    body.theme-sunset {
+      --cyan:   #F97316;
+      --lime:   #FBBF24;
+      --p-rgb:  249,115,22;
+      --s-rgb:  251,191,36;
+      --bg-rgb: 26,8,0;
+      --navy:   #1A0800;
+      --navy2:  #230C00;
+      --navy3:  #0F0400;
+      --muted:  #B8906A;
+    }
+
+    /* ── FOREST ── emerald / lime on dark green */
+    body.theme-forest {
+      --cyan:   #10B981;
+      --lime:   #84CC16;
+      --p-rgb:  16,185,129;
+      --s-rgb:  132,204,22;
+      --bg-rgb: 7,24,17;
+      --navy:   #071811;
+      --navy2:  #0A2019;
+      --navy3:  #040F0A;
+      --muted:  #86BFAB;
+    }
+
+    /* ── THEME SWITCHER PANEL ── */
+    .theme-toggle {
+      position: fixed;
+      bottom: 28px;
+      right: 24px;
+      z-index: 200;
+    }
+
+    .theme-fab {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(var(--bg-rgb), 0.9);
+      backdrop-filter: blur(12px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .theme-fab:hover { transform: scale(1.08); border-color: rgba(var(--p-rgb),0.5); }
+
+    .theme-panel {
+      position: absolute;
+      bottom: 56px;
+      right: 0;
+      background: rgba(var(--bg-rgb),0.96);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      width: 200px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      opacity: 0;
+      transform: translateY(10px) scale(0.96);
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .theme-panel.open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: all;
+    }
+
+    .theme-panel-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+
+    .theme-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+
+    .theme-option:hover { background: rgba(255,255,255,0.06); }
+
+    .theme-option.active { background: rgba(var(--p-rgb),0.12); }
+
+    .theme-swatch {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.15);
+    }
+
+    .theme-check {
+      margin-left: auto;
+      color: var(--cyan);
+      font-size: 0.9rem;
+      opacity: 0;
+    }
+
+    .theme-option.active .theme-check { opacity: 1; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--navy); }
+    ::-webkit-scrollbar-thumb { background: rgba(var(--p-rgb),0.3); border-radius: 3px; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5%;
+      height: 64px;
+      background: rgba(var(--bg-rgb),0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-logo svg { width: 34px; height: 34px; flex-shrink: 0; }
+
+    .nav-logo-text { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.3px; }
+
+    .grad {
+      background: linear-gradient(90deg, var(--cyan), var(--lime));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: linear-gradient(90deg, var(--cyan), var(--lime));
+      color: var(--navy);
+      padding: 8px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 700;
+      transition: opacity 0.2s, transform 0.15s;
+      white-space: nowrap;
+    }
+
+    .nav-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--text);
+      border-radius: 2px;
+    }
+
+    .mobile-menu {
+      display: none;
+      flex-direction: column;
+      position: fixed;
+      top: 64px; left: 0; right: 0;
+      background: rgba(10,22,40,0.97);
+      border-bottom: 1px solid var(--border);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, padding 0.4s ease;
+      z-index: 99;
+    }
+
+    .mobile-menu.open {
+      max-height: 360px;
+      padding: 12px 5% 20px;
+    }
+
+    .mobile-menu a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      transition: color 0.2s;
+    }
+
+    .mobile-menu a:hover { color: var(--text); }
+
+    .mobile-menu .mob-cta {
+      margin-top: 14px;
+      background: linear-gradient(90deg, var(--cyan), var(--lime));
+      color: var(--navy);
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 700;
+      text-align: center;
+      border: none;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 5% 80px;
+      overflow: hidden;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(var(--p-rgb),0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(var(--p-rgb),0.06) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: gridMove 20s linear infinite;
+    }
+
+    @keyframes gridMove {
+      from { transform: translateY(0); }
+      to   { transform: translateY(50px); }
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      pointer-events: none;
+    }
+
+    .orb-cyan {
+      width: 560px; height: 560px;
+      background: radial-gradient(circle, rgba(var(--p-rgb),0.18) 0%, transparent 70%);
+      top: -100px; left: -120px;
+      animation: orbFloat 7s ease-in-out infinite;
+    }
+
+    .orb-lime {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, rgba(var(--s-rgb),0.14) 0%, transparent 70%);
+      bottom: -80px; right: -80px;
+      animation: orbFloat 9s ease-in-out infinite reverse;
+    }
+
+    @keyframes orbFloat {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-22px); }
+    }
+
+    .hero-content { position: relative; z-index: 2; max-width: 760px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(var(--p-rgb),0.1);
+      border: 1px solid rgba(var(--p-rgb),0.25);
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .badge-dot {
+      width: 7px; height: 7px;
+      background: var(--cyan);
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.5); opacity: 0.5; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.6rem, 6vw, 5rem);
+      font-weight: 900;
+      line-height: 1.08;
+      letter-spacing: -2px;
+      margin-bottom: 22px;
+    }
+
+    .hero h1 .line2 {
+      display: block;
+      background: linear-gradient(90deg, var(--cyan), var(--lime));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      background-size: 200%;
+      animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+      from { background-position: 0% center; }
+      to   { background-position: 200% center; }
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
+    }
+
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 40px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .stat-item {
+      flex: 1;
+      padding: 18px 24px;
+      border-right: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .stat-item:last-child { border-right: none; }
+
+    .stat-num {
+      font-size: 1.6rem;
+      font-weight: 900;
+      background: linear-gradient(90deg, var(--cyan), var(--lime));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(90deg, var(--cyan), var(--lime));
+      color: var(--navy);
+      padding: 13px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      color: var(--text);
+      padding: 13px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(0,212,255,0.4);
+      background: rgba(0,212,255,0.07);
+      transform: translateY(-2px);
+    }
+
+    /* ─── SECTIONS ─── */
+    section { padding: 88px 5%; }
+
+    .section-inner { max-width: 1160px; margin: 0 auto; }
+
+    .section-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+
+    .section-sub {
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.7;
+      margin-bottom: 52px;
+    }
+
+    /* ─── TOPICS ─── */
+    #topics { background: var(--navy2); }
+
+    .topics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .topic-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 26px 22px;
+      transition: border-color 0.2s, transform 0.2s, background 0.2s;
+      cursor: default;
+    }
+
+    .topic-card:hover {
+      border-color: rgba(var(--p-rgb),0.35);
+      transform: translateY(-4px);
+      background: rgba(var(--p-rgb),0.06);
+    }
+
+    .topic-icon { font-size: 2rem; margin-bottom: 14px; display: block; }
+
+    .topic-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+
+    .topic-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+    /* ─── VIDEOS ─── */
+    #videos { background: var(--navy); }
+
+    .videos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 22px;
+    }
+
+    .video-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .video-card:hover {
+      border-color: rgba(var(--p-rgb),0.4);
+      transform: translateY(-4px);
+    }
+
+    .video-thumb {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+    }
+
+    .video-thumb-bg {
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .v1 { background: linear-gradient(135deg, var(--navy) 0%, rgba(var(--p-rgb),0.15) 100%); }
+    .v2 { background: linear-gradient(135deg, var(--navy) 0%, rgba(var(--s-rgb),0.12) 100%); }
+    .v3 { background: linear-gradient(135deg, var(--navy2) 0%, rgba(var(--p-rgb),0.10) 100%); }
+
+    .play-btn {
+      width: 54px; height: 54px;
+      background: rgba(var(--p-rgb),0.9);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .video-card:hover .play-btn { transform: scale(1.1); background: var(--cyan); }
+
+    .play-btn svg { width: 22px; height: 22px; fill: var(--navy); margin-left: 3px; }
+
+    .thumb-tag {
+      position: absolute;
+      top: 12px; left: 12px;
+      background: rgba(var(--bg-rgb),0.85);
+      border: 1px solid rgba(var(--p-rgb),0.3);
+      color: var(--cyan);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+
+    .video-info { padding: 18px 18px 20px; }
+
+    .video-info h3 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .video-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .video-meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* ─── WHY SUBSCRIBE ─── */
+    #why { background: var(--navy2); }
+
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .why-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 26px;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .why-card:hover {
+      border-color: rgba(var(--p-rgb),0.3);
+      transform: translateY(-3px);
+    }
+
+    .why-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      background: rgba(var(--p-rgb),0.1);
+      border: 1px solid rgba(var(--p-rgb),0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.3rem;
+    }
+
+    .why-body h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .why-body p  { font-size: 0.83rem; color: var(--muted); line-height: 1.6; }
+
+    /* ─── ABOUT ─── */
+    #about { background: var(--navy); }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .about-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .about-stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .about-stat-num {
+      font-size: 1.8rem;
+      font-weight: 900;
+      background: linear-gradient(90deg, var(--cyan), var(--lime));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+
+    .about-stat-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ─── CTA BANNER ─── */
+    .cta-banner {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(var(--p-rgb),0.13) 0%, var(--navy) 40%, rgba(var(--s-rgb),0.08) 100%);
+      border-top: 1px solid rgba(var(--p-rgb),0.15);
+      border-bottom: 1px solid rgba(var(--s-rgb),0.12);
+      text-align: center;
+      padding: 96px 5%;
+    }
+
+    .cta-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(var(--p-rgb),0.04) 50%, transparent 100%);
+      animation: bannerShine 4s linear infinite;
+    }
+
+    @keyframes bannerShine {
+      from { transform: translateX(-100%); }
+      to   { transform: translateX(100%); }
+    }
+
+    .cta-banner-inner { position: relative; z-index: 2; max-width: 680px; margin: 0 auto; }
+
+    .cta-banner h2 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      margin-bottom: 16px;
+    }
+
+    .cta-banner p {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 36px;
+      line-height: 1.7;
+    }
+
+    .cta-sub-note {
+      margin-top: 20px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--navy3);
+      border-top: 1px solid var(--border);
+      padding: 52px 5% 32px;
+    }
+
+    .footer-inner { max-width: 1160px; margin: 0 auto; }
+
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 48px;
+      margin-bottom: 40px;
+      align-items: start;
+    }
+
+    .footer-brand p {
+      font-size: 0.83rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 280px;
+      margin-top: 12px;
+    }
+
+    .footer-col h4 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .footer-col a {
+      display: block;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      margin-bottom: 9px;
+      transition: color 0.2s;
+    }
+
+    .footer-col a:hover { color: var(--cyan); }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-bottom p { font-size: 0.8rem; color: var(--muted); }
+
+    .social-links { display: flex; gap: 14px; }
+
+    .social-link {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .social-link:hover {
+      border-color: rgba(var(--p-rgb),0.4);
+      background: rgba(var(--p-rgb),0.08);
+    }
+
+    .social-link svg { width: 16px; height: 16px; fill: var(--muted); transition: fill 0.2s; }
+    .social-link:hover svg { fill: var(--cyan); }
+
+    /* ─── SCROLL FADE ─── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+
+    .fade-up.visible { opacity: 1; transform: none; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: flex; }
+      .mobile-menu { display: flex; }
+
+      .stats-bar { flex-direction: column; }
+      .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat-item:last-child { border-bottom: none; }
+
+      .about-grid { grid-template-columns: 1fr; gap: 36px; }
+      .footer-top { grid-template-columns: 1fr; gap: 28px; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; }
+    }
+
+    @media (max-width: 480px) {
+      nav { padding: 0 4%; }
+      section { padding: 64px 4%; }
+      .hero { padding: 90px 4% 60px; }
+      .hero h1 { letter-spacing: -1px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav>
+  <a href="#home" class="nav-logo">
+    <svg viewBox="0 0 34 34" fill="none">
+      <circle cx="17" cy="17" r="15.5" stroke="#00D4FF" stroke-width="1.6"/>
+      <circle cx="17" cy="17" r="10" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+      <path d="M9 18l3.5-6 5 4 4-6 3.5 2.5" stroke="#7FFF00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="17" cy="17" r="2.5" fill="#00D4FF" opacity="0.8"/>
+    </svg>
+    <span class="nav-logo-text"><span class="grad">BNC</span> <span style="color:rgba(255,255,255,0.5);font-weight:400;">Motors</span></span>
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#topics">Topics</a></li>
+    <li><a href="#videos">Videos</a></li>
+    <li><a href="#why">Why Subscribe</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+
+  <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener" class="nav-cta">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1C4.5 20.4 12 20.4 12 20.4s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+    Subscribe on YouTube
+  </a>
+
+  <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#home"   onclick="closeMenu()">Home</a>
+  <a href="#topics" onclick="closeMenu()">Topics</a>
+  <a href="#videos" onclick="closeMenu()">Videos</a>
+  <a href="#why"    onclick="closeMenu()">Why Subscribe</a>
+  <a href="#about"  onclick="closeMenu()">About</a>
+  <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener" class="mob-cta" onclick="closeMenu()">Subscribe on YouTube</a>
+</div>
+
+<!-- ═══ HERO ═══ -->
+<section id="home" class="hero">
+  <div class="hero-grid"></div>
+  <div class="orb orb-cyan"></div>
+  <div class="orb orb-lime"></div>
+
+  <div class="hero-content">
+    <div class="badge"><span class="badge-dot"></span> Electric Vehicle Channel</div>
+
+    <h1>
+      India's EV Journey
+      <span class="line2">On Camera</span>
+    </h1>
+
+    <p>Real-world EV reviews, charging deep dives, range tests, and the inside story on India's electric two-wheeler revolution — straight from the source.</p>
+
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-num">50K+</div>
+        <div class="stat-label">Subscribers</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">100+</div>
+        <div class="stat-label">Videos</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">30+</div>
+        <div class="stat-label">EV Reviews</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">Weekly</div>
+        <div class="stat-label">New Content</div>
+      </div>
+    </div>
+
+    <div class="hero-ctas">
+      <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener" class="btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1C4.5 20.4 12 20.4 12 20.4s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+        Subscribe Now — It's Free
+      </a>
+      <a href="https://www.youtube.com/@bnc_ev/videos" target="_blank" rel="noopener" class="btn-secondary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Watch Latest Videos
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOPICS ═══ -->
+<section id="topics">
+  <div class="section-inner">
+    <div class="fade-up">
+      <span class="section-tag">What We Cover</span>
+      <h2 class="section-title">Everything Electric,<br>Nothing Left Out</h2>
+      <p class="section-sub">From first-ride impressions to charging infrastructure maps — we cover the full EV ecosystem in India.</p>
+    </div>
+    <div class="topics-grid">
+      <div class="topic-card fade-up">
+        <span class="topic-icon">⚡</span>
+        <h3>EV Reviews</h3>
+        <p>In-depth reviews of electric scooters, bikes, and emerging two-wheelers from BNC Motors and competitors.</p>
+      </div>
+      <div class="topic-card fade-up">
+        <span class="topic-icon">🔬</span>
+        <h3>Tech Deep Dives</h3>
+        <p>Battery chemistry, motor types, regenerative braking, and EV engineering explained simply.</p>
+      </div>
+      <div class="topic-card fade-up">
+        <span class="topic-icon">🔋</span>
+        <h3>Range & Battery Tests</h3>
+        <p>Real-world range tests under Indian road and traffic conditions — not just lab numbers.</p>
+      </div>
+      <div class="topic-card fade-up">
+        <span class="topic-icon">⚙️</span>
+        <h3>Charging Guide</h3>
+        <p>Home charging setup, public charging network reviews, fast vs. slow charging — all questions answered.</p>
+      </div>
+      <div class="topic-card fade-up">
+        <span class="topic-icon">📰</span>
+        <h3>Industry News</h3>
+        <p>EV policy updates, new model launches, government subsidies, and what they mean for Indian buyers.</p>
+      </div>
+      <div class="topic-card fade-up">
+        <span class="topic-icon">🏍️</span>
+        <h3>BNC Models</h3>
+        <p>Exclusive behind-the-scenes content, feature walkthroughs, and owner stories from the BNC family.</p>
+      </div>
+      <div class="topic-card fade-up">
+        <span class="topic-icon">⚖️</span>
+        <h3>EV vs. Petrol</h3>
+        <p>Honest cost-of-ownership comparisons, maintenance breakdowns, and what makes the switch worthwhile.</p>
+      </div>
+      <div class="topic-card fade-up">
+        <span class="topic-icon">🌏</span>
+        <h3>Future Mobility</h3>
+        <p>Autonomous vehicles, smart charging, V2G tech, and where India's mobility is headed next.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ VIDEOS ═══ -->
+<section id="videos">
+  <div class="section-inner">
+    <div class="fade-up">
+      <span class="section-tag">Featured Videos</span>
+      <h2 class="section-title">Start Watching</h2>
+      <p class="section-sub">Handpicked videos to get you started on the BNC Motors channel.</p>
+    </div>
+    <div class="videos-grid">
+      <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener" class="video-card fade-up">
+        <div class="video-thumb">
+          <div class="video-thumb-bg v1">
+            <div class="play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+          </div>
+          <span class="thumb-tag">EV Review</span>
+        </div>
+        <div class="video-info">
+          <h3>BNC Challenger S125 — Full Real-World Review & Range Test</h3>
+          <div class="video-meta">
+            <span>
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              50K+ views
+            </span>
+            <span>·</span>
+            <span>15 min</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener" class="video-card fade-up">
+        <div class="video-thumb">
+          <div class="video-thumb-bg v2">
+            <div class="play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+          </div>
+          <span class="thumb-tag">Tech</span>
+        </div>
+        <div class="video-info">
+          <h3>How EV Batteries Actually Work — A Simple Guide for Indian Buyers</h3>
+          <div class="video-meta">
+            <span>
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              32K+ views
+            </span>
+            <span>·</span>
+            <span>12 min</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener" class="video-card fade-up">
+        <div class="video-thumb">
+          <div class="video-thumb-bg v3">
+            <div class="play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+          </div>
+          <span class="thumb-tag">Charging</span>
+        </div>
+        <div class="video-info">
+          <h3>Setting Up Home EV Charging in India — Cost, Safety & Best Practices</h3>
+          <div class="video-meta">
+            <span>
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              28K+ views
+            </span>
+            <span>·</span>
+            <span>18 min</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WHY SUBSCRIBE ═══ -->
+<section id="why">
+  <div class="section-inner">
+    <div class="fade-up">
+      <span class="section-tag">Why Subscribe</span>
+      <h2 class="section-title">The Only EV Channel<br>You'll Need</h2>
+      <p class="section-sub">We're not just a YouTube channel — we're India's EV community, built by the team making the vehicles.</p>
+    </div>
+    <div class="why-grid">
+      <div class="why-card fade-up">
+        <div class="why-icon">🎯</div>
+        <div class="why-body">
+          <h3>Honest Reviews</h3>
+          <p>No paid promotions. We test every EV the same way — on Indian roads, in real traffic, with real numbers.</p>
+        </div>
+      </div>
+      <div class="why-card fade-up">
+        <div class="why-icon">📅</div>
+        <div class="why-body">
+          <h3>Weekly Uploads</h3>
+          <p>Fresh content every week — reviews, news breakdowns, tech explainers, and community Q&A sessions.</p>
+        </div>
+      </div>
+      <div class="why-card fade-up">
+        <div class="why-icon">🇮🇳</div>
+        <div class="why-body">
+          <h3>Made for India</h3>
+          <p>Content tailored for Indian roads, pricing, charging infrastructure, and the Indian buyer's concerns.</p>
+        </div>
+      </div>
+      <div class="why-card fade-up">
+        <div class="why-icon">🔧</div>
+        <div class="why-body">
+          <h3>Hands-On Testing</h3>
+          <p>We don't just read spec sheets. Every range test, charging session, and performance run is done by our team.</p>
+        </div>
+      </div>
+      <div class="why-card fade-up">
+        <div class="why-icon">💬</div>
+        <div class="why-body">
+          <h3>Community First</h3>
+          <p>Your questions shape our content. Regular comment Q&As, community polls, and live sessions with the BNC team.</p>
+        </div>
+      </div>
+      <div class="why-card fade-up">
+        <div class="why-icon">🎬</div>
+        <div class="why-body">
+          <h3>Behind the Scenes</h3>
+          <p>Factory tours, prototype reveals, and development updates straight from the BNC Motors floor.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ABOUT ═══ -->
+<section id="about">
+  <div class="section-inner">
+    <div class="about-grid fade-up">
+      <div>
+        <span class="section-tag">About the Channel</span>
+        <h2 class="section-title" style="margin-bottom:20px;">Built by EV Builders,<br>For EV Believers</h2>
+        <p style="color:var(--muted);line-height:1.8;font-size:0.95rem;margin-bottom:18px;">
+          BNC Motors is an Indian electric two-wheeler brand on a mission to accelerate EV adoption. Our YouTube channel is the unfiltered window into that journey — from factory floors to highway rides.
+        </p>
+        <p style="color:var(--muted);line-height:1.8;font-size:0.95rem;margin-bottom:32px;">
+          Whether you're an EV owner, a curious buyer, or a technology enthusiast — this channel gives you the real story behind India's electric revolution, told by the people building it.
+        </p>
+        <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener" class="btn-primary">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1C4.5 20.4 12 20.4 12 20.4s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+          Visit Our Channel
+        </a>
+      </div>
+      <div class="about-stats">
+        <div class="about-stat">
+          <div class="about-stat-num">2021</div>
+          <div class="about-stat-label">Founded</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">India</div>
+          <div class="about-stat-label">Based in</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">Electric</div>
+          <div class="about-stat-label">100% Focus</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">Free</div>
+          <div class="about-stat-label">To Subscribe</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA BANNER ═══ -->
+<div class="cta-banner">
+  <div class="cta-banner-inner">
+    <h2 class="fade-up">Join the <span class="grad">EV Revolution</span></h2>
+    <p class="fade-up">Subscribe to BNC Motors on YouTube and never miss a review, a road test, or a breakthrough moment in India's electric mobility story.</p>
+    <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener" class="btn-primary fade-up" style="font-size:1rem;padding:15px 36px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1C4.5 20.4 12 20.4 12 20.4s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+      Subscribe Free on YouTube
+    </a>
+    <p class="cta-sub-note fade-up">Free to subscribe · New videos every week · No spam, just EVs</p>
+  </div>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="#home" class="nav-logo">
+          <svg viewBox="0 0 34 34" fill="none" width="30" height="30">
+            <circle cx="17" cy="17" r="15.5" stroke="#00D4FF" stroke-width="1.6"/>
+            <path d="M9 18l3.5-6 5 4 4-6 3.5 2.5" stroke="#7FFF00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="17" cy="17" r="2.5" fill="#00D4FF" opacity="0.8"/>
+          </svg>
+          <span class="nav-logo-text"><span class="grad">BNC</span> <span style="color:rgba(255,255,255,0.5);font-weight:400;">Motors</span></span>
+        </a>
+        <p>India's electric two-wheeler brand — documenting the EV revolution one video at a time.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Channel</h4>
+        <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener">All Videos</a>
+        <a href="https://www.youtube.com/@bnc_ev/playlists" target="_blank" rel="noopener">Playlists</a>
+        <a href="https://www.youtube.com/@bnc_ev/community" target="_blank" rel="noopener">Community</a>
+        <a href="https://www.youtube.com/@bnc_ev/about" target="_blank" rel="noopener">About</a>
+      </div>
+      <div class="footer-col">
+        <h4>Topics</h4>
+        <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener">EV Reviews</a>
+        <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener">Range Tests</a>
+        <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener">Charging Guide</a>
+        <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener">Tech Explainers</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 BNC Motors. All rights reserved.</p>
+      <div class="social-links">
+        <a href="https://www.youtube.com/@bnc_ev" target="_blank" rel="noopener" class="social-link" aria-label="YouTube">
+          <svg viewBox="0 0 24 24"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1C4.5 20.4 12 20.4 12 20.4s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/bnc_ev" target="_blank" rel="noopener" class="social-link" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+        </a>
+        <a href="https://x.com/bnc_ev" target="_blank" rel="noopener" class="social-link" aria-label="X">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ THEME SWITCHER ═══ -->
+<div class="theme-toggle">
+  <div class="theme-panel" id="themePanel">
+    <div class="theme-panel-title">Choose Theme</div>
+
+    <button class="theme-option active" id="opt-electric" onclick="setTheme('electric')">
+      <span class="theme-swatch" style="background:linear-gradient(135deg,#00D4FF,#7FFF00)"></span>
+      Electric
+      <span class="theme-check">✓</span>
+    </button>
+
+    <button class="theme-option" id="opt-midnight" onclick="setTheme('midnight')">
+      <span class="theme-swatch" style="background:linear-gradient(135deg,#A855F7,#EC4899)"></span>
+      Midnight
+      <span class="theme-check">✓</span>
+    </button>
+
+    <button class="theme-option" id="opt-sunset" onclick="setTheme('sunset')">
+      <span class="theme-swatch" style="background:linear-gradient(135deg,#F97316,#FBBF24)"></span>
+      Sunset
+      <span class="theme-check">✓</span>
+    </button>
+
+    <button class="theme-option" id="opt-forest" onclick="setTheme('forest')">
+      <span class="theme-swatch" style="background:linear-gradient(135deg,#10B981,#84CC16)"></span>
+      Forest
+      <span class="theme-check">✓</span>
+    </button>
+  </div>
+
+  <button class="theme-fab" onclick="toggleThemePanel()" aria-label="Change theme" title="Change theme">🎨</button>
+</div>
+
+<script>
+  /* ── MENU ── */
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+  function closeMenu() {
+    document.getElementById('mobileMenu').classList.remove('open');
+  }
+
+  /* ── SCROLL FADE ── */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 60);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  /* ── THEME SWITCHER ── */
+  const themes = ['electric','midnight','sunset','forest'];
+
+  function setTheme(name) {
+    document.body.className = name === 'electric' ? '' : 'theme-' + name;
+    localStorage.setItem('bnc-theme', name);
+    themes.forEach(t => {
+      const opt = document.getElementById('opt-' + t);
+      opt.classList.toggle('active', t === name);
+    });
+  }
+
+  function toggleThemePanel() {
+    document.getElementById('themePanel').classList.toggle('open');
+  }
+
+  document.addEventListener('click', (e) => {
+    const toggle = document.querySelector('.theme-toggle');
+    if (!toggle.contains(e.target)) {
+      document.getElementById('themePanel').classList.remove('open');
+    }
+  });
+
+  /* restore saved theme */
+  const saved = localStorage.getItem('bnc-theme') || 'electric';
+  setTheme(saved);
+</script>
+</body>
+</html>
