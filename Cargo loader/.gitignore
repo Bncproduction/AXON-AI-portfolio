@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+*.local
+.vercel
+.DS_Store
+
+# screen recordings / large media (reference only)
+*.mp4
+*.mkv
+*.webm
+*.mov
+
+# claude agent worktrees
+.claude/worktrees/
