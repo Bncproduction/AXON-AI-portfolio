@@ -26,3 +26,7 @@ Thumbs.db
 documents/
 *.dwg
 *.dxf
+
+# Vercel build output
+public/
+.vercel/
