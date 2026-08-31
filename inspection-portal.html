@@ -1060,20 +1060,223 @@ function postprocess(raw, engine) {
   };
 }
 
+/* ==================================================== PDF text-layer reader
+   CAD packages export PDFs with a real text layer, so the title block can be
+   read with no AI and no API key at all. Uses only native APIs — the browser's
+   DecompressionStream inflates the FlateDecode streams — so the file stays
+   self-contained. A scanned drawing has no text layer; that is detected and
+   reported rather than papered over.
+   ======================================================================== */
+async function inflate(bytes) {
+  for (const format of ["deflate", "deflate-raw"]) {
+    try {
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    } catch (e) { /* not this encoding — try the next */ }
+  }
+  return null;
+}
+
+function latin1(bytes) {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 8192)
+    s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+  return s;
+}
+
+/* Streams that hold pictures, fonts or colour data, never page text. */
+const NON_TEXT_STREAM = /\/(Image|DCTDecode|JPXDecode|CCITTFaxDecode|JBIG2Decode|FontFile\d?|ICCBased|XML)\b/;
+
+/** Pull every `stream ... endstream` payload, skipping images and fonts. */
+function pdfStreams(bytes) {
+  const s = latin1(bytes), out = [];
+  let i = 0;
+  while ((i = s.indexOf("stream", i)) !== -1) {
+    // The object dictionary sits immediately before the keyword; it says what this is.
+    const dict = s.slice(Math.max(0, i - 400), i);
+    let start = i + 6;
+    if (s[start] === "\r") start += 1;
+    if (s[start] === "\n") start += 1;
+    const end = s.indexOf("endstream", start);
+    if (end === -1) break;
+    if (end > start && !NON_TEXT_STREAM.test(dict)) {
+      let stop = end;                       // drop the EOL that precedes `endstream`
+      while (stop > start && (bytes[stop - 1] === 0x0a || bytes[stop - 1] === 0x0d)) stop -= 1;
+      out.push(bytes.subarray(start, stop));
+    }
+    i = end + 9;
+  }
+  return out;
+}
+
+/** Does this decoded buffer actually look like a text content stream? */
+function looksLikeContentStream(text) {
+  if (!/\b(Tj|TJ)\b/.test(text)) return false;
+  let printable = 0;
+  const sample = text.slice(0, 4000);
+  for (let i = 0; i < sample.length; i++) {
+    const c = sample.charCodeAt(i);
+    if (c === 9 || c === 10 || c === 13 || (c >= 32 && c < 127)) printable += 1;
+  }
+  return sample.length > 0 && printable / sample.length > 0.85;
+}
+
+const PDF_ESCAPES = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", "(": "(", ")": ")", "\\": "\\" };
+
+function unescapePdfString(raw) {
+  let out = "";
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i] !== "\\") { out += raw[i]; continue; }
+    const next = raw[++i];
+    if (next === undefined) break;
+    if (next >= "0" && next <= "7") {
+      let oct = next;
+      while (oct.length < 3 && raw[i + 1] >= "0" && raw[i + 1] <= "7") oct += raw[++i];
+      out += String.fromCharCode(parseInt(oct, 8));
+    } else out += PDF_ESCAPES[next] ?? next;
+  }
+  return out;
+}
+
+/** Text-showing operators from one decoded content stream. */
+function textFromContentStream(content) {
+  const pieces = [];
+  const re = /\((?:\\[\s\S]|[^\\()])*\)|<([0-9A-Fa-f\s]+)>/g;
+  let m;
+  while ((m = re.exec(content)) !== null) {
+    if (m[1] !== undefined) {
+      const hex = m[1].replace(/\s+/g, "");
+      let s = "";
+      for (let i = 0; i + 1 < hex.length; i += 2) s += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+      pieces.push(s);
+    } else {
+      pieces.push(unescapePdfString(m[0].slice(1, -1)));
+    }
+  }
+  // One line per text-showing run, so a title-block label and its value stay together
+  // and cannot bleed into the next cell.
+  return pieces.join("\n");
+}
+
+/** Whole-document text, or "" when the PDF is a scan. */
+async function pdfText(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (latin1(bytes.subarray(0, 5)) !== "%PDF-") return "";
+  const chunks = [];
+  for (const raw of pdfStreams(bytes)) {
+    const inflated = await inflate(raw);
+    const text = latin1(inflated || raw);
+    if (!looksLikeContentStream(text)) continue;
+    chunks.push(textFromContentStream(text));
+  }
+  return chunks.join("\n")
+    .split("\n").map(l => l.replace(/[ \t]+/g, " ").trim()).filter(Boolean).join("\n");
+}
+
+/* Title-block labels vary by company, so each field gets several patterns.
+   Every capture stops at the end of its line — a title-block cell never spans
+   lines, and a greedy capture would otherwise swallow the next cell's label. */
+const ID = "[A-Z0-9][A-Z0-9._\\-\\/]{3,}";
+const TITLE_BLOCK_PATTERNS = {
+  drawing_number: [new RegExp(`(?:drg|dwg|drawing)\\s*\\.?\\s*\\/?\\s*(?:part)?\\s*no\\.?\\s*:?\\s*(${ID})`, "i"),
+                   new RegExp(`part\\s*no\\.?\\s*:?\\s*(${ID})`, "i")],
+  part_number:    [new RegExp(`part\\s*no\\.?\\s*:?\\s*(${ID})`, "i"),
+                   new RegExp(`(?:drg|dwg)\\s*\\.?\\s*\\/?\\s*part\\s*no\\.?\\s*:?\\s*(${ID})`, "i")],
+  part_name:      [/(?:drg|dwg)\.?\s*\/?\s*part\s*designation\s*:?\s*([^\n]{2,45})/i,
+                   /part\s*name\s*:?\s*([^\n]{2,45})/i,
+                   /\bdesignation\s*:?\s*([^\n]{2,45})/i],
+  material:       [/material\s*(?:description)?[^:\n]{0,40}:\s*([^\n]{2,50})/i,
+                   /^\s*material\s*:?\s*([^\n]{2,50})$/im,
+                   /\b(nylon\s+[a-z]+|EN\s?\d+[A-Z0-9 ]*|SS\s?\d{3}|AISI\s?\d+|POM|ABS|PA\s?\d+)\b/i],
+  drawing_revision: [/revision\s*no\.?\s*:?\s*([A-Z0-9]{1,6})(?=\s|$)/i,
+                     /\brev\.?\s*no\.?\s*:?\s*([A-Z0-9]{1,6})(?=\s|$)/i],
+  scale:          [/scale\s*:?\s*(\d+\s*:\s*\d+)/i],
+};
+
+/* Words that are labels, not values — a capture landing on one means the cell
+   was empty and we ran into the next field. */
+const LABEL_WORDS = /^(no|name|number|date|sign|rev|revision|scale|material|model|drawn|checked|approved|title|sheet|units?)\b[.:]?$/i;
+
+function cleanValue(raw) {
+  const value = String(raw).trim().replace(/\s{2,}/g, " ").replace(/^[:\-–]\s*/, "").replace(/[,:;]+$/, "");
+  if (!value || LABEL_WORDS.test(value)) return null;
+  return value;
+}
+
+function matchField(text, patterns) {
+  const lines = text.split("\n");
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (m && m[1]) {
+      const value = cleanValue(m[1]);
+      if (value) return value;
+    }
+    // Some title blocks put the label in one text run and the value in the next.
+    const labelOnly = new RegExp(re.source.replace(/\(\[\^\\n\][^)]*\)|\([^)]*\)/, "") + "\\s*:?\\s*$", "i");
+    for (let i = 0; i < lines.length - 1; i++) {
+      if (labelOnly.test(lines[i])) {
+        const value = cleanValue(lines[i + 1]);
+        if (value) return value;
+      }
+    }
+  }
+  return null;
+}
+
+/** Build an extraction from a PDF's own text layer. No AI involved. */
+function extractionFromText(text, fileName) {
+  const found = {};
+  for (const [field, patterns] of Object.entries(TITLE_BLOCK_PATTERNS)) found[field] = matchField(text, patterns);
+
+  // A drawing number in the file name is a reasonable last resort.
+  if (!found.drawing_number) {
+    const stem = (fileName || "").replace(/\.[^.]+$/, "");
+    const m = stem.match(/([A-Z0-9]{6,}[A-Z0-9._\-]*)/i);
+    if (m) found.drawing_number = m[1];
+  }
+  const units = /dimensions?\s+in\s+mm|\bin\s+mm\b/i.test(text) ? "mm"
+              : /dimensions?\s+in\s+inch/i.test(text) ? "inch" : "mm";
+  const generalTol = text.match(/(unspecified[^.\n]{0,120}|ISO\s*2768[-\s]?[a-zA-Z]{0,3}|general\s+tolerance[^.\n]{0,120})/i);
+
+  const readCount = Object.values(found).filter(Boolean).length;
+  const confidence = readCount ? Math.min(0.9, 0.55 + 0.07 * readCount) : 0;
+
+  return postprocess({
+    ...found,
+    units,
+    general_tolerance_note: generalTol ? generalTol[0].trim() : null,
+    title_block_confidence: confidence,
+    dimensions: [],
+    notes: [],
+    unreadable_areas: [
+      "Dimensions and tolerances were not extracted — the text layer gives the title block only. " +
+      "Add them by hand, or configure an AI key in Settings to read the views.",
+    ],
+    pages_analysed: 1,
+  }, "pdf-text-layer");
+}
+
 /** Offline extractor. Every field is null and unverified — it never pretends to have read a drawing. */
-function offlineExtraction(fileName) {
+function offlineExtraction(fileName, reason) {
+  const scanned = reason === "scanned";
   return postprocess({
     drawing_number: (fileName || "").replace(/\.[^.]+$/, "").slice(0, 40) || null,
     units: "mm", title_block_confidence: 0,
     dimensions: [{
       label: "Placeholder characteristic 1", reference: "1", dimension_type: "length",
       nominal_value: null, upper_tolerance: null, lower_tolerance: null,
-      specification_text: "Not extracted — offline mode", classification: "major",
-      confidence: 0, source_note: "No AI provider configured; nothing was read from the drawing.",
+      specification_text: "Not extracted", classification: "major",
+      confidence: 0,
+      source_note: scanned
+        ? "This PDF is a scanned image with no text layer, so nothing could be read without AI vision."
+        : "No AI provider configured; nothing was read from the drawing.",
     }],
-    notes: [], unreadable_areas: ["Entire drawing — AI extraction not configured"],
+    notes: [],
+    unreadable_areas: [scanned
+      ? "Entire drawing — scanned image with no text layer. Add an AI key in Settings to read it."
+      : "Entire drawing — AI extraction not configured"],
     pages_analysed: 0,
-  }, "offline-stub");
+  }, scanned ? "offline-scanned" : "offline-stub");
 }
 
 function fileToBase64(file) {
@@ -1613,8 +1816,10 @@ function drawingDetailView(id) {
   if (ex && !unverified && ex.dimensions.length) notices.push(`<div class="note pass">
     All ${ex.dimensions.length} characteristics verified. Ready to generate the inspection standard.</div>`);
   if (!settings.apiKey) notices.push(`<div class="note info">
-    No API key configured, so <b>Run AI analysis</b> loads a worked demo extraction instead of reading your file.
-    Add a key under Settings to analyse real drawings.</div>`);
+    No AI key configured. <b>Run AI analysis</b> still reads the title block straight out of the PDF's
+    text layer, which is why the fields below may already be filled — but it cannot read the
+    <b>dimensions and tolerances</b> in the views, and it reads nothing at all from a scanned sheet.
+    Add a key under Settings for full extraction.</div>`);
 
   const preview = blobUrl
     ? (isImage
@@ -1850,10 +2055,14 @@ async function runAnalysis(drawingId) {
       extraction = await extractWithAI(file);
     } else if (settings.apiKey && !file) {
       throw new Error("The original file is no longer in this session — re-upload it to analyse");
+    } else if (file && drawing.mime_type === "application/pdf") {
+      // No AI key: read whatever the PDF's own text layer gives us.
+      const text = await pdfText(file);
+      extraction = text
+        ? extractionFromText(text, drawing.file_name)
+        : offlineExtraction(drawing.file_name, "scanned");
     } else {
-      await new Promise(r => setTimeout(r, 700));
-      extraction = drawing.drawing_number === "DWG-4471"
-        ? demoExtraction() : offlineExtraction(drawing.file_name);
+      extraction = offlineExtraction(drawing.file_name);
     }
     rev.extraction = extraction;
     rev.extraction_confidence = extraction.overall_confidence;
