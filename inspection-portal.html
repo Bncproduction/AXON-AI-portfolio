@@ -1567,7 +1567,12 @@ function drawingsView() {
         <td>${esc(byId("users", d.uploaded_by_id)?.full_name || "—")}</td>
         <td>${dims ? `${dims}${unver ? ` <span class="chip warn">${unver} unverified</span>` : ""}` : "—"}</td>
         <td>${chip(d.status)}</td>
-        <td class="r"><a class="btn sm" href="#/drawings/${d.id}">Open</a></td></tr>`;
+        <td class="r" style="white-space:nowrap">
+          <a class="btn sm" href="#/drawings/${d.id}">Open</a>
+          ${can("quality_manager")
+            ? `<button class="btn sm" data-act="ask-delete-drawing" data-id="${d.id}"
+                 title="Delete this drawing" style="margin-left:4px">Delete</button>` : ""}
+        </td></tr>`;
     }).join("")}</tbody></table></div>`
     : emptyState("No drawings match", "Upload a PDF or scanned drawing to start the extraction workflow.");
 
@@ -1632,7 +1637,9 @@ function drawingDetailView(id) {
      ${can("inspector") ? `<button class="btn" data-act="analyze" data-id="${drawing.id}">
         ${rev?.extraction ? "Re-run AI analysis" : "Run AI analysis"}</button>` : ""}
      ${editable && ex ? `<button class="btn" data-act="save-extraction" data-rev="${rev.id}">Save verification</button>
-        <button class="btn primary" data-act="gen-standard" data-rev="${rev.id}">Generate standard</button>` : ""}`) +
+        <button class="btn primary" data-act="gen-standard" data-rev="${rev.id}">Generate standard</button>` : ""}
+     ${can("quality_manager")
+        ? `<button class="btn danger" data-act="ask-delete-drawing" data-id="${drawing.id}">Delete drawing</button>` : ""}`) +
 
   (notices.length ? `<div class="stack" style="margin-bottom:16px">${notices.join("")}</div>` : "") + `
 
@@ -1699,6 +1706,129 @@ function drawingDetailView(id) {
       </tr>`).join("")}</tbody></table></div>`,
     { pad: false, actions: `<span style="font-size:11.5px;color:var(--ink-3)">
         Amber rows block approval until a value is supplied</span>` }) : ""}`;
+}
+
+/* ============================================================== deletion
+   Quality records are not casually disposable: anything a QA manager has
+   signed off is kept. Deletion is allowed for work in progress — uploads that
+   went nowhere, draft standards, unsubmitted reports — and refused once a
+   report has been submitted or closed, which is the point the record becomes
+   evidence. Everything removed is written to the audit log first.
+   ======================================================================== */
+const CLOSED_STATES = new Set(["submitted", "approved", "rejected"]);
+
+/** What would go if this drawing were removed, and whether that is allowed. */
+function drawingCascade(drawingId) {
+  const revisions = db.revisions.filter(r => r.drawing_id === drawingId);
+  const revIds = new Set(revisions.map(r => r.id));
+  const standards = db.standards.filter(s => revIds.has(s.drawing_revision_id));
+  const stdIds = new Set(standards.map(s => s.id));
+  const parameters = db.parameters.filter(p => stdIds.has(p.standard_id));
+  const reports = db.reports.filter(r => stdIds.has(r.standard_id) || r.drawing_id === drawingId);
+  const reportIds = new Set(reports.map(r => r.id));
+  const results = db.results.filter(r => reportIds.has(r.report_id));
+  const locked = reports.filter(r => CLOSED_STATES.has(r.status));
+  return { revisions, standards, parameters, reports, results, locked };
+}
+
+function deleteDrawing(drawingId) {
+  const drawing = byId("drawings", drawingId);
+  if (!drawing) return;
+  const c = drawingCascade(drawingId);
+  if (c.locked.length) {
+    return toast(`Cannot delete — ${c.locked.length} inspection report(s) have been submitted ` +
+      `or closed against this drawing. Those are quality records.`, "bad");
+  }
+
+  const revIds = new Set(c.revisions.map(r => r.id));
+  const stdIds = new Set(c.standards.map(s => s.id));
+  const reportIds = new Set(c.reports.map(r => r.id));
+
+  audit("drawing.delete", "drawing", drawingId, {
+    drawing_number: drawing.drawing_number, revisions: c.revisions.length,
+    standards: c.standards.length, parameters: c.parameters.length, reports: c.reports.length,
+  });
+
+  db.results = db.results.filter(r => !reportIds.has(r.report_id));
+  db.reports = db.reports.filter(r => !reportIds.has(r.id));
+  db.parameters = db.parameters.filter(p => !stdIds.has(p.standard_id));
+  db.standards = db.standards.filter(s => !stdIds.has(s.id));
+  db.revisions = db.revisions.filter(r => !revIds.has(r.id));
+  db.drawings = db.drawings.filter(d => d.id !== drawingId);
+
+  const url = blobs.get(drawingId);
+  if (url) { URL.revokeObjectURL(url); blobs.delete(drawingId); }
+  state.files?.delete(drawingId);
+  state.draftExtraction = null;
+  state.drafts = {};
+
+  save();
+  go("#/drawings");
+  render();
+  toast(`Deleted ${drawing.drawing_number}`, "good");
+}
+
+function deleteStandard(standardId) {
+  const s = byId("standards", standardId);
+  if (!s) return;
+  const reports = db.reports.filter(r => r.standard_id === standardId);
+  const locked = reports.filter(r => CLOSED_STATES.has(r.status));
+  if (locked.length)
+    return toast(`Cannot delete — ${locked.length} report(s) submitted or closed against this standard.`, "bad");
+
+  const reportIds = new Set(reports.map(r => r.id));
+  audit("standard.delete", "standard", standardId, { code: s.code, reports: reports.length });
+  db.results = db.results.filter(r => !reportIds.has(r.report_id));
+  db.reports = db.reports.filter(r => !reportIds.has(r.id));
+  db.parameters = db.parameters.filter(p => p.standard_id !== standardId);
+  db.standards = db.standards.filter(x => x.id !== standardId);
+  save();
+  go("#/standards");
+  render();
+  toast(`Deleted ${s.code}`, "good");
+}
+
+function deleteReport(reportId) {
+  const r = byId("reports", reportId);
+  if (!r) return;
+  if (CLOSED_STATES.has(r.status))
+    return toast("Cannot delete — this report has been submitted or closed. It is a quality record.", "bad");
+  audit("report.delete", "report", reportId, { report_number: r.report_number });
+  db.results = db.results.filter(x => x.report_id !== reportId);
+  db.reports = db.reports.filter(x => x.id !== reportId);
+  state.drafts = {};
+  save();
+  go("#/reports");
+  render();
+  toast(`Deleted ${r.report_number}`, "good");
+}
+
+/** Confirmation that spells out exactly what disappears. */
+function confirmDeleteDrawing(drawingId) {
+  const drawing = byId("drawings", drawingId);
+  const c = drawingCascade(drawingId);
+  const lines = [
+    ["Drawing revisions", c.revisions.length],
+    ["Inspection standards", c.standards.length],
+    ["Inspection parameters", c.parameters.length],
+    ["Inspection reports", c.reports.length],
+    ["Recorded results", c.results.length],
+  ].filter(([, n]) => n > 0);
+
+  openModal(`Delete ${drawing.drawing_number}?`, `
+    ${c.locked.length ? `<div class="note fail" style="margin-bottom:12px">
+        <b>${c.locked.length} inspection report(s)</b> against this drawing have been submitted or
+        closed. Those are quality records and cannot be deleted — archive the standard instead.</div>`
+      : `<div class="note warn" style="margin-bottom:12px">This cannot be undone.</div>`}
+    <p style="font-size:13.5px;color:var(--ink-2)">Removing
+      <b>${esc(drawing.drawing_number)}</b> — ${esc(drawing.file_name)} — also removes:</p>
+    <ul style="margin:10px 0 0;padding-left:18px;font-size:13.5px">
+      ${lines.length ? lines.map(([label, n]) => `<li>${n} × ${esc(label.toLowerCase())}</li>`).join("")
+                     : `<li>nothing else — no standard has been generated from it</li>`}
+    </ul>`,
+    `<button class="btn" data-act="close-modal">Cancel</button>
+     ${c.locked.length ? "" :
+       `<button class="btn danger" data-act="do-delete-drawing" data-id="${drawingId}">Delete permanently</button>`}`);
 }
 
 /* ------------------------------------------------------- drawing actions */
@@ -1818,7 +1948,12 @@ function standardsView() {
         <td>${fmtDate(s.created_at)}</td>
         <td>${esc(byId("users", s.approved_by_id)?.full_name || "—")}</td>
         <td>${chip(s.status)}</td>
-        <td class="r"><a class="btn sm" href="#/standards/${s.id}">Open</a></td></tr>`;
+        <td class="r" style="white-space:nowrap">
+          <a class="btn sm" href="#/standards/${s.id}">Open</a>
+          ${can("quality_manager") && s.status === "draft"
+            ? `<button class="btn sm" data-act="delete-standard" data-id="${s.id}"
+                 title="Delete this draft standard" style="margin-left:4px">Delete</button>` : ""}
+        </td></tr>`;
     }).join("")}</tbody></table></div>`
     : emptyState("No inspection standards", "Analyse a drawing, verify the characteristics, then generate a standard.");
 
@@ -2059,7 +2194,12 @@ function reportsView() {
       <td class="r num">${r.failed_parameters ? `<b style="color:var(--fail)">${r.failed_parameters}</b>` : "0"}</td>
       <td class="r num">${r.critical_failures ? `<b style="color:var(--fail)">${r.critical_failures}</b>` : "0"}</td>
       <td>${chip(r.overall_result)}</td><td>${chip(r.status)}</td>
-      <td class="r"><a class="btn sm" href="#/reports/${r.id}">Open</a></td></tr>`).join("")}</tbody></table></div>`
+      <td class="r" style="white-space:nowrap">
+        <a class="btn sm" href="#/reports/${r.id}">Open</a>
+        ${can("quality_manager") && r.status === "draft"
+          ? `<button class="btn sm" data-act="delete-report" data-id="${r.id}"
+               title="Delete this draft report" style="margin-left:4px">Delete</button>` : ""}
+      </td></tr>`).join("")}</tbody></table></div>`
     : emptyState("No reports match these filters", "Approve an inspection standard, then create a report against it.");
 
   return pageHead("Inspection Reports", "Search by report number, batch, PO, invoice, supplier or date",
@@ -2897,6 +3037,22 @@ document.addEventListener("click", e => {
         rework: Number($("#qaRework").value) || 0,
       });
       closeModal();
+      break;
+    }
+
+    case "ask-delete-drawing": confirmDeleteDrawing(Number(id)); break;
+    case "do-delete-drawing": closeModal(); deleteDrawing(Number(id)); break;
+
+    case "delete-standard": {
+      const s = byId("standards", id);
+      if (!confirm(`Delete draft standard ${s.code} and its parameters? This cannot be undone.`)) return;
+      deleteStandard(Number(id));
+      break;
+    }
+    case "delete-report": {
+      const r = byId("reports", id);
+      if (!confirm(`Delete draft report ${r.report_number}? This cannot be undone.`)) return;
+      deleteReport(Number(id));
       break;
     }
 
