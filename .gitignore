@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+backend/storage/
+backend/.env
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+out/
+frontend/.env.local
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Controlled customer documents — released drawings, filled inspection records
+# and anything else carrying supplier names or signatures. This repository is
+# public; keep proprietary source documents out of it.
+documents/
+*.dwg
+*.dxf

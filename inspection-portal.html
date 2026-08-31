@@ -1,0 +1,3157 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inspection Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ============================================================ tokens */
+:root {
+  --ground:        #f2f4f3;
+  --surface:       #ffffff;
+  --surface-2:     #eaeeee;
+  --surface-sunk:  #e2e7e7;
+  --line:          #d3dad9;
+  --line-strong:   #b3bdbc;
+  --ink:           #14181c;
+  --ink-2:         #454f52;
+  --ink-3:         #6d7a7c;
+  --accent:        #1a6b7a;
+  --accent-soft:   #e0eef0;
+  --accent-line:   #9cc7ce;
+  --pass:          #2f7a4e;
+  --pass-soft:     #e2f0e7;
+  --fail:          #b4342a;
+  --fail-soft:     #fae7e5;
+  --warn:          #a4691a;
+  --warn-soft:     #f8eeda;
+  --rail:          #12191b;
+  --rail-ink:      #b9c7c9;
+  --rail-hi:       #ffffff;
+  --shadow:        0 1px 2px rgba(20,24,28,.05), 0 2px 8px rgba(20,24,28,.06);
+  --radius:        4px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:       #0e1214;
+    --surface:      #161b1d;
+    --surface-2:    #1d2426;
+    --surface-sunk: #101617;
+    --line:         #2a3335;
+    --line-strong:  #3c4749;
+    --ink:          #e6ebeb;
+    --ink-2:        #adb9ba;
+    --ink-3:        #7f8d8f;
+    --accent:       #58b6c6;
+    --accent-soft:  #16323a;
+    --accent-line:  #2b5f6b;
+    --pass:         #5fbd85;
+    --pass-soft:    #14301f;
+    --fail:         #ef8177;
+    --fail-soft:    #371916;
+    --warn:         #d9a44e;
+    --warn-soft:    #33260f;
+    --rail:         #090d0e;
+    --rail-ink:     #93a3a5;
+    --shadow:       0 1px 2px rgba(0,0,0,.4), 0 2px 10px rgba(0,0,0,.3);
+  }
+}
+[data-theme="dark"] {
+  --ground:       #0e1214;
+  --surface:      #161b1d;
+  --surface-2:    #1d2426;
+  --surface-sunk: #101617;
+  --line:         #2a3335;
+  --line-strong:  #3c4749;
+  --ink:          #e6ebeb;
+  --ink-2:        #adb9ba;
+  --ink-3:        #7f8d8f;
+  --accent:       #58b6c6;
+  --accent-soft:  #16323a;
+  --accent-line:  #2b5f6b;
+  --pass:         #5fbd85;
+  --pass-soft:    #14301f;
+  --fail:         #ef8177;
+  --fail-soft:    #371916;
+  --warn:         #d9a44e;
+  --warn-soft:    #33260f;
+  --rail:         #090d0e;
+  --rail-ink:     #93a3a5;
+  --shadow:       0 1px 2px rgba(0,0,0,.4), 0 2px 10px rgba(0,0,0,.3);
+}
+
+/* ============================================================ base */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Barlow", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.mono { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* label vernacular borrowed from a drawing title block */
+.lbl {
+  font-family: "Barlow Condensed", "Barlow", sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  line-height: 1.3;
+}
+
+/* ============================================================ shell */
+.app { display: flex; min-height: 100vh; }
+.rail {
+  width: 232px; flex: 0 0 232px;
+  background: var(--rail); color: var(--rail-ink);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.rail-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 18px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.09);
+}
+.rail-mark {
+  width: 30px; height: 30px; flex: none;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 15px;
+  letter-spacing: .04em;
+}
+.rail-brand strong { color: var(--rail-hi); font-size: 14px; font-weight: 600; display: block; letter-spacing: .01em; }
+.rail-brand span { font-size: 11px; color: #6d7f81; letter-spacing: .05em; text-transform: uppercase;
+  font-family: "Barlow Condensed", sans-serif; font-weight: 600; }
+.rail nav { padding: 12px 10px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
+.rail nav a {
+  display: flex; align-items: center; gap: 11px;
+  padding: 8px 10px; border-radius: var(--radius);
+  color: var(--rail-ink); font-size: 13.5px; text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.rail nav a:hover { background: rgba(255,255,255,.06); color: var(--rail-hi); text-decoration: none; }
+.rail nav a.on { background: rgba(255,255,255,.09); color: var(--rail-hi); border-left-color: var(--accent); font-weight: 500; }
+.rail nav a .ic { width: 16px; text-align: center; opacity: .8; font-size: 13px; }
+.rail-foot { margin-top: auto; padding: 14px; border-top: 1px solid rgba(255,255,255,.09); }
+.rail-foot .who { color: var(--rail-hi); font-size: 13px; font-weight: 500; }
+.rail-foot .role { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: #6d7f81;
+  font-family: "Barlow Condensed", sans-serif; font-weight: 600; }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+  height: 56px; flex: none;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 20px;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 30;
+}
+.topbar input[type="search"] {
+  flex: 1; max-width: 460px;
+  background: var(--surface-sunk); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 7px 11px; font-size: 13.5px;
+}
+.topbar input[type="search"]:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+.content { padding: 22px 24px 60px; max-width: 1640px; width: 100%; }
+.burger { display: none; }
+
+/* ============================================================ page furniture */
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+.page-head h1 { font-size: 23px; letter-spacing: -.01em; }
+.page-head .sub { color: var(--ink-3); font-size: 13.5px; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card > header {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 14px; border-bottom: 1px solid var(--line);
+}
+.card > header h2 { font-family: "Barlow Condensed", sans-serif; font-size: 13px; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--ink-2); font-weight: 600; }
+.card .body { padding: 16px; }
+.grid { display: grid; gap: 16px; }
+
+/* KPI tile: reads as a gauge face */
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 13px 14px 14px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+.kpi::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 2px; background: var(--line-strong); }
+.kpi.k-accent::before { background: var(--accent); }
+.kpi.k-pass::before   { background: var(--pass); }
+.kpi.k-fail::before   { background: var(--fail); }
+.kpi.k-warn::before   { background: var(--warn); }
+.kpi .v { font-family: "Barlow Condensed", sans-serif; font-size: 30px; font-weight: 600; line-height: 1.05;
+  margin-top: 6px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.kpi.k-pass .v { color: var(--pass); } .kpi.k-fail .v { color: var(--fail); }
+.kpi.k-warn .v { color: var(--warn); } .kpi.k-accent .v { color: var(--accent); }
+.kpi .h { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+
+/* ============================================================ title block — the drawing-office device */
+.titleblock { border: 1.5px solid var(--line-strong); display: grid; background: var(--surface);
+  grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.titleblock > div { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 7px 10px 8px; min-width: 0; }
+.titleblock > div:nth-child(5n) { border-right: 0; }
+.titleblock .val { font-size: 13.5px; font-weight: 500; margin-top: 2px; overflow-wrap: anywhere; }
+.titleblock .val.mono { font-size: 12.5px; }
+
+/* ============================================================ tables */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+thead th {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--surface-2); text-align: left; white-space: nowrap;
+  padding: 8px 10px; border-bottom: 1px solid var(--line-strong);
+  font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: 11px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2);
+}
+tbody td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr.row-fail { background: var(--fail-soft); }
+tbody tr.row-fail:hover { background: var(--fail-soft); filter: brightness(.98); }
+tbody tr.row-warn { background: var(--warn-soft); }
+td.r, th.r { text-align: right; }
+/* severity stripe encodes criticality without spending a column */
+td.sev { border-left: 3px solid transparent; }
+td.sev.critical { border-left-color: var(--fail); }
+td.sev.major    { border-left-color: var(--warn); }
+td.sev.minor    { border-left-color: var(--line-strong); }
+
+/* ============================================================ controls */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: var(--radius); border: 1px solid var(--line-strong);
+  background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { background: var(--fail); border-color: var(--fail); color: #fff; }
+.btn.danger:hover { filter: brightness(1.08); }
+.btn.sm { padding: 4px 9px; font-size: 12px; }
+
+label.f { display: block; min-width: 0; }
+label.f > .lbl { display: block; margin-bottom: 4px; }
+.in {
+  width: 100%; padding: 7px 10px; font-size: 13.5px;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--radius);
+}
+.in:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.in:disabled { background: var(--surface-sunk); color: var(--ink-3); }
+.in.cell { padding: 4px 7px; font-size: 12.5px; }
+.in.mono { font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+.in.r { text-align: right; font-variant-numeric: tabular-nums; }
+.in.bad { border-color: var(--fail); background: var(--fail-soft); font-weight: 600; color: var(--fail); }
+textarea.in { resize: vertical; min-height: 62px; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 7px; border-radius: 2px; font-size: 11px; font-weight: 600;
+  font-family: "Barlow Condensed", sans-serif; letter-spacing: .07em; text-transform: uppercase;
+  border: 1px solid; white-space: nowrap;
+}
+.chip.pass  { color: var(--pass); background: var(--pass-soft); border-color: var(--pass); }
+.chip.fail  { color: var(--fail); background: var(--fail-soft); border-color: var(--fail); }
+.chip.warn  { color: var(--warn); background: var(--warn-soft); border-color: var(--warn); }
+.chip.info  { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
+.chip.mute  { color: var(--ink-3); background: var(--surface-2); border-color: var(--line-strong); }
+
+.note { border: 1px solid; border-left-width: 3px; border-radius: var(--radius); padding: 9px 12px; font-size: 13px; }
+.note.info { border-color: var(--accent-line); border-left-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.note.warn { border-color: var(--warn); background: var(--warn-soft); color: var(--ink); }
+.note.fail { border-color: var(--fail); background: var(--fail-soft); color: var(--ink); }
+.note.pass { border-color: var(--pass); background: var(--pass-soft); color: var(--ink); }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.empty { padding: 44px 20px; text-align: center; color: var(--ink-3); font-size: 13.5px; }
+
+/* ============================================================ modal */
+.scrim { position: fixed; inset: 0; background: rgba(9,13,14,.55); z-index: 100;
+  display: flex; align-items: flex-start; justify-content: center; padding: 5vh 16px; overflow-y: auto; }
+.modal { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius);
+  width: 100%; max-width: 560px; box-shadow: 0 20px 60px rgba(9,13,14,.35); }
+.modal.wide { max-width: 900px; }
+.modal > header { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 13px 16px; border-bottom: 1px solid var(--line); }
+.modal > header h2 { font-size: 15px; }
+.modal .body { padding: 16px; }
+.modal footer { display: flex; justify-content: flex-end; gap: 8px; padding: 13px 16px; border-top: 1px solid var(--line); }
+
+/* ============================================================ role switch */
+.rail-foot select {
+  width: 100%; margin-top: 9px; padding: 5px 8px; font-size: 12.5px;
+  background: rgba(255,255,255,.07); color: var(--rail-hi);
+  border: 1px solid rgba(255,255,255,.16); border-radius: var(--radius);
+}
+.rail-foot select option { background: var(--rail); color: var(--rail-hi); }
+
+/* ============================================ BNC controlled-document view */
+.doc { background: #fff; color: #000; padding: 16px; max-width: 1000px; margin: 0 auto;
+  font-family: "Barlow", Arial, sans-serif; font-size: 12px; }
+.doc table { border-collapse: collapse; width: 100%; }
+.doc th, .doc td { border: 1px solid #000; padding: 3px 5px; vertical-align: middle; }
+.doc thead th { background: #e8e8e8; color: #000; position: static;
+  font-family: "Barlow", Arial, sans-serif; font-size: 11px; letter-spacing: 0;
+  text-transform: none; font-weight: 700; text-align: center; }
+.doc .band { background: #d8d8d8; font-weight: 700; text-align: center; letter-spacing: .06em; }
+.doc .c { text-align: center; }
+.doc .ctq { font-size: 14px; line-height: 1; }
+.doc h1 { font-size: 16px; text-align: center; letter-spacing: .06em; }
+.doc .sig { height: 54px; vertical-align: top; }
+.doc-wrap { background: var(--surface-sunk); padding: 18px 0; }
+@media print {
+  .doc-wrap { background: #fff; padding: 0; }
+  .doc { max-width: none; padding: 0; font-size: 10.5px; }
+  .doc table { page-break-inside: auto; }
+  .doc tr { page-break-inside: avoid; }
+}
+
+/* ============================================================ misc */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 18px; flex-wrap: wrap; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  padding: 8px 14px; cursor: pointer; color: var(--ink-3); font-size: 13.5px; font-weight: 500; }
+.tabs button.on { color: var(--accent); border-bottom-color: var(--accent); }
+.dropzone { border: 1.5px dashed var(--line-strong); border-radius: var(--radius); background: var(--surface-sunk);
+  padding: 30px 18px; text-align: center; cursor: pointer; }
+.dropzone:hover, .dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
+.preview { height: 460px; width: 100%; border: 0; background: var(--surface-sunk); }
+.preview img { display: block; max-width: 100%; margin: 0 auto; }
+.sigline { border-bottom: 1px solid var(--line-strong); min-height: 46px; display: flex; align-items: flex-end; padding-bottom: 3px; }
+.sigline em { font-family: "Barlow Condensed", cursive, sans-serif; font-style: italic; font-size: 20px; color: var(--ink); }
+.bar { height: 6px; background: var(--surface-sunk); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 3px; }
+.toast { position: fixed; right: 18px; bottom: 18px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast > div { background: var(--rail); color: #e9f1f2; padding: 10px 14px; border-radius: var(--radius);
+  font-size: 13px; box-shadow: 0 8px 26px rgba(0,0,0,.3); border-left: 3px solid var(--accent); max-width: 380px; }
+.toast > div.bad { border-left-color: var(--fail); }
+.toast > div.good { border-left-color: var(--pass); }
+
+@media (max-width: 1000px) {
+  .rail { position: fixed; z-index: 60; transform: translateX(-100%); transition: transform .18s; }
+  .rail.open { transform: none; }
+  .burger { display: inline-flex; }
+  .titleblock { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .titleblock > div:nth-child(5n) { border-right: 1px solid var(--line); }
+  .titleblock > div:nth-child(2n) { border-right: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+@media print {
+  .rail, .topbar, .no-print, .toast { display: none !important; }
+  body { background: #fff; }
+  .content { padding: 0; max-width: none; }
+  .card { box-shadow: none; break-inside: avoid; }
+  thead th { position: static; }
+  tbody tr.row-fail { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   AI Drawing Inspection Standard Generator & Inspection Report System
+   Single-file build. State lives in localStorage; uploaded drawing files are
+   held in memory for the session only (object URLs), so a reload keeps the
+   record but drops the preview.
+   ========================================================================== */
+
+/* ------------------------------------------------------------------ utils */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+function esc(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function num(v, dp = 4) {
+  if (v === null || v === undefined || v === "" || Number.isNaN(Number(v))) return "—";
+  return String(Number(v).toFixed(dp)).replace(/\.?0+$/, "");
+}
+function titleCase(s) { return String(s).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()); }
+function fmtDate(v) {
+  if (!v) return "—";
+  const d = new Date(v);
+  return isNaN(d) ? String(v) : d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+}
+function fmtDateTime(v) {
+  if (!v) return "—";
+  const d = new Date(v);
+  return isNaN(d) ? String(v) : d.toLocaleString(undefined,
+    { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+function fmtBytes(n) {
+  if (!n) return "—";
+  const u = ["B", "KB", "MB", "GB"]; let i = 0, v = n;
+  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+  return v.toFixed(i ? 1 : 0) + " " + u[i];
+}
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+
+function toast(message, kind = "") {
+  const el = document.createElement("div");
+  if (kind) el.className = kind;
+  el.textContent = message;
+  $("#toast").append(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+/* ------------------------------------------------- PASS / FAIL engine
+   The single place a measurement is judged. Deliberately refuses to judge a
+   specification the AI could not read: that returns PENDING, never PASS.      */
+const PASS = "PASS", FAIL = "FAIL", PENDING = "PENDING", NA = "NA";
+
+function limitsOf(p) {
+  if (p.nominal_value === null || p.nominal_value === undefined) return [null, null];
+  let lsl = p.lower_tolerance === null || p.lower_tolerance === undefined ? null : p.nominal_value + p.lower_tolerance;
+  let usl = p.upper_tolerance === null || p.upper_tolerance === undefined ? null : p.nominal_value + p.upper_tolerance;
+  if (lsl !== null && usl !== null && lsl > usl) { const t = lsl; lsl = usl; usl = t; }
+  return [lsl, usl];
+}
+
+function evaluate(p, actualValue, manualResult) {
+  if (p.requires_manual_verification)
+    return { result: PENDING, deviation: null, reason: "Specification requires manual verification" };
+  if (p.is_attribute) {
+    if (manualResult === PASS || manualResult === FAIL || manualResult === NA)
+      return { result: manualResult, deviation: null, reason: "Attribute verdict recorded by inspector" };
+    return { result: PENDING, deviation: null, reason: "Awaiting inspector verdict" };
+  }
+  if (actualValue === null || actualValue === undefined || actualValue === "" || Number.isNaN(Number(actualValue)))
+    return { result: PENDING, deviation: null, reason: "No measurement recorded" };
+
+  const v = Number(actualValue);
+  const [lsl, usl] = limitsOf(p);
+  if (lsl === null && usl === null)
+    return { result: PENDING, deviation: null, reason: "No usable tolerance on specification" };
+  if (usl !== null && v > usl)
+    return { result: FAIL, deviation: round6(v - usl), reason: "Above upper limit" };
+  if (lsl !== null && v < lsl)
+    return { result: FAIL, deviation: round6(v - lsl), reason: "Below lower limit" };
+  return { result: PASS, deviation: 0, reason: "Within specification" };
+}
+function round6(n) { return Math.round(n * 1e6) / 1e6; }
+
+/** Parse an inspector's reading list — "20.07, 20.11 20.06" → [20.07, 20.11, 20.06]. */
+function parseReadings(text) {
+  if (text === null || text === undefined) return [];
+  if (Array.isArray(text)) return text.filter(v => Number.isFinite(Number(v))).map(Number);
+  return String(text).split(/[\s,;/]+/).filter(Boolean)
+    .map(Number).filter(Number.isFinite);
+}
+
+/**
+ * Judge a whole sample. Every piece measured must be inside the limits — the
+ * lot fails on its worst reading, and the deviation reported is that worst
+ * excursion, which is how BNC-IQC-DIR01 records it.
+ */
+function evaluateSample(p, readings, manualResult) {
+  if (p.requires_manual_verification)
+    return { result: PENDING, deviation: null, min: null, max: null,
+             reason: "Specification requires manual verification" };
+  if (p.is_attribute) {
+    if (manualResult === PASS || manualResult === FAIL || manualResult === NA)
+      return { result: manualResult, deviation: null, min: null, max: null,
+               reason: "Attribute verdict recorded by inspector" };
+    return { result: PENDING, deviation: null, min: null, max: null,
+             reason: "Awaiting inspector verdict" };
+  }
+
+  const values = parseReadings(readings);
+  if (!values.length)
+    return { result: PENDING, deviation: null, min: null, max: null,
+             reason: "No measurement recorded" };
+
+  const min = Math.min(...values), max = Math.max(...values);
+  let result = PASS, worst = 0, reason = "All readings within specification";
+  for (const v of values) {
+    const one = evaluate(p, v);
+    if (one.result === PENDING)
+      return { result: PENDING, deviation: null, min, max, reason: one.reason };
+    if (one.result === FAIL && Math.abs(one.deviation) > Math.abs(worst)) {
+      result = FAIL; worst = one.deviation; reason = one.reason;
+    }
+  }
+  return { result, deviation: result === FAIL ? round6(worst) : 0, min, max, reason };
+}
+
+function summarise(rows) {
+  const total = rows.length;
+  const passed  = rows.filter(r => r.result === PASS).length;
+  const failed  = rows.filter(r => r.result === FAIL).length;
+  const pending = rows.filter(r => r.result === PENDING).length;
+  const crit  = rows.filter(r => r.result === FAIL && r.classification === "critical").length;
+  const major = rows.filter(r => r.result === FAIL && r.classification === "major").length;
+  const minor = rows.filter(r => r.result === FAIL && r.classification === "minor").length;
+  let overall;
+  if (total === 0 || pending > 0)   overall = "PENDING";
+  else if (failed === 0)            overall = "ACCEPTED";
+  else if (crit > 0 || major > 0)   overall = "REJECTED";
+  else                              overall = "ACCEPTED_WITH_DEVIATION";
+  return { total, passed, failed, pending, critical: crit, major, minor, overall };
+}
+
+function limitsText(p) {
+  const [lsl, usl] = limitsOf(p);
+  const unit = p.unit || "";
+  if (lsl !== null && usl !== null) return `${num(lsl)} – ${num(usl)} ${unit}`.trim();
+  if (usl !== null) return `max ${num(usl)} ${unit}`.trim();
+  if (lsl !== null) return `min ${num(lsl)} ${unit}`.trim();
+  return "—";
+}
+function tolText(p) {
+  if (p.upper_tolerance == null && p.lower_tolerance == null) return "—";
+  const u = p.upper_tolerance == null ? "—" : "+" + num(p.upper_tolerance);
+  const l = p.lower_tolerance == null ? "—" : num(p.lower_tolerance);
+  return `${u} / ${l}`;
+}
+
+/* ------------------------------------------------------------------ RBAC */
+const RANK = { viewer: 0, inspector: 1, quality_manager: 2, admin: 3 };
+function can(minRole) { return state.user ? RANK[state.user.role] >= RANK[minRole] : false; }
+
+/* ================================================================== store */
+const DB_KEY = "qip.db.v2", SESSION_KEY = "qip.session.v1", SETTINGS_KEY = "qip.settings.v1";
+
+/* Drawing sheets bundled with the file, keyed by drawing number, held outside
+   localStorage so the record persists while the bitmap lives in the page.
+   Empty in the published build: this repository is public and released
+   customer drawings do not belong in it. Upload the PDF through
+   Drawings → Upload to get the preview back, or paste a data URI here. */
+const SHEETS = {};
+
+let db;                                   // persisted relational data
+const state = { user: null, route: "", railOpen: false };
+const blobs = new Map();                  // drawingId -> object URL (session only)
+let settings = { apiKey: "", model: "claude-opus-5", threshold: 0.75 };
+
+function save() { try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) { toast("Storage full — export your data", "bad"); } }
+function saveSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+function nextId(table) { return db[table].reduce((m, r) => Math.max(m, r.id), 0) + 1; }
+function byId(table, id) { return db[table].find(r => r.id === Number(id)) || null; }
+
+function audit(action, entityType, entityId, payload) {
+  db.audit.unshift({
+    id: nextId("audit"), actor: state.user ? state.user.email : null,
+    action, entity_type: entityType || null, entity_id: entityId || null,
+    payload: payload || null, at: new Date().toISOString(),
+  });
+  if (db.audit.length > 400) db.audit.length = 400;
+}
+
+/* ------------------------------------------------------------- seed data */
+const INSTRUMENTS = [
+  ["DVC-150", "Digital Vernier Caliper 0-150 mm", "Variable",  "0.01 mm",  "0-150 mm"],
+  ["PPJ-300", "Profile Projector",                "Variable",  "0.001 mm / 1'", "300 mm"],
+  ["PG-20",   "Plug Gauge Ø20 +0.05/0 (Go/No-Go)","Attribute", "—",        "Ø20 H"],
+  ["PG-199",  "Plug Gauge Ø19.9 +0.1/0 (Go/No-Go)","Attribute","—",        "Ø19.9 H"],
+  ["BM-25",   "Bore Micrometer 18-25 mm",         "Variable",  "0.001 mm", "18-25 mm"],
+  ["RGS",     "Radius Gauge Set",                 "Attribute", "0.5 mm",   "1-25 mm"],
+  ["BP-UNI",  "Universal Bevel Protractor",       "Variable",  "5'",       "0-360°"],
+  ["VIS",     "Visual / limit sample",            "Attribute", "—",        "—"],
+];
+const DEFECTS = [
+  ["DEF-01", "Oversize dimension",        "Dimensional", "major"],
+  ["DEF-02", "Undersize dimension",       "Dimensional", "major"],
+  ["DEF-03", "Bore out of round",         "Dimensional", "critical"],
+  ["DEF-04", "Flash present",             "Appearance",  "major"],
+  ["DEF-05", "Ejected pin mark",          "Appearance",  "major"],
+  ["DEF-06", "Sink mark",                 "Appearance",  "minor"],
+  ["DEF-07", "Short moulding",            "Appearance",  "critical"],
+  ["DEF-08", "Warpage / out of flatness", "Dimensional", "major"],
+  ["DEF-09", "Shrinkage beyond limit",    "Dimensional", "major"],
+  ["DEF-10", "Cut mark / damage",         "Appearance",  "major"],
+];
+/* ---------------------------------------------------------------------------
+   IGNITION SLEEVE — drawing 2A041514B008 rev L4, BNC Motors Pvt Ltd.
+   Every row was read off the supplied sheet. Where the drawing states no
+   tolerance, the value is derived from the sheet's own general-tolerance table
+   ("TOL. FOR PLASTIC", note 3) and the derivation is recorded in the source
+   note. Where neither exists, the tolerance stays null and the row is flagged
+   for manual verification rather than guessed.
+
+   Classification follows the sheet's own legend:
+     solid dot = CRITICAL     half dot = MAJOR     no symbol = MINOR
+   label, ref, type, nominal, +tol, -tol, callout, class, instrument, method, note, flags
+   --------------------------------------------------------------------------- */
+const SLEEVE_CHARACTERISTICS = [
+  ["Inner dia — bearing bore", "1", "diameter", 20, 0.05, 0, "Ø20 +0.05/0", "critical", "PG-20",
+   "Attribute gauging (Go/No-Go)",
+   "Section A-A. Solid dot alongside the callout = CRITICAL per the sheet legend.", []],
+  ["Inner dia — spigot bore", "2", "diameter", 19.9, 0.1, 0, "Ø19.9 +0.1/0", "critical", "PG-199",
+   "Attribute gauging (Go/No-Go)",
+   "Section A-A. Solid dot alongside the callout = CRITICAL per the sheet legend.", []],
+  ["Overall length", "3", "length", 25, 0.6, -0.6, "25 ±0.6", "minor", "DVC-150",
+   "Variable measurement", "Section A-A. Tolerance stated on the drawing.", []],
+  ["Flange outside dia", "4", "diameter", 32, 0, -0.4, "Ø32", "minor", "DVC-150",
+   "Variable measurement",
+   "Front view, no tolerance stated. Applied general table: O.D, basic size 16-63 → -0.4/0.", []],
+  ["Body outside dia", "5", "diameter", 26, 0, -0.4, "Ø26", "minor", "DVC-150",
+   "Variable measurement",
+   "Side view, no tolerance stated. Applied general table: O.D, basic size 16-63 → -0.4/0. " +
+   "NOTE: existing standard BNC-IQC-DIM02 states Ø26 ±0.4 — confirm which governs.", []],
+  ["Height to flange face", "6", "length", 20, 0.5, -0.5, "20 ±0.5", "major", "DVC-150",
+   "Variable measurement", "Side view. Half-filled dot = MAJOR per the sheet legend.", []],
+  ["Step length", "7", "length", 14.5, 0.2, -0.2, "14.5", "major", "DVC-150",
+   "Variable measurement",
+   "Side view. Half-filled dot = MAJOR. No tolerance stated; applied general table: " +
+   "LENGTH, basic size 4-16 → ±0.2.", []],
+  ["Overall height", "8", "length", 19.3, 0.4, -0.4, "19.3", "minor", "DVC-150",
+   "Variable measurement",
+   "Side view, no tolerance stated. Applied general table: LENGTH, basic size 16-63 → ±0.4.", []],
+  ["Lug length", "9", "length", 9.9, 0.2, -0.2, "9.9", "minor", "DVC-150",
+   "Variable measurement",
+   "Side view, no tolerance stated. Applied general table: LENGTH, basic size 4-16 → ±0.2.", []],
+  ["Profile radius", "10", "radius", 14.8, 0.2, -0.2, "R14.8", "minor", "PPJ-300",
+   "Optical comparison",
+   "Side view, no tolerance stated. Applied general table: LENGTH, basic size 4-16 → ±0.2.", []],
+  ["Lug width (Detail A)", "11", "length", 6.2, 0.2, -0.2, "6.2", "minor", "DVC-150",
+   "Variable measurement", "Detail A (2:1). Applied general table: LENGTH, 4-16 → ±0.2.", []],
+  ["Lug base length (Detail A)", "12", "length", 6, 0.2, -0.2, "6", "minor", "DVC-150",
+   "Variable measurement", "Detail A (2:1). Applied general table: LENGTH, 4-16 → ±0.2.", []],
+  ["Lug height (Detail A)", "13", "length", 5, 0.2, -0.2, "5", "minor", "DVC-150",
+   "Variable measurement", "Detail A (2:1). Applied general table: LENGTH, 4-16 → ±0.2.", []],
+  /* The last three have no numeric tolerance anywhere on the sheet. Rather than
+     invent one, they are inspected as attributes: the inspector compares the
+     feature against the drawing on the projector and records conforms / does
+     not conform. Give them a tolerance in the editor to make them variable.  */
+  ["Lug angular position", "14", "angle", 90, null, null, "90° — verify against drawing",
+   "minor", "PPJ-300", "Optical comparison against drawing",
+   "Front view. Nominal is legible; the general-tolerance table has no angular column, " +
+   "so this is gauged as an attribute rather than against an invented tolerance.", [], true],
+  ["Draft angle", "15", "angle", 2, null, null, "2° — verify against drawing",
+   "minor", "PPJ-300", "Optical comparison against drawing",
+   "Side view. Nominal is legible; the general-tolerance table has no angular column, " +
+   "so this is gauged as an attribute rather than against an invented tolerance.", [], true],
+  ["Chamfer (typical)", "16", "length", 0.25, null, null, "0.25 × 45° Typ — verify against drawing",
+   "minor", "PPJ-300", "Optical comparison against drawing",
+   "Section A-A. 0.25 falls below the general table's smallest band (1-4), so no tolerance " +
+   "is defined; gauged as an attribute rather than against an invented tolerance.", [], true],
+];
+
+/* Appearance characteristics — judged by the inspector, not measured. */
+const SLEEVE_APPEARANCE = [
+  ["Cut mark",          "Carried over from BNC-IQC-DIM02. Not classified on the drawing."],
+  ["Moulding defect",   "Carried over from BNC-IQC-DIM02. Not classified on the drawing."],
+  ["Flashes",           "Drawing note 1: FLASHES ARE NOT ALLOWED."],
+  ["Ejected pin marks", "Drawing note 2: EJECTED PIN MARKS NOT ALLOWED. " +
+                        "Absent from the existing BNC standard."],
+  ["Damages",           "Carried over from BNC-IQC-DIM02. Not classified on the drawing."],
+  ["Sink mark",         "Carried over from BNC-IQC-DIM02. Not classified on the drawing."],
+  ["Shrinkage",         "Carried over from BNC-IQC-DIM02. Not classified on the drawing."],
+  ["Warpage",           "Carried over from BNC-IQC-DIM02. Not classified on the drawing."],
+];
+
+function demoExtraction() {
+  const dims = SLEEVE_CHARACTERISTICS.map(
+    ([label, ref, type, nom, up, lo, spec, cls, inst, method, note, flags, attr]) => ({
+      label, reference: ref, dimension_type: type,
+      nominal_value: nom, upper_tolerance: up, lower_tolerance: lo,
+      unit: type === "angle" ? "°" : "mm",
+      specification_text: spec, gdt_symbol: null, datums: null,
+      classification: cls, instrument_code: inst, inspection_method: method,
+      is_attribute: !!attr,
+      confidence: flags.length ? 0.55 : 0.95,
+      source_note: note,
+      requires_manual_verification: flags.length > 0,
+      verification_reasons: flags,
+    }));
+
+  SLEEVE_APPEARANCE.forEach(([label, note], i) => dims.push({
+    label, reference: `A${i + 1}`, dimension_type: "appearance",
+    nominal_value: null, upper_tolerance: null, lower_tolerance: null, unit: null,
+    specification_text: "Not allowed", gdt_symbol: null, datums: null,
+    classification: "minor", instrument_code: "VIS", inspection_method: "Visual inspection",
+    confidence: 0.9, source_note: note,
+    requires_manual_verification: false, verification_reasons: [],
+  }));
+
+  return {
+    part_name: "IGNITION SLEEVE",
+    part_number: "2A041514B008",
+    drawing_number: "2A041514B008",
+    drawing_revision: "L4",
+    material: "NYLON BLACK",
+    units: "mm",
+    scale: "1:1",
+    general_tolerance_note:
+      "TOL. FOR PLASTIC — 1-4: length ±0.1, thk ±0.1, I.D +0.2, O.D -0.2 · " +
+      "4-16: ±0.2, ±0.3, +0.3, -0.3 · 16-63: ±0.4, N/A, +0.4, -0.4 · " +
+      "63-250: ±0.5, N/A, +0.8, -0.8 · 250-1000: ±0.8, N/A, +1.2, -1.2",
+    title_block_confidence: 0.96,
+    header_requires_verification: {},
+    dimensions: dims,
+    notes: [
+      { text: "Flashes are not allowed.", is_inspection_requirement: false, confidence: 0.97 },
+      { text: "Ejected pin marks not allowed.", is_inspection_requirement: false, confidence: 0.97 },
+      { text: "Refer general tolerance table for unspecified tolerance.", is_inspection_requirement: false, confidence: 0.97 },
+      { text: "Refer model for unspecified dimensions.", is_inspection_requirement: false, confidence: 0.97 },
+      { text: "First angle projection · finished mass 0.006 kg · sheet 1 of 1 (A3) · drawn ARAVIND 21/06/2024, checked ANAND 21/06/2024, approved VINOTH 22/06/2024.", is_inspection_requirement: false, confidence: 0.94 },
+    ],
+    unreadable_areas: [
+      "REVISION NO. box in the title block is blank — revision L4 taken from the " +
+      "\"L4 APPROVED FOR MASS PRODUCTION\" banner and the file name",
+    ],
+    pages_analysed: 1,
+    engine: "vision:verified-2A041514B008-L4",
+    confidence_threshold: 0.75,
+    overall_confidence: 0.9,
+  };
+}
+
+/* ---------------------------------------------- standard builder (mapping) */
+const METHOD_TABLE = {
+  length:         ["Variable measurement",   "DVC-150"],
+  diameter:       ["Variable measurement",   "DVC-150"],
+  radius:         ["Optical comparison",     "PPJ-300"],
+  angle:          ["Angular measurement",    "PPJ-300"],
+  hole:           ["Bore measurement",       "BM-25"],
+  thread:         ["Attribute gauging",      "VIS"],
+  appearance:     ["Visual inspection",      "VIS"],
+  other:          ["Visual inspection",      "VIS"],
+};
+const FREQ = {
+  critical: "100% inspection",
+  major: "Every incoming lot",
+  minor: "Every incoming lot",
+};
+/* BNC sampling per IS:2500 — sample size by lot quantity, rejection number 0. */
+const IS2500 = "IS:2500 — 3 (0-99) / 5 (100-199) / 8 (200-499) / 10 (500-999) / 20 (>1000); Rej. no. 0";
+const PLAN = {
+  critical: "100% — no sampling permitted",
+  major: IS2500,
+  minor: IS2500,
+};
+const ATTRIBUTE_TYPES = new Set(["thread", "appearance", "other"]);
+
+function acceptanceText(d) {
+  if (d.requires_manual_verification) return "Requires Manual Verification";
+  if (d.nominal_value === null || d.nominal_value === undefined) return d.specification_text || "As per drawing";
+  const [lsl, usl] = limitsOf(d), unit = d.unit || "mm";
+  if (lsl !== null && usl !== null) return `${num(lsl)} to ${num(usl)} ${unit}`;
+  if (usl !== null) return `Max ${num(usl)} ${unit}`;
+  if (lsl !== null) return `Min ${num(lsl)} ${unit}`;
+  return `As per drawing: ${d.specification_text}`;
+}
+
+function buildParameters(extraction) {
+  const out = [];
+  extraction.dimensions.forEach((d, i) => {
+    const type = d.dimension_type || "other";
+    const [tableMethod, tableCode] = METHOD_TABLE[type] || METHOD_TABLE.other;
+    // An extraction may name the instrument and method itself; that wins over the table.
+    const method = d.inspection_method || tableMethod;
+    const code = d.instrument_code || tableCode;
+    const inst = db.instruments.find(x => x.code === code);
+    const flagged = !!d.requires_manual_verification;
+    const bits = [];
+    if (d.gdt_symbol) bits.push(`GD&T: ${d.gdt_symbol}${d.datums ? " | datums " + d.datums : ""}`);
+    if (flagged && d.verification_reasons?.length) bits.push("Requires Manual Verification — " + d.verification_reasons.join("; "));
+    out.push({
+      seq: i + 1,
+      // Which section of the controlled document this row belongs to.
+      characteristic_type: type === "appearance" ? "appearance" : "dimensional",
+      parameter: d.label || `Characteristic ${i + 1}`,
+      specification: d.specification_text || "",
+      nominal_value: d.nominal_value ?? null,
+      upper_tolerance: d.upper_tolerance ?? null,
+      lower_tolerance: d.lower_tolerance ?? null,
+      // Attribute characteristics have no unit of measure; don't inherit "mm".
+      unit: d.unit || (ATTRIBUTE_TYPES.has(type) ? null : extraction.units || "mm"),
+      inspection_method: method,
+      instrument_id: inst ? inst.id : null,
+      instrument_text: inst ? inst.name : null,
+      frequency: FREQ[d.classification] || FREQ.minor,
+      sampling_plan: PLAN[d.classification] || PLAN.minor,
+      acceptance_criteria: acceptanceText(d),
+      classification: d.classification || "minor",
+      reference_dimension: d.reference || d.label || null,
+      remarks: bits.join(" · ") || null,
+      // An extraction may declare the characteristic an attribute outright.
+      is_attribute: d.is_attribute
+        ?? (ATTRIBUTE_TYPES.has(type) || (d.nominal_value == null && !flagged)),
+      requires_manual_verification: flagged,
+      source_confidence: d.confidence ?? null,
+      source_note: d.source_note || null,
+    });
+  });
+  (extraction.notes || []).filter(n => n.is_inspection_requirement).forEach(n => {
+    const inst = db.instruments.find(x => x.code === "VIS");
+    out.push({
+      seq: out.length + 1,
+      parameter: `Drawing note ${out.length + 1}`,
+      specification: (n.text || "").slice(0, 240),
+      nominal_value: null, upper_tolerance: null, lower_tolerance: null, unit: null,
+      inspection_method: "Visual inspection / document check",
+      instrument_id: inst ? inst.id : null,
+      instrument_text: inst ? inst.name : null,
+      frequency: "Once per lot", sampling_plan: "1 pc per lot",
+      acceptance_criteria: "Conforms to drawing note",
+      classification: "major", reference_dimension: "Notes", remarks: null,
+      is_attribute: true,
+      requires_manual_verification: (n.confidence ?? 0) < settings.threshold,
+      source_confidence: n.confidence ?? null, source_note: "Extracted from drawing notes block",
+    });
+  });
+  return out;
+}
+
+/* --------------------------------------------------------------- seeding */
+function seed() {
+  db = { users: [], suppliers: [], instruments: [], defects: [], parts: [], drawings: [],
+         revisions: [], standards: [], parameters: [], reports: [], results: [], audit: [] };
+
+  [["admin@qip.local", "System Administrator", "admin", "EMP-001"],
+   ["qm@qip.local", "Priya Raghavan", "quality_manager", "EMP-002"],
+   ["inspector@qip.local", "Rahul Kulkarni", "inspector", "EMP-003"],
+   ["viewer@qip.local", "Read Only", "viewer", "EMP-004"]]
+    .forEach(([email, full_name, role, employee_code], i) =>
+      db.users.push({ id: i + 1, email, full_name, role, employee_code, is_active: true }));
+
+  [["SUP-001", "Sharma Precision Works", "quality@sharmaprecision.in", "A"],
+   ["SUP-002", "Deccan Forge & Machining", "qa@deccanforge.in", "B"],
+   ["SUP-003", "Nova Metal Components", "inspection@novametal.in", "A"]]
+    .forEach(([code, name, contact_email, rating], i) =>
+      db.suppliers.push({ id: i + 1, code, name, contact_email, rating, is_active: true }));
+
+  INSTRUMENTS.forEach(([code, name, type, least_count, range_text], i) => {
+    const due = new Date(); due.setDate(due.getDate() + [140, 61, 12, 220, 95, -8, 175, 40, 300][i]);
+    db.instruments.push({ id: i + 1, code, name, type, least_count, range_text,
+      calibration_due: due.toISOString().slice(0, 10), is_active: true });
+  });
+  DEFECTS.forEach(([code, name, category, severity], i) =>
+    db.defects.push({ id: i + 1, code, name, category, severity }));
+
+  db.parts.push({ id: 1, part_number: "2A041514B008", part_name: "IGNITION SLEEVE",
+    material: "NYLON BLACK", customer_name: "Challenger", supplier_id: 1 });
+
+  db.drawings.push({ id: 1, drawing_number: "2A041514B008", title: "Ignition Sleeve",
+    part_id: 1, file_name: "2A041514B008_L4-NR 1.pdf", mime_type: "application/pdf", file_size: 1331603,
+    status: "analyzed", uploaded_by_id: 3, created_at: new Date(Date.now() - 86400e3 * 74).toISOString() });
+
+  const extraction = demoExtraction();
+  db.revisions.push({ id: 1, drawing_id: 1, revision: "L4", is_current: true, status: "analyzed",
+    extraction, extraction_confidence: extraction.overall_confidence, extraction_engine: extraction.engine,
+    extraction_error: null, analyzed_at: new Date(Date.now() - 86400e3 * 74).toISOString(),
+    verified_by_id: 2, verified_at: new Date(Date.now() - 86400e3 * 73).toISOString(),
+    created_at: new Date(Date.now() - 86400e3 * 74).toISOString() });
+
+  db.standards.push({ id: 1, code: "BNC-IQC-DIM02",
+    title: "Inspection Standard — Ignition Sleeve (Drg. Rev L4)",
+    drawing_revision_id: 1, part_id: 1, version: 1, status: "approved",
+    notes: "Model: Challenger · Sampling per " + IS2500 +
+      " · Record the minimum and maximum reading in the inspection report.",
+    created_by_id: 2, approved_by_id: 2,
+    approved_at: new Date(Date.now() - 86400e3 * 72).toISOString(),
+    created_at: new Date(Date.now() - 86400e3 * 73).toISOString() });
+
+  buildParameters(extraction).forEach(p =>
+    db.parameters.push({ id: nextId("parameters"), standard_id: 1, ...p }));
+
+  seedBlankReport();
+  audit("system.seed", "standard", 1, { characteristics: db.parameters.length });
+  save();
+}
+
+/**
+ * One blank incoming-inspection report carrying every parameter of the
+ * standard — the equivalent of a printed blank form waiting on the bench.
+ * No measurements are invented; every row starts PENDING.
+ */
+function seedBlankReport() {
+  const params = db.parameters.filter(p => p.standard_id === 1).sort((a, b) => a.seq - b.seq);
+  const report = {
+    id: 1, report_number: `IR-${new Date().getFullYear()}-00001`,
+    standard_id: 1, part_id: 1, drawing_id: 1, drawing_revision: "L4",
+    supplier_id: null,
+    company_name: "BNC Motors Pvt Ltd", customer_name: "Challenger",
+    batch_number: null, po_number: null, invoice_number: null,
+    inspection_date: todayISO(), shift: null, machine_number: null, operator_name: null,
+    inspector_id: 3, inspector_name: null,
+    lot_quantity: 0, sample_quantity: 3,
+    accepted_quantity: 0, rejected_quantity: 0, rework_quantity: 0,
+    total_parameters: params.length, passed_parameters: 0, failed_parameters: 0,
+    pending_parameters: params.length, critical_failures: 0,
+    major_failures: 0, minor_failures: 0, overall_result: "PENDING",
+    status: "draft", inspector_signature: null, inspector_signed_at: null,
+    qa_approver_id: null, qa_signature: null, qa_approved_at: null, qa_remarks: null,
+    created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  };
+  db.reports.push(report);
+  params.forEach(p => db.results.push({
+    id: nextId("results"), report_id: report.id, parameter_id: p.id, seq: p.seq,
+    readings: "", reading_min: null, reading_max: null,
+    actual_value: null, actual_text: null, result: PENDING, deviation: null,
+    defect_id: null, defect_description: null, remarks: null,
+  }));
+}
+
+function loadDb() {
+  const raw = localStorage.getItem(DB_KEY);
+  if (raw) { try { db = JSON.parse(raw); return; } catch (e) { /* fall through to reseed */ } }
+  seed();
+}
+
+/* ================================================== AI extraction pipeline
+   Anti-hallucination contract, enforced in three places:
+   1. the prompt says omission is correct and invention is a critical failure;
+   2. the tool schema makes every numeric field nullable and demands a
+      per-item confidence and source_note;
+   3. postprocess() flags anything under threshold, any missing nominal and
+      any missing tolerance as requires_manual_verification — which the
+      PASS/FAIL engine then refuses to judge and approval refuses to release.
+   ======================================================================== */
+const SYSTEM_PROMPT = `You are a senior manufacturing quality engineer reading an engineering drawing.
+
+Extract ONLY what is actually legible on the drawing.
+
+ABSOLUTE RULES — these override any desire to be helpful:
+- NEVER invent, infer, complete or "standardise" a dimension, tolerance, material or note.
+- If a value is unreadable, ambiguous, cropped or simply absent, return null for it and set
+  confidence low with a source_note explaining what you could and could not see.
+- Do NOT apply general tolerance tables from memory unless the drawing's own general-tolerance
+  note is legible; if it is, quote it verbatim in general_tolerance_note.
+- Never guess a decimal place. If you can read "25." but not the following digits, the value is
+  null and the source_note says so.
+- An incomplete but honest extraction is a success. A complete but fabricated one is a failure.
+
+Report a confidence between 0 and 1 per item, meaning "probability this value is exactly what is
+printed on the drawing". Use the units printed on the drawing.`;
+
+const USER_PROMPT = `Read this engineering drawing and return the structured extraction.
+
+Cover: title block (part name/number, drawing number, revision, material, scale, units, general
+tolerance note), every dimension with its tolerance, every geometric tolerance (GD&T frame:
+symbol, value, datums, material condition), surface finish callouts, hole specifications, thread
+specifications, and any note that states an inspection or special-characteristic requirement.
+
+Mark a characteristic critical/major/minor only when the drawing itself indicates it (a special
+characteristic symbol, a note, or a balloon). Otherwise classify by engineering judgement and say
+so in the source_note.`;
+
+const EXTRACTION_TOOL = {
+  name: "record_drawing_extraction",
+  description: "Record technical content read from an engineering drawing.",
+  input_schema: {
+    type: "object",
+    properties: {
+      part_name:        { type: ["string", "null"] },
+      part_number:      { type: ["string", "null"] },
+      drawing_number:   { type: ["string", "null"] },
+      drawing_revision: { type: ["string", "null"] },
+      material:         { type: ["string", "null"] },
+      units:            { type: ["string", "null"] },
+      scale:            { type: ["string", "null"] },
+      general_tolerance_note: { type: ["string", "null"],
+        description: "Verbatim general-tolerance note, or null if not legible." },
+      title_block_confidence: { type: "number" },
+      dimensions: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            label:     { type: "string" },
+            reference: { type: ["string", "null"], description: "balloon number or zone" },
+            dimension_type: { type: "string",
+              enum: ["length","diameter","radius","angle","hole","thread","surface_finish","geometric","other"] },
+            nominal_value:   { type: ["number", "null"] },
+            upper_tolerance: { type: ["number", "null"] },
+            lower_tolerance: { type: ["number", "null"] },
+            unit: { type: ["string", "null"] },
+            specification_text: { type: "string", description: "Verbatim callout" },
+            gdt_symbol: { type: ["string", "null"] },
+            datums:     { type: ["string", "null"] },
+            classification: { type: "string", enum: ["critical", "major", "minor"] },
+            confidence:  { type: "number" },
+            source_note: { type: "string" },
+          },
+          required: ["label","dimension_type","specification_text","classification","confidence","source_note"],
+        },
+      },
+      notes: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            text: { type: "string" },
+            is_inspection_requirement: { type: "boolean" },
+            confidence: { type: "number" },
+          },
+          required: ["text", "confidence"],
+        },
+      },
+      unreadable_areas: { type: "array", items: { type: "string" } },
+    },
+    required: ["dimensions", "title_block_confidence"],
+  },
+};
+
+function asFloat(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function postprocess(raw, engine) {
+  const threshold = settings.threshold;
+  const dims = (raw.dimensions || []).map(item => {
+    const d = { ...item };
+    d.classification = d.classification || "minor";
+    d.confidence = asFloat(d.confidence) ?? 0;
+    d.source_note = d.source_note || "";
+    d.unit = d.unit || raw.units || "mm";
+    d.nominal_value   = asFloat(d.nominal_value);
+    d.upper_tolerance = asFloat(d.upper_tolerance);
+    d.lower_tolerance = asFloat(d.lower_tolerance);
+
+    const reasons = [];
+    if (d.confidence < threshold)
+      reasons.push(`AI confidence ${d.confidence.toFixed(2)} below ${threshold.toFixed(2)}`);
+    const variable = d.dimension_type !== "other";
+    if (variable && d.nominal_value === null) reasons.push("Nominal value not read from drawing");
+    if (variable && d.nominal_value !== null && d.upper_tolerance === null && d.lower_tolerance === null)
+      reasons.push("No tolerance read from drawing");
+    if (!String(d.specification_text || "").trim()) reasons.push("Specification text missing");
+
+    d.requires_manual_verification = reasons.length > 0;
+    d.verification_reasons = reasons;
+    return d;
+  });
+
+  const titleConf = asFloat(raw.title_block_confidence) ?? 0;
+  const headerFlags = {};
+  ["part_name", "part_number", "drawing_number", "drawing_revision", "material"].forEach(f => {
+    headerFlags[f] = !raw[f] || titleConf < threshold;
+  });
+  const confs = dims.map(d => d.confidence);
+  const overall = confs.length ? round6(confs.reduce((a, b) => a + b, 0) / confs.length) : 0;
+
+  return {
+    part_name: raw.part_name ?? null, part_number: raw.part_number ?? null,
+    drawing_number: raw.drawing_number ?? null, drawing_revision: raw.drawing_revision ?? null,
+    material: raw.material ?? null, units: raw.units || "mm", scale: raw.scale ?? null,
+    general_tolerance_note: raw.general_tolerance_note ?? null,
+    title_block_confidence: titleConf, header_requires_verification: headerFlags,
+    dimensions: dims, notes: raw.notes || [], unreadable_areas: raw.unreadable_areas || [],
+    pages_analysed: raw.pages_analysed ?? 1, engine,
+    confidence_threshold: threshold, overall_confidence: overall,
+  };
+}
+
+/** Offline extractor. Every field is null and unverified — it never pretends to have read a drawing. */
+function offlineExtraction(fileName) {
+  return postprocess({
+    drawing_number: (fileName || "").replace(/\.[^.]+$/, "").slice(0, 40) || null,
+    units: "mm", title_block_confidence: 0,
+    dimensions: [{
+      label: "Placeholder characteristic 1", reference: "1", dimension_type: "length",
+      nominal_value: null, upper_tolerance: null, lower_tolerance: null,
+      specification_text: "Not extracted — offline mode", classification: "major",
+      confidence: 0, source_note: "No AI provider configured; nothing was read from the drawing.",
+    }],
+    notes: [], unreadable_areas: ["Entire drawing — AI extraction not configured"],
+    pages_analysed: 0,
+  }, "offline-stub");
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(",")[1]);
+    fr.onerror = () => reject(new Error("Could not read the file"));
+    fr.readAsDataURL(file);
+  });
+}
+
+/** Live vision call. Runs from the browser, so it needs the direct-access header. */
+async function extractWithAI(file) {
+  const mediaType = file.type === "application/pdf" ? "application/pdf" : file.type;
+  const data = await fileToBase64(file);
+  const source = file.type === "application/pdf"
+    ? { type: "base64", media_type: "application/pdf", data }
+    : { type: "base64", media_type: mediaType, data };
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": settings.apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: settings.model,
+      max_tokens: 8000,
+      system: SYSTEM_PROMPT,
+      tools: [EXTRACTION_TOOL],
+      tool_choice: { type: "tool", name: EXTRACTION_TOOL.name },
+      messages: [{
+        role: "user",
+        content: [
+          { type: file.type === "application/pdf" ? "document" : "image", source },
+          { type: "text", text: USER_PROMPT },
+        ],
+      }],
+    }),
+  });
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { const body = await res.json(); detail = body.error?.message || detail; } catch (e) { /* keep statusText */ }
+    throw new Error(`Vision API ${res.status}: ${detail}`);
+  }
+  const body = await res.json();
+  const block = (body.content || []).find(b => b.type === "tool_use");
+  if (!block) throw new Error("The model returned no structured extraction");
+  return postprocess(block.input, `anthropic:${settings.model}`);
+}
+
+/* ================================================================== charts
+   Hand-drawn SVG: a faint grid, tabular values, an emphasised endpoint. No
+   external chart library, so the file stays self-contained and offline.      */
+function svgWrap(w, h, inner) {
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img"
+    style="display:block;overflow:visible">${inner}</svg>`;
+}
+function gridLines(x0, y0, w, h, steps, max) {
+  let out = "";
+  for (let i = 0; i <= steps; i++) {
+    const y = y0 + h - (h * i) / steps;
+    out += `<line x1="${x0}" y1="${y}" x2="${x0 + w}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`;
+    out += `<text x="${x0 - 7}" y="${y + 3.5}" text-anchor="end" font-size="10"
+      fill="var(--ink-3)" font-family="IBM Plex Mono, monospace">${num((max * i) / steps, 0)}</text>`;
+  }
+  return out;
+}
+
+/** Grouped bars + a line, used for the inspection trend. */
+function trendChart(points) {
+  if (!points.length) return `<div class="empty">No inspections in this period</div>`;
+  const W = 780, H = 250, PADL = 40, PADB = 34, PADT = 12;
+  const w = W - PADL - 12, h = H - PADB - PADT;
+  const max = Math.max(4, ...points.map(p => p.inspections));
+  const step = w / points.length;
+  const bw = Math.max(4, Math.min(20, step / 3.1));
+
+  let bars = "", labels = "", path = "";
+  points.forEach((p, i) => {
+    const cx = PADL + step * i + step / 2;
+    const hp = (p.passed / max) * h, hf = (p.failed / max) * h;
+    bars += `<rect x="${cx - bw - 1}" y="${PADT + h - hp}" width="${bw}" height="${hp}"
+      fill="var(--pass)" rx="1"><title>${esc(p.period)} — ${p.passed} accepted</title></rect>`;
+    bars += `<rect x="${cx + 1}" y="${PADT + h - hf}" width="${bw}" height="${hf}"
+      fill="var(--fail)" rx="1"><title>${esc(p.period)} — ${p.failed} with failures</title></rect>`;
+    const y = PADT + h - (p.inspections / max) * h;
+    path += `${i ? "L" : "M"}${cx} ${y} `;
+    if (points.length <= 16 || i % Math.ceil(points.length / 12) === 0)
+      labels += `<text x="${cx}" y="${H - 12}" text-anchor="middle" font-size="10"
+        fill="var(--ink-3)" font-family="IBM Plex Mono, monospace">${esc(p.period.slice(-5))}</text>`;
+  });
+  const last = points[points.length - 1];
+  const lastX = PADL + step * (points.length - 1) + step / 2;
+  const lastY = PADT + h - (last.inspections / max) * h;
+
+  return svgWrap(W, H,
+    gridLines(PADL, PADT, w, h, 4, max) + bars +
+    `<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="1.8"
+       stroke-linejoin="round" stroke-linecap="round"/>` +
+    `<circle cx="${lastX}" cy="${lastY}" r="3.5" fill="var(--accent)"/>` +
+    `<circle cx="${lastX}" cy="${lastY}" r="7" fill="none" stroke="var(--accent)" stroke-width="1" opacity=".4"/>` +
+    labels);
+}
+
+/** Classic Pareto: descending bars plus the cumulative % line and the 80 % rule. */
+function paretoChart(points) {
+  if (!points.length) return `<div class="empty">No failures recorded — every characteristic passed</div>`;
+  const W = 760, H = 300, PADL = 38, PADR = 40, PADB = 96, PADT = 12;
+  const w = W - PADL - PADR, h = H - PADB - PADT;
+  const max = Math.max(...points.map(p => p.count));
+  const step = w / points.length;
+  const bw = Math.min(38, step * 0.62);
+
+  let bars = "", labels = "", line = "", dots = "";
+  points.forEach((p, i) => {
+    const cx = PADL + step * i + step / 2;
+    const bh = (p.count / max) * h;
+    bars += `<rect x="${cx - bw / 2}" y="${PADT + h - bh}" width="${bw}" height="${bh}"
+      fill="var(--warn)" rx="1"><title>${esc(p.label)} — ${p.count}</title></rect>`;
+    const y = PADT + h - (p.cumulative / 100) * h;
+    line += `${i ? "L" : "M"}${cx} ${y} `;
+    dots += `<circle cx="${cx}" cy="${y}" r="2.6" fill="var(--accent)"/>`;
+    const text = p.label.length > 24 ? p.label.slice(0, 23) + "…" : p.label;
+    labels += `<text x="${cx}" y="${PADT + h + 10}" font-size="10" fill="var(--ink-3)"
+      transform="rotate(-38 ${cx} ${PADT + h + 10})" text-anchor="end">${esc(text)}</text>`;
+  });
+  const y80 = PADT + h - 0.8 * h;
+
+  return svgWrap(W, H,
+    gridLines(PADL, PADT, w, h, 4, max) +
+    `<line x1="${PADL}" y1="${y80}" x2="${PADL + w}" y2="${y80}" stroke="var(--accent-line)"
+       stroke-width="1" stroke-dasharray="4 3"/>` +
+    `<text x="${PADL + w + 4}" y="${y80 + 3.5}" font-size="10" fill="var(--ink-3)"
+       font-family="IBM Plex Mono, monospace">80%</text>` +
+    bars +
+    `<path d="${line}" fill="none" stroke="var(--accent)" stroke-width="1.6"/>` + dots + labels);
+}
+
+/** Horizontal ranked bars, used for part-wise defect analysis. */
+function rankedBars(rows, colourFor) {
+  if (!rows.length) return `<div class="empty">No data yet</div>`;
+  const max = Math.max(...rows.map(r => r.value)) || 1;
+  return `<div style="display:grid;gap:9px">` + rows.map(r => `
+    <div>
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px;margin-bottom:3px">
+        <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.label)}</span>
+        <b class="num mono" style="font-size:12px">${num(r.value, 0)}</b>
+      </div>
+      <div class="bar"><i style="width:${Math.max(2, (r.value / max) * 100)}%;background:${colourFor(r)}"></i></div>
+    </div>`).join("") + `</div>`;
+}
+
+/** Donut for the severity split. */
+function donut(rows, colours) {
+  const total = rows.reduce((a, r) => a + r.value, 0);
+  if (!total) return `<div class="empty">No failures recorded</div>`;
+  const R = 74, r0 = 46, cx = 96, cy = 96;
+  let angle = -Math.PI / 2, paths = "";
+  rows.forEach(row => {
+    const sweep = (row.value / total) * Math.PI * 2;
+    const end = angle + sweep;
+    const large = sweep > Math.PI ? 1 : 0;
+    const p = (rad, radius) => `${cx + Math.cos(rad) * radius} ${cy + Math.sin(rad) * radius}`;
+    paths += `<path d="M${p(angle, R)} A${R} ${R} 0 ${large} 1 ${p(end, R)}
+      L${p(end, r0)} A${r0} ${r0} 0 ${large} 0 ${p(angle, r0)} Z"
+      fill="${colours[row.label] || "var(--line-strong)"}" stroke="var(--surface)" stroke-width="1.5">
+      <title>${esc(titleCase(row.label))} — ${row.value}</title></path>`;
+    angle = end;
+  });
+  const legend = rows.map(r => `
+    <div style="display:flex;align-items:center;gap:7px;font-size:12.5px">
+      <span style="width:9px;height:9px;border-radius:2px;background:${colours[r.label] || "var(--line-strong)"}"></span>
+      <span style="flex:1">${esc(titleCase(r.label))}</span>
+      <b class="num mono" style="font-size:12px">${r.value}</b>
+    </div>`).join("");
+  return `<div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap">
+    <svg viewBox="0 0 192 192" width="180" height="180" style="flex:none">${paths}
+      <text x="96" y="92" text-anchor="middle" font-size="26" font-weight="600"
+        fill="var(--ink)" font-family="Barlow Condensed, sans-serif">${total}</text>
+      <text x="96" y="108" text-anchor="middle" font-size="10" fill="var(--ink-3)"
+        font-family="Barlow Condensed, sans-serif" letter-spacing="1.4">FAILURES</text></svg>
+    <div style="display:grid;gap:8px;flex:1;min-width:150px">${legend}</div></div>`;
+}
+
+/* ============================================================== fragments */
+const CHIP_TONE = {
+  PASS: "pass", ACCEPTED: "pass", approved: "pass", analyzed: "pass", Verified: "pass",
+  FAIL: "fail", REJECTED: "fail", rejected: "fail", failed: "fail", critical: "fail",
+  PENDING: "warn", ACCEPTED_WITH_DEVIATION: "warn", major: "warn",
+  submitted: "info", analyzing: "info", quality_manager: "info", admin: "info",
+};
+function chip(value, label) {
+  return `<span class="chip ${CHIP_TONE[value] || "mute"}">${esc(label ?? titleCase(value))}</span>`;
+}
+function kpi(label, value, hint, tone) {
+  return `<div class="kpi ${tone ? "k-" + tone : ""}">
+    <div class="lbl">${esc(label)}</div>
+    <div class="v">${value}</div>
+    ${hint ? `<div class="h">${esc(hint)}</div>` : ""}</div>`;
+}
+function card(title, bodyHtml, opts = {}) {
+  const { actions = "", pad = true, cls = "" } = opts;
+  return `<section class="card ${cls}">
+    ${title || actions ? `<header><h2>${esc(title || "")}</h2><div class="actions">${actions}</div></header>` : ""}
+    <div class="${pad ? "body" : ""}">${bodyHtml}</div></section>`;
+}
+/** The drawing-office title block — how this data actually appears on a sheet. */
+function titleBlock(pairs) {
+  return `<div class="titleblock">` + pairs.map(([label, value, mono]) =>
+    `<div><div class="lbl">${esc(label)}</div>
+      <div class="val ${mono ? "mono" : ""}">${value === "" || value == null ? "—" : esc(value)}</div></div>`
+  ).join("") + `</div>`;
+}
+function pageHead(title, sub, actions) {
+  return `<div class="page-head">
+    <div><h1>${esc(title)}</h1>${sub ? `<div class="sub">${sub}</div>` : ""}</div>
+    <div class="actions no-print">${actions || ""}</div></div>`;
+}
+function emptyState(title, hint) {
+  return `<div class="empty"><div style="font-weight:500;color:var(--ink-2)">${esc(title)}</div>
+    ${hint ? `<div style="margin-top:4px;max-width:44ch;margin-inline:auto">${esc(hint)}</div>` : ""}</div>`;
+}
+
+/* ================================================================= router */
+const ROUTES = [
+  ["dashboard", "Dashboard",            "▦", "viewer"],
+  ["drawings",  "Drawings",             "◳", "viewer"],
+  ["standards", "Inspection Standards", "☰", "viewer"],
+  ["reports",   "Inspection Reports",   "✓", "viewer"],
+  ["analytics", "Analytics",            "◔", "viewer"],
+  ["admin",     "Administration",       "⚙", "admin"],
+];
+
+function go(hash) { location.hash = hash; }
+
+function currentRoute() {
+  const raw = (location.hash || "#/dashboard").replace(/^#\/?/, "");
+  const [name, id, sub] = raw.split("/");
+  return { name: name || "dashboard", id: id || null, sub: sub || null };
+}
+
+function render() {
+  const root = $("#root");
+  const r = currentRoute();
+  const entry = ROUTES.find(x => x[0] === r.name);
+  if (entry && !can(entry[3])) { go("#/dashboard"); return; }
+
+  let view;
+  try {
+    view = ({
+      dashboard: dashboardView,
+      drawings:  () => r.id ? drawingDetailView(r.id) : drawingsView(),
+      standards: () => !r.id ? standardsView()
+        : r.sub === "doc" ? standardDocView(r.id) : standardDetailView(r.id),
+      reports:   () => !r.id ? reportsView()
+        : r.sub === "doc" ? reportDocView(r.id) : reportDetailView(r.id),
+      analytics: analyticsView,
+      admin:     adminView,
+      settings:  settingsView,
+    }[r.name] || dashboardView)();
+  } catch (err) {
+    console.error(err);
+    view = `<div class="note fail">Something went wrong rendering this page: ${esc(err.message)}</div>`;
+  }
+
+  root.innerHTML = `
+    <div class="app">
+      <aside class="rail ${state.railOpen ? "open" : ""}" id="rail">
+        <div class="rail-brand">
+          <div class="rail-mark">QI</div>
+          <div><strong>Inspection Portal</strong><span>Quality Management</span></div>
+        </div>
+        <nav>
+          ${ROUTES.filter(([, , , min]) => can(min)).map(([key, label, icon]) =>
+            `<a href="#/${key}" class="${r.name === key ? "on" : ""}"><span class="ic">${icon}</span>${label}</a>`).join("")}
+        </nav>
+        <div class="rail-foot">
+          <div class="who">${esc(state.user.full_name)}</div>
+          <div class="role">${esc(titleCase(state.user.role))}</div>
+          <label>
+            <span class="lbl" style="color:#6d7f81;display:block;margin-top:10px">Acting as</span>
+            <select id="roleSwitch" title="Switch role to see what each one may change">
+              ${db.users.map(u => `<option value="${u.id}" ${u.id === state.user.id ? "selected" : ""}
+                >${esc(u.full_name)} — ${esc(titleCase(u.role))}</option>`).join("")}
+            </select>
+          </label>
+          <button class="btn sm" data-act="settings" style="width:100%;margin-top:8px;justify-content:center">Settings</button>
+        </div>
+      </aside>
+      <div class="main">
+        <header class="topbar no-print">
+          <button class="btn sm burger" data-act="rail">☰</button>
+          <input type="search" id="globalSearch" placeholder="Search reports — number, batch, PO or invoice"
+                 value="${esc(state.search || "")}">
+          <button class="btn sm" data-act="theme" title="Switch light / dark">◐</button>
+        </header>
+        <div class="content">${view}</div>
+      </div>
+    </div>`;
+}
+
+/* ============================================================== dashboard */
+function dashboardView() {
+  const reports = db.reports;
+  const closed = reports.filter(r => r.status === "approved" || r.status === "rejected");
+  const passed = reports.reduce((a, r) => a + r.passed_parameters, 0);
+  const failed = reports.reduce((a, r) => a + r.failed_parameters, 0);
+  const checked = passed + failed;
+  const critical = reports.reduce((a, r) => a + r.critical_failures, 0);
+  const pendingQa = reports.filter(r => r.status === "submitted").length;
+
+  const gran = state.trendGranularity || "weekly";
+  const recent = [...reports].sort((a, b) => (b.inspection_date || "").localeCompare(a.inspection_date || "")).slice(0, 8);
+
+  return pageHead("Quality Dashboard",
+    "Drawing analysis, released standards and shop-floor results",
+    `<a class="btn primary" href="#/drawings">Upload drawing</a>`) + `
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(178px,1fr));margin-bottom:16px">
+    ${kpi("Drawings uploaded", db.drawings.length, null, "accent")}
+    ${kpi("Standards generated", db.standards.length, `${db.standards.filter(s => s.status === "approved").length} approved`, "accent")}
+    ${kpi("Inspections completed", closed.length, `${reports.length - closed.length} open · ${pendingQa} awaiting QA`)}
+    ${kpi("Pass rate", checked ? (passed / checked * 100).toFixed(1) + "%" : "—",
+          `${checked.toLocaleString()} characteristics checked`, "pass")}
+    ${kpi("Fail rate", checked ? (failed / checked * 100).toFixed(1) + "%" : "—", null, "fail")}
+    ${kpi("Critical defects", critical, "across all lots", critical ? "fail" : "pass")}
+    ${kpi("Awaiting QA approval", pendingQa, null, pendingQa ? "warn" : null)}
+    ${kpi("Total reports", reports.length)}
+  </div>
+
+  <div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);margin-bottom:16px" id="dashRow1">
+    ${card("Inspection trend", trendChart(trendData(gran)), {
+      actions: ["daily", "weekly", "monthly"].map(g =>
+        `<button class="btn sm ${g === gran ? "primary" : ""}" data-gran="${g}">${titleCase(g)}</button>`).join(""),
+    })}
+    ${card("Failures by severity", donut(severityData(),
+      { critical: "var(--fail)", major: "var(--warn)", minor: "var(--line-strong)" }))}
+  </div>
+
+  <div class="grid" style="grid-template-columns:minmax(0,3fr) minmax(0,2fr);margin-bottom:16px" id="dashRow2">
+    ${card("Pareto — failing characteristics", paretoChart(paretoData(8)))}
+    ${card("Part-wise defect analysis", rankedBars(partData(),
+      (r, i) => "var(--warn)"))}
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-bottom:16px">
+    ${card("Supplier performance", supplierTable(), { pad: false })}
+    ${card("Inspector performance", inspectorTable(), { pad: false })}
+  </div>
+
+  ${card("Recent inspection reports", `<div class="tablewrap"><table>
+    <thead><tr><th>Report no.</th><th>Part</th><th>Supplier</th><th>Batch</th><th>Date</th>
+      <th class="r">Checked</th><th class="r">Failed</th><th>Result</th><th>Status</th></tr></thead>
+    <tbody>${recent.map(r => {
+      const sup = byId("suppliers", r.supplier_id), part = byId("parts", r.part_id);
+      return `<tr class="${r.failed_parameters ? "row-fail" : ""}">
+        <td><a href="#/reports/${r.id}" class="mono">${esc(r.report_number)}</a></td>
+        <td>${esc(part?.part_number || "—")}</td>
+        <td>${esc(sup?.name || "—")}</td>
+        <td class="mono" style="font-size:12px">${esc(r.batch_number || "—")}</td>
+        <td>${fmtDate(r.inspection_date)}</td>
+        <td class="r num">${r.total_parameters}</td>
+        <td class="r num">${r.failed_parameters
+          ? `<b style="color:var(--fail)">${r.failed_parameters}</b>` : "0"}</td>
+        <td>${chip(r.overall_result)}</td>
+        <td>${chip(r.status)}</td></tr>`;
+    }).join("")}</tbody></table></div>`,
+    { pad: false, actions: `<a class="btn sm" href="#/reports">View all</a>` })}`;
+}
+
+/* ------------------------------------------------------ dashboard queries */
+function bucketOf(iso, gran) {
+  const d = new Date(iso);
+  if (gran === "monthly") return iso.slice(0, 7);
+  if (gran === "weekly") {
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+    const week = Math.ceil(((t - new Date(Date.UTC(t.getUTCFullYear(), 0, 1))) / 86400000 + 1) / 7);
+    return `${t.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+  }
+  return iso;
+}
+function trendData(gran) {
+  const map = new Map();
+  db.reports.forEach(r => {
+    if (!r.inspection_date) return;
+    const key = bucketOf(r.inspection_date, gran);
+    const row = map.get(key) || { period: key, inspections: 0, passed: 0, failed: 0 };
+    row.inspections++;
+    if (r.overall_result === "ACCEPTED") row.passed++;
+    else if (r.failed_parameters) row.failed++;
+    map.set(key, row);
+  });
+  return [...map.values()].sort((a, b) => a.period.localeCompare(b.period)).slice(-18);
+}
+function paretoData(limit) {
+  const counts = new Map();
+  db.results.filter(r => r.result === FAIL).forEach(r => {
+    const p = byId("parameters", r.parameter_id);
+    if (!p) return;
+    counts.set(p.parameter, (counts.get(p.parameter) || 0) + 1);
+  });
+  const rows = [...counts.entries()].map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
+  const total = rows.reduce((a, r) => a + r.count, 0);
+  let run = 0;
+  return rows.slice(0, limit).map(r => {
+    run += r.count;
+    return { ...r, cumulative: total ? round6(run / total * 100) : 0 };
+  });
+}
+function severityData() {
+  const counts = { critical: 0, major: 0, minor: 0 };
+  db.results.filter(r => r.result === FAIL).forEach(r => {
+    const p = byId("parameters", r.parameter_id);
+    if (p) counts[p.classification] = (counts[p.classification] || 0) + 1;
+  });
+  return Object.entries(counts).filter(([, v]) => v > 0).map(([label, value]) => ({ label, value }));
+}
+function partData() {
+  const map = new Map();
+  db.reports.forEach(r => {
+    const part = byId("parts", r.part_id);
+    if (!part) return;
+    map.set(part.part_number, (map.get(part.part_number) || 0) + r.failed_parameters);
+  });
+  return [...map.entries()].map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value).slice(0, 8);
+}
+function supplierTable() {
+  const rows = db.suppliers.map(s => {
+    const reports = db.reports.filter(r => r.supplier_id === s.id);
+    const passed = reports.reduce((a, r) => a + r.passed_parameters, 0);
+    const failed = reports.reduce((a, r) => a + r.failed_parameters, 0);
+    const rate = passed + failed ? passed / (passed + failed) * 100 : 0;
+    return { name: s.name, reports: reports.length, rate };
+  }).filter(r => r.reports).sort((a, b) => b.rate - a.rate);
+  if (!rows.length) return emptyState("No supplier data yet");
+  return `<div class="tablewrap"><table>
+    <thead><tr><th>Supplier</th><th class="r">Reports</th><th class="r">Pass rate</th><th style="width:34%">Rating</th></tr></thead>
+    <tbody>${rows.map(r => {
+      const colour = r.rate >= 98 ? "var(--pass)" : r.rate >= 92 ? "var(--warn)" : "var(--fail)";
+      return `<tr><td>${esc(r.name)}</td><td class="r num">${r.reports}</td>
+        <td class="r num mono" style="color:${colour};font-weight:600">${r.rate.toFixed(1)}%</td>
+        <td><div class="bar"><i style="width:${Math.min(100, r.rate)}%;background:${colour}"></i></div></td></tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+function inspectorTable() {
+  const rows = db.users.filter(u => db.reports.some(r => r.inspector_id === u.id)).map(u => {
+    const reports = db.reports.filter(r => r.inspector_id === u.id);
+    return { name: u.full_name, reports: reports.length,
+      found: reports.reduce((a, r) => a + r.failed_parameters, 0) };
+  }).sort((a, b) => b.reports - a.reports);
+  if (!rows.length) return emptyState("No inspector data yet");
+  return `<div class="tablewrap"><table>
+    <thead><tr><th>Inspector</th><th class="r">Reports</th><th class="r">Failures found</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td>${esc(r.name)}</td>
+      <td class="r num">${r.reports}</td><td class="r num">${r.found}</td></tr>`).join("")}</tbody></table></div>`;
+}
+
+/* =============================================================== drawings */
+function drawingsView() {
+  const q = (state.drawingQuery || "").toLowerCase();
+  const filter = state.drawingStatus || "";
+  const rows = db.drawings.filter(d =>
+    (!q || d.drawing_number.toLowerCase().includes(q) || (d.file_name || "").toLowerCase().includes(q)) &&
+    (!filter || d.status === filter)
+  ).sort((a, b) => b.id - a.id);
+
+  const body = rows.length ? `<div class="tablewrap"><table>
+    <thead><tr><th>Drawing no.</th><th>Title</th><th>Part</th><th>File</th><th class="r">Size</th>
+      <th>Uploaded</th><th>By</th><th>Characteristics</th><th>Status</th><th></th></tr></thead>
+    <tbody>${rows.map(d => {
+      const part = byId("parts", d.part_id);
+      const rev = db.revisions.find(r => r.drawing_id === d.id && r.is_current);
+      const dims = rev?.extraction?.dimensions?.length || 0;
+      const unver = rev?.extraction?.dimensions?.filter(x => x.requires_manual_verification).length || 0;
+      return `<tr>
+        <td><a href="#/drawings/${d.id}" class="mono">${esc(d.drawing_number)}</a>
+            <div style="color:var(--ink-3);font-size:11.5px">Rev ${esc(rev?.revision || "—")}</div></td>
+        <td>${esc(d.title || "—")}</td>
+        <td class="mono" style="font-size:12px">${esc(part?.part_number || "—")}</td>
+        <td style="max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+            color:var(--ink-3);font-size:12px">${esc(d.file_name)}</td>
+        <td class="r num">${fmtBytes(d.file_size)}</td>
+        <td>${fmtDate(d.created_at)}</td>
+        <td>${esc(byId("users", d.uploaded_by_id)?.full_name || "—")}</td>
+        <td>${dims ? `${dims}${unver ? ` <span class="chip warn">${unver} unverified</span>` : ""}` : "—"}</td>
+        <td>${chip(d.status)}</td>
+        <td class="r"><a class="btn sm" href="#/drawings/${d.id}">Open</a></td></tr>`;
+    }).join("")}</tbody></table></div>`
+    : emptyState("No drawings match", "Upload a PDF or scanned drawing to start the extraction workflow.");
+
+  return pageHead("Engineering Drawings",
+    "Upload a sheet, then run the vision pipeline over it",
+    can("inspector") ? `<button class="btn primary" data-act="upload">Upload drawing</button>` : "") +
+    card(`${rows.length} drawing${rows.length === 1 ? "" : "s"}`, body, {
+      pad: false,
+      actions: `<input class="in" style="width:190px;padding:5px 9px" placeholder="Search drawing number"
+                  id="drawingQuery" value="${esc(state.drawingQuery || "")}">
+        <select class="in" style="width:140px;padding:5px 9px" id="drawingStatus">
+          ${["", "uploaded", "analyzing", "analyzed", "failed"].map(v =>
+            `<option value="${v}" ${v === filter ? "selected" : ""}>${v ? titleCase(v) : "All statuses"}</option>`).join("")}
+        </select>`,
+    });
+}
+
+function drawingDetailView(id) {
+  const drawing = byId("drawings", id);
+  if (!drawing) return `<div class="note fail">Drawing not found.</div>`;
+  const rev = db.revisions.find(r => r.drawing_id === drawing.id && r.is_current)
+           || db.revisions.filter(r => r.drawing_id === drawing.id).pop();
+  const ex = state.draftExtraction || rev?.extraction || null;
+  const part = byId("parts", drawing.part_id);
+  const unverified = ex ? ex.dimensions.filter(d => d.requires_manual_verification).length : 0;
+  const editable = can("quality_manager");
+  const blobUrl = blobs.get(drawing.id) || SHEETS[drawing.drawing_number] || null;
+  const isImage = blobs.has(drawing.id)
+    ? drawing.mime_type.startsWith("image/")
+    : !!SHEETS[drawing.drawing_number];
+
+  const notices = [];
+  if (rev?.extraction_error) notices.push(`<div class="note fail">Last analysis failed: ${esc(rev.extraction_error)}</div>`);
+  if (ex && unverified) notices.push(`<div class="note warn">
+    <b>${unverified}</b> characteristic${unverified === 1 ? "" : "s"} could not be read confidently and
+    ${unverified === 1 ? "is" : "are"} held as <em>Requires Manual Verification</em>. Supply the value from
+    the drawing and tick Verified — the standard cannot be approved until every row is cleared.</div>`);
+  if (ex && !unverified && ex.dimensions.length) notices.push(`<div class="note pass">
+    All ${ex.dimensions.length} characteristics verified. Ready to generate the inspection standard.</div>`);
+  if (!settings.apiKey) notices.push(`<div class="note info">
+    No API key configured, so <b>Run AI analysis</b> loads a worked demo extraction instead of reading your file.
+    Add a key under Settings to analyse real drawings.</div>`);
+
+  const preview = blobUrl
+    ? (isImage
+        ? `<div class="preview" style="overflow:auto"><img src="${blobUrl}"
+             alt="Drawing sheet ${esc(drawing.drawing_number)}" style="width:100%"></div>`
+        : `<iframe class="preview" src="${blobUrl}" title="Drawing sheet ${esc(drawing.drawing_number)}"></iframe>`)
+    : emptyState("No preview in this session",
+        "Uploaded files are held in memory only, so a page reload keeps the record but drops the image. Re-upload to preview.");
+
+  const headerFields = [
+    ["part_name", "Part name"], ["part_number", "Part number"], ["drawing_number", "Drawing number"],
+    ["drawing_revision", "Revision"], ["material", "Material"], ["units", "Units"],
+  ];
+
+  return pageHead(drawing.drawing_number,
+    `${esc(drawing.title || "Untitled sheet")} · Rev ${esc(rev?.revision || "—")} ${chip(drawing.status)}
+     ${rev?.extraction_engine ? `<span class="chip info">${esc(rev.extraction_engine)}</span>` : ""}
+     ${part ? `<span class="mono" style="font-size:12px;color:var(--ink-3)">${esc(part.part_number)}</span>` : ""}`,
+    `<a class="btn" href="#/drawings">Back</a>
+     ${can("inspector") ? `<button class="btn" data-act="analyze" data-id="${drawing.id}">
+        ${rev?.extraction ? "Re-run AI analysis" : "Run AI analysis"}</button>` : ""}
+     ${editable && ex ? `<button class="btn" data-act="save-extraction" data-rev="${rev.id}">Save verification</button>
+        <button class="btn primary" data-act="gen-standard" data-rev="${rev.id}">Generate standard</button>` : ""}`) +
+
+  (notices.length ? `<div class="stack" style="margin-bottom:16px">${notices.join("")}</div>` : "") + `
+
+  <div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,3fr);margin-bottom:16px" id="drawRow">
+    ${card("Drawing sheet", preview, { pad: false })}
+    <div class="stack">
+      ${card("Title block — extracted", !ex
+        ? emptyState("Not analysed yet", "Run the AI analysis to read dimensions, tolerances and GD&T from this sheet.")
+        : `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+            ${headerFields.map(([key, label]) => {
+              const flagged = ex.header_requires_verification?.[key];
+              return `<label class="f"><span class="lbl">${esc(label)}</span>
+                <input class="in ${flagged ? "bad" : ""}" data-header="${key}" value="${esc(ex[key] || "")}"
+                  placeholder="${flagged ? "Requires verification" : ""}" ${editable ? "" : "disabled"}></label>`;
+            }).join("")}
+          </div>
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:14px;
+               border-top:1px solid var(--line);padding-top:12px">
+            <div><div class="lbl">General tolerance note</div>
+              <div style="margin-top:2px">${ex.general_tolerance_note
+                ? esc(ex.general_tolerance_note)
+                : `<span style="color:var(--warn)">Not legible — verify manually</span>`}</div></div>
+            <div><div class="lbl">Extraction confidence</div>
+              <div style="margin-top:2px" class="num">${(ex.overall_confidence * 100).toFixed(0)}% mean across
+                ${ex.dimensions.length} characteristics · threshold ${(ex.confidence_threshold * 100).toFixed(0)}%</div></div>
+            ${ex.unreadable_areas?.length ? `<div style="grid-column:1/-1"><div class="lbl">Reported unreadable</div>
+              <div style="margin-top:2px;color:var(--warn)">${esc(ex.unreadable_areas.join(" · "))}</div></div>` : ""}
+            ${ex.notes?.length ? `<div style="grid-column:1/-1"><div class="lbl">Drawing notes</div>
+              <div style="margin-top:4px;display:grid;gap:4px">${ex.notes.map(n =>
+                `<div>${n.is_inspection_requirement ? `<span class="chip info">Inspection</span> ` : ""}${esc(n.text)}</div>`
+              ).join("")}</div></div>` : ""}
+          </div>`)}
+    </div>
+  </div>
+
+  ${ex ? card(`Extracted characteristics — ${ex.dimensions.length}`, `<div class="tablewrap"><table>
+    <thead><tr><th style="width:44px">Ref</th><th style="min-width:180px">Characteristic</th>
+      <th style="min-width:150px">Callout</th><th>Type</th><th class="r" style="width:96px">Nominal</th>
+      <th class="r" style="width:88px">Upper tol.</th><th class="r" style="width:88px">Lower tol.</th>
+      <th style="width:62px">Unit</th><th style="width:104px">Class</th>
+      <th class="r" style="width:60px">Conf.</th><th style="width:104px">Verified</th></tr></thead>
+    <tbody>${ex.dimensions.map((d, i) => `
+      <tr class="${d.requires_manual_verification ? "row-warn" : ""}">
+        <td class="sev ${esc(d.classification)} mono num" style="color:var(--ink-3)">${esc(d.reference || i + 1)}</td>
+        <td><input class="in cell" data-dim="${i}" data-field="label" value="${esc(d.label)}" ${editable ? "" : "disabled"}>
+          ${d.requires_manual_verification && d.verification_reasons?.length
+            ? `<div style="font-size:11.5px;color:var(--warn);margin-top:3px">${esc(d.verification_reasons.join("; "))}</div>` : ""}
+          ${d.gdt_symbol ? `<div style="font-size:11.5px;color:var(--ink-3);margin-top:3px">GD&amp;T ${esc(d.gdt_symbol)}${
+            d.datums ? ` | datums ${esc(d.datums)}` : ""}</div>` : ""}</td>
+        <td><input class="in cell mono" data-dim="${i}" data-field="specification_text"
+              value="${esc(d.specification_text)}" ${editable ? "" : "disabled"}></td>
+        <td style="font-size:11.5px;color:var(--ink-3)">${esc(d.dimension_type)}</td>
+        ${["nominal_value", "upper_tolerance", "lower_tolerance"].map(f =>
+          `<td><input class="in cell r" type="number" step="any" data-dim="${i}" data-field="${f}"
+             value="${d[f] ?? ""}" placeholder="—" ${editable ? "" : "disabled"}></td>`).join("")}
+        <td><input class="in cell" data-dim="${i}" data-field="unit" value="${esc(d.unit || "")}" ${editable ? "" : "disabled"}></td>
+        <td><select class="in cell" data-dim="${i}" data-field="classification" ${editable ? "" : "disabled"}>
+          ${["critical", "major", "minor"].map(c =>
+            `<option value="${c}" ${c === d.classification ? "selected" : ""}>${titleCase(c)}</option>`).join("")}</select></td>
+        <td class="r num mono" style="font-size:11.5px;color:var(--ink-3)">${(d.confidence * 100).toFixed(0)}%</td>
+        <td><label style="display:flex;align-items:center;gap:6px;font-size:11.5px">
+          <input type="checkbox" data-verify="${i}" ${d.requires_manual_verification ? "" : "checked"} ${editable ? "" : "disabled"}>
+          ${d.requires_manual_verification ? `<span style="color:var(--warn)">Pending</span>` : "Verified"}</label></td>
+      </tr>`).join("")}</tbody></table></div>`,
+    { pad: false, actions: `<span style="font-size:11.5px;color:var(--ink-3)">
+        Amber rows block approval until a value is supplied</span>` }) : ""}`;
+}
+
+/* ------------------------------------------------------- drawing actions */
+async function runAnalysis(drawingId) {
+  const drawing = byId("drawings", drawingId);
+  const rev = db.revisions.find(r => r.drawing_id === drawing.id && r.is_current);
+  if (!rev) return toast("This drawing has no current revision", "bad");
+  const ext = (drawing.file_name || "").toLowerCase().split(".").pop();
+  if (ext === "dwg" || ext === "dxf")
+    return toast("Native CAD must be exported to PDF before AI analysis", "bad");
+
+  drawing.status = rev.status = "analyzing"; save(); render();
+  toast("Reading the drawing…");
+
+  try {
+    const file = state.files?.get(drawing.id);
+    let extraction;
+    if (settings.apiKey && file) {
+      extraction = await extractWithAI(file);
+    } else if (settings.apiKey && !file) {
+      throw new Error("The original file is no longer in this session — re-upload it to analyse");
+    } else {
+      await new Promise(r => setTimeout(r, 700));
+      extraction = drawing.drawing_number === "DWG-4471"
+        ? demoExtraction() : offlineExtraction(drawing.file_name);
+    }
+    rev.extraction = extraction;
+    rev.extraction_confidence = extraction.overall_confidence;
+    rev.extraction_engine = extraction.engine;
+    rev.extraction_error = null;
+    rev.analyzed_at = new Date().toISOString();
+    rev.status = drawing.status = "analyzed";
+    if (extraction.drawing_revision && (rev.revision === "-" || !rev.revision))
+      rev.revision = String(extraction.drawing_revision).slice(0, 20);
+    const part = byId("parts", drawing.part_id);
+    if (part && extraction.material && !part.material) part.material = extraction.material;
+
+    state.draftExtraction = null;
+    audit("drawing.analyze", "drawing_revision", rev.id,
+      { engine: extraction.engine, characteristics: extraction.dimensions.length });
+    save(); render();
+    const unver = extraction.dimensions.filter(d => d.requires_manual_verification).length;
+    toast(unver ? `Analysis complete — ${unver} characteristic(s) need manual verification`
+                : "Analysis complete — all characteristics read confidently", unver ? "" : "good");
+  } catch (err) {
+    drawing.status = rev.status = "failed";
+    rev.extraction_error = err.message;
+    audit("drawing.analyze.failed", "drawing", drawing.id, { error: err.message });
+    save(); render();
+    toast(err.message, "bad");
+  }
+}
+
+function generateStandard(revId) {
+  const rev = byId("revisions", revId);
+  const extraction = state.draftExtraction || rev.extraction;
+  if (!extraction) return toast("Run the AI analysis first", "bad");
+  persistExtraction(revId, { silent: true });
+
+  const drawing = byId("drawings", rev.drawing_id);
+  const version = db.standards.filter(s => s.drawing_revision_id === rev.id).length + 1;
+  const standard = {
+    id: nextId("standards"),
+    code: `IS-${drawing.drawing_number}-${rev.revision}-v${version}`.replace(/\s+/g, ""),
+    title: `Inspection Standard — ${drawing.title || drawing.drawing_number} (Rev ${rev.revision})`,
+    drawing_revision_id: rev.id, part_id: drawing.part_id, version,
+    status: "draft", notes: null,
+    created_by_id: state.user.id, approved_by_id: null, approved_at: null,
+    created_at: new Date().toISOString(),
+  };
+  db.standards.push(standard);
+  buildParameters(extraction).forEach(p =>
+    db.parameters.push({ id: nextId("parameters"), standard_id: standard.id, ...p }));
+
+  audit("standard.generate", "standard", standard.id, { version });
+  state.draftExtraction = null;
+  save();
+  toast(`Generated ${standard.code}`, "good");
+  go(`#/standards/${standard.id}`);
+}
+
+function persistExtraction(revId, opts = {}) {
+  const rev = byId("revisions", revId);
+  if (!rev || !state.draftExtraction) { if (!opts.silent) toast("Nothing to save"); return; }
+  rev.extraction = state.draftExtraction;
+  rev.extraction_confidence = state.draftExtraction.overall_confidence;
+  rev.verified_by_id = state.user.id;
+  rev.verified_at = new Date().toISOString();
+  audit("extraction.verify", "drawing_revision", rev.id);
+  state.draftExtraction = null;
+  save();
+  if (!opts.silent) { render(); toast("Verified extraction saved", "good"); }
+}
+
+/* ============================================================== standards */
+function standardsView() {
+  const q = (state.standardQuery || "").toLowerCase();
+  const filter = state.standardStatus || "";
+  const rows = db.standards.filter(s =>
+    (!q || s.code.toLowerCase().includes(q) || s.title.toLowerCase().includes(q)) &&
+    (!filter || s.status === filter)).sort((a, b) => b.id - a.id);
+
+  const body = rows.length ? `<div class="tablewrap"><table>
+    <thead><tr><th>Code</th><th>Title</th><th>Part</th><th class="r">Ver.</th>
+      <th class="r">Parameters</th><th>Verification</th><th>Created</th><th>Approved by</th>
+      <th>Status</th><th></th></tr></thead>
+    <tbody>${rows.map(s => {
+      const params = db.parameters.filter(p => p.standard_id === s.id);
+      const unver = params.filter(p => p.requires_manual_verification).length;
+      return `<tr>
+        <td><a href="#/standards/${s.id}" class="mono">${esc(s.code)}</a></td>
+        <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title)}</td>
+        <td class="mono" style="font-size:12px">${esc(byId("parts", s.part_id)?.part_number || "—")}</td>
+        <td class="r num">v${s.version}</td>
+        <td class="r num">${params.length}</td>
+        <td>${unver ? `<span class="chip warn">${unver} pending</span>` : `<span class="chip pass">Complete</span>`}</td>
+        <td>${fmtDate(s.created_at)}</td>
+        <td>${esc(byId("users", s.approved_by_id)?.full_name || "—")}</td>
+        <td>${chip(s.status)}</td>
+        <td class="r"><a class="btn sm" href="#/standards/${s.id}">Open</a></td></tr>`;
+    }).join("")}</tbody></table></div>`
+    : emptyState("No inspection standards", "Analyse a drawing, verify the characteristics, then generate a standard.");
+
+  return pageHead("Inspection Standards", "Controlled inspection plans built from verified drawing extractions") +
+    card(`${rows.length} standard${rows.length === 1 ? "" : "s"}`, body, {
+      pad: false,
+      actions: `<input class="in" style="width:190px;padding:5px 9px" placeholder="Search code or title"
+                  id="standardQuery" value="${esc(state.standardQuery || "")}">
+        <select class="in" style="width:140px;padding:5px 9px" id="standardStatus">
+          ${["", "draft", "approved", "archived"].map(v =>
+            `<option value="${v}" ${v === filter ? "selected" : ""}>${v ? titleCase(v) : "All statuses"}</option>`).join("")}
+        </select>`,
+    });
+}
+
+function standardDetailView(id) {
+  const s = byId("standards", id);
+  if (!s) return `<div class="note fail">Inspection standard not found.</div>`;
+  const params = db.parameters.filter(p => p.standard_id === s.id).sort((a, b) => a.seq - b.seq);
+  const unver = params.filter(p => p.requires_manual_verification).length;
+  const editable = can("quality_manager") && s.status === "draft";
+  const part = byId("parts", s.part_id);
+  const rev = byId("revisions", s.drawing_revision_id);
+  const drawing = rev ? byId("drawings", rev.drawing_id) : null;
+
+  const notices = [];
+  if (unver) notices.push(`<div class="note warn">${unver} parameter${unver === 1 ? "" : "s"} still marked
+    <em>Requires Manual Verification</em>. Enter the nominal and tolerance from the drawing and clear the flag —
+    approval is refused until then.</div>`);
+  if (s.status !== "draft") notices.push(`<div class="note info">This standard is ${esc(s.status)} and therefore
+    read-only. Generate a new version from the drawing to make changes.</div>`);
+
+  return pageHead(s.code,
+    `${esc(s.title)} · v${s.version} ${chip(s.status)}
+     ${s.approved_by_id ? `<span style="font-size:12px;color:var(--ink-3)">Approved by
+        ${esc(byId("users", s.approved_by_id)?.full_name)} on ${fmtDate(s.approved_at)}</span>` : ""}`,
+    `<a class="btn" href="#/standards">Back</a>
+     ${drawing ? `<a class="btn" href="#/drawings/${drawing.id}">View drawing</a>` : ""}
+     <a class="btn" href="#/standards/${s.id}/doc">Controlled document</a>
+     ${editable ? `<button class="btn" data-act="add-param" data-id="${s.id}">Add parameter</button>
+        <button class="btn" data-act="save-standard" data-id="${s.id}">Save changes</button>
+        <button class="btn primary" data-act="approve-standard" data-id="${s.id}">Approve standard</button>` : ""}
+     ${s.status === "approved" && can("inspector")
+        ? `<button class="btn primary" data-act="new-report" data-id="${s.id}">Create inspection report</button>` : ""}`) +
+
+  (notices.length ? `<div class="stack" style="margin-bottom:16px">${notices.join("")}</div>` : "") +
+
+  `<div style="margin-bottom:16px">${titleBlock([
+    ["Part name", part?.part_name], ["Part number", part?.part_number, true],
+    ["Drawing number", drawing?.drawing_number, true], ["Revision", rev?.revision],
+    ["Material", part?.material],
+    ["Customer", part?.customer_name], ["Standard code", s.code, true],
+    ["Version", "v" + s.version], ["Prepared by", byId("users", s.created_by_id)?.full_name],
+    ["Characteristics", `${params.length} (${params.filter(p => p.classification === "critical").length} critical)`],
+  ])}</div>` +
+
+  card(`Inspection parameters — ${params.length}`, `<div class="tablewrap"><table>
+    <thead><tr><th style="width:40px">S.No</th><th style="min-width:165px">Inspection parameter</th>
+      <th style="min-width:145px">Specification</th><th class="r" style="width:90px">Nominal</th>
+      <th class="r" style="width:84px">Upper tol.</th><th class="r" style="width:84px">Lower tol.</th>
+      <th style="width:56px">Unit</th><th style="min-width:135px">Inspection method</th>
+      <th style="min-width:150px">Measuring instrument</th><th style="min-width:110px">Frequency</th>
+      <th style="min-width:140px">Sampling plan</th><th style="min-width:140px">Acceptance criteria</th>
+      <th style="width:98px">Class</th><th style="width:80px">Ref. dim.</th>
+      <th style="min-width:150px">Remarks</th></tr></thead>
+    <tbody>${params.map(p => `
+      <tr class="${p.requires_manual_verification ? "row-warn" : ""}">
+        <td class="sev ${esc(p.classification)} num" style="color:var(--ink-3)">${p.seq}</td>
+        <td><input class="in cell" data-param="${p.id}" data-field="parameter" value="${esc(p.parameter)}" ${editable ? "" : "disabled"}>
+          <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);margin-top:3px">
+            <input type="checkbox" data-param="${p.id}" data-field="is_attribute" ${p.is_attribute ? "checked" : ""} ${editable ? "" : "disabled"}>
+            Attribute — inspector verdict</label></td>
+        <td><input class="in cell mono" data-param="${p.id}" data-field="specification" value="${esc(p.specification)}" ${editable ? "" : "disabled"}></td>
+        ${["nominal_value", "upper_tolerance", "lower_tolerance"].map(f =>
+          `<td><input class="in cell r" type="number" step="any" data-param="${p.id}" data-field="${f}"
+             value="${p[f] ?? ""}" placeholder="—" ${editable ? "" : "disabled"}></td>`).join("")}
+        <td><input class="in cell" data-param="${p.id}" data-field="unit" value="${esc(p.unit || "")}" ${editable ? "" : "disabled"}></td>
+        <td><input class="in cell" data-param="${p.id}" data-field="inspection_method" value="${esc(p.inspection_method || "")}" ${editable ? "" : "disabled"}></td>
+        <td><select class="in cell" data-param="${p.id}" data-field="instrument_id" ${editable ? "" : "disabled"}>
+            <option value="">${esc(p.instrument_text || "— select —")}</option>
+            ${db.instruments.map(i => `<option value="${i.id}" ${i.id === p.instrument_id ? "selected" : ""}>${esc(i.name)}</option>`).join("")}
+          </select></td>
+        <td><input class="in cell" data-param="${p.id}" data-field="frequency" value="${esc(p.frequency || "")}" ${editable ? "" : "disabled"}></td>
+        <td><input class="in cell" data-param="${p.id}" data-field="sampling_plan" value="${esc(p.sampling_plan || "")}" ${editable ? "" : "disabled"}></td>
+        <td><input class="in cell" data-param="${p.id}" data-field="acceptance_criteria" value="${esc(p.acceptance_criteria || "")}" ${editable ? "" : "disabled"}>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:3px" class="mono">${esc(limitsText(p))}</div></td>
+        <td><select class="in cell" data-param="${p.id}" data-field="classification" ${editable ? "" : "disabled"}>
+          ${["critical", "major", "minor"].map(c => `<option value="${c}" ${c === p.classification ? "selected" : ""}>${titleCase(c)}</option>`).join("")}
+        </select></td>
+        <td><input class="in cell" data-param="${p.id}" data-field="reference_dimension" value="${esc(p.reference_dimension || "")}" ${editable ? "" : "disabled"}></td>
+        <td><input class="in cell" data-param="${p.id}" data-field="remarks" value="${esc(p.remarks || "")}" ${editable ? "" : "disabled"}>
+          ${p.requires_manual_verification
+            ? `<label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--warn);margin-top:3px">
+                 <input type="checkbox" data-clear-verify="${p.id}" ${editable ? "" : "disabled"}> Requires manual verification</label>`
+            : `<div style="margin-top:3px"><span class="chip pass">Verified</span></div>`}</td>
+      </tr>`).join("")}</tbody></table></div>`, { pad: false });
+}
+
+/* ------------------------------------ BNC-format controlled standard sheet */
+const CTQ_MARK = { critical: "●", major: "◐", minor: "" };
+
+function standardDocView(id) {
+  const s = byId("standards", id);
+  if (!s) return `<div class="note fail">Inspection standard not found.</div>`;
+  const params = db.parameters.filter(p => p.standard_id === s.id).sort((a, b) => a.seq - b.seq);
+  const isAppearance = p => (p.characteristic_type || (p.is_attribute ? "appearance" : "dimensional")) === "appearance";
+  const appearance = params.filter(isAppearance);
+  const dimensional = params.filter(p => !isAppearance(p));
+  const part = byId("parts", s.part_id);
+  const rev = byId("revisions", s.drawing_revision_id);
+  const drawing = rev ? byId("drawings", rev.drawing_id) : null;
+
+  const head = (rows, offset) => rows.map((p, i) => `<tr>
+      <td class="c">${i + 1 + offset}</td>
+      <td>${esc(p.parameter)}</td>
+      <td class="c ctq">${CTQ_MARK[p.classification] || "-"}</td>
+      <td>${esc(p.is_attribute ? p.specification : p.acceptance_criteria || p.specification)}</td>
+      <td class="c">${esc(p.unit || "-")}</td>
+      <td>${esc(byId("instruments", p.instrument_id)?.name || p.instrument_text || "-")}</td>
+    </tr>`).join("");
+
+  const cols = `<thead><tr><th style="width:44px">SL. NO.</th><th style="width:24%">PARAMETERS</th>
+    <th style="width:44px">CTQ</th><th style="width:26%">SPECIFICATIONS</th>
+    <th style="width:44px">UOM</th><th>MEASURING METHOD</th></tr></thead>`;
+
+  return `<div class="no-print" style="max-width:1000px;margin:0 auto 14px;display:flex;
+      justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div class="actions">
+        <a class="btn" href="#/standards/${s.id}">Back to editor</a>
+        <button class="btn primary" data-act="print">Print / Save as PDF</button>
+      </div>
+      <span style="font-size:12px;color:var(--ink-3);align-self:center">
+        Controlled-document layout — ${params.length} characteristics
+        ${s.status === "draft" ? "· DRAFT, not yet approved" : ""}</span>
+    </div>
+  <div class="doc-wrap"><div class="doc">
+    <table style="margin-bottom:-1px">
+      <tr>
+        <td rowspan="3" class="c" style="width:150px;font-weight:700;font-size:20px;
+            letter-spacing:.08em">BNC</td>
+        <td rowspan="3" class="c"><h1>INSPECTION STANDARD</h1></td>
+        <td style="width:140px">DOC.NO</td><td style="width:180px">: ${esc(s.code)}</td>
+      </tr>
+      <tr><td>REV. NO/DATE</td><td>: NR / 01.03.2023</td></tr>
+      <tr><td>PAGE NO</td><td>: 01 of 01</td></tr>
+    </table>
+    <table style="margin-bottom:-1px">
+      <tr><td style="width:110px">PART NO</td><td>: ${esc(part?.part_number || "-")}</td>
+          <td style="width:150px">DRG.REV.NO/DATE</td>
+          <td style="width:190px">: ${esc(rev?.revision || "-")} / 22.06.2024</td></tr>
+      <tr><td>PART NAME</td><td>: ${esc(part?.part_name || "-")}</td>
+          <td>MODEL</td><td>: CHALLENGER</td></tr>
+      <tr><td>MATERIAL</td><td>: ${esc(part?.material || "-")}</td>
+          <td>DRAWING NO</td><td>: ${esc(drawing?.drawing_number || "-")}</td></tr>
+    </table>
+
+    <table style="margin-bottom:-1px">
+      <tr><td colspan="6" class="band">APPEARANCE INSPECTION</td></tr>
+    </table>
+    <table style="margin-bottom:-1px">${cols}<tbody>${head(appearance, 0)}</tbody></table>
+
+    <table style="margin-bottom:-1px">
+      <tr><td colspan="6" class="band">DIMENSION INSPECTION</td></tr>
+    </table>
+    <table style="margin-bottom:-1px">${cols}<tbody>${head(dimensional, 0)}</tbody></table>
+
+    <table style="margin-bottom:-1px">
+      <tr><td class="c" style="width:33.33%"><span class="ctq">●</span> CRITICAL</td>
+          <td class="c" style="width:33.33%"><span class="ctq">◐</span> MAJOR</td>
+          <td class="c"><span class="ctq">▽</span> SAFETY</td></tr>
+    </table>
+
+    <table style="margin-bottom:-1px">
+      <tr><td colspan="6" class="band">SAMPLING PLAN AS PER IS:2500</td></tr>
+      <tr><th>PARAMETER / LOT QTY</th><th class="c">0 - 99</th><th class="c">100 - 199</th>
+          <th class="c">200 - 499</th><th class="c">500 - 999</th><th class="c">&gt;1000</th></tr>
+      <tr><td>DIMENSION / ATTRIBUTE</td><td class="c">3</td><td class="c">5</td>
+          <td class="c">8</td><td class="c">10</td><td class="c">20</td></tr>
+      <tr><td>REJECTION NO.</td><td class="c">0</td><td class="c">0</td>
+          <td class="c">0</td><td class="c">0</td><td class="c">0</td></tr>
+      <tr><td>PERFORMANCE</td><td class="c">1</td><td class="c">1</td>
+          <td class="c">1</td><td class="c">2</td><td class="c">3</td></tr>
+      <tr><td>WHILE OCCURRING CUSTOMER COMPLAINTS</td><td class="c">5</td><td class="c">10</td>
+          <td class="c">15</td><td class="c">20</td><td class="c">30</td></tr>
+      <tr><td colspan="6" class="c" style="font-weight:600">
+        RECORD THE MINIMUM AND MAXIMUM OF READING IN THE INSPECTION REPORTS</td></tr>
+    </table>
+
+    <table style="margin-bottom:-1px">
+      <tr><th style="width:90px">Rev. No</th><th>Changes</th><th style="width:130px">Date</th></tr>
+      <tr><td class="c">NR</td><td>New Release</td><td class="c">22.06.2024</td></tr>
+    </table>
+    <table>
+      <tr><td class="sig" style="width:50%">PREPARED BY:</td><td class="sig">APPROVED BY:</td></tr>
+    </table>
+  </div></div>`;
+}
+
+/* ================================================================ reports */
+function reportsView() {
+  const f = state.reportFilters || (state.reportFilters = { q: "", status: "", supplier: "", from: "", to: "" });
+  const q = (state.search || f.q || "").toLowerCase();
+  const rows = db.reports.filter(r =>
+    (!q || [r.report_number, r.batch_number, r.po_number, r.invoice_number]
+      .some(v => (v || "").toLowerCase().includes(q))) &&
+    (!f.status || r.status === f.status) &&
+    (!f.supplier || r.supplier_id === Number(f.supplier)) &&
+    (!f.from || (r.inspection_date || "") >= f.from) &&
+    (!f.to || (r.inspection_date || "") <= f.to)
+  ).sort((a, b) => (b.inspection_date || "").localeCompare(a.inspection_date || "") || b.id - a.id);
+
+  const filters = card("Filters", `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+    <label class="f"><span class="lbl">Search</span>
+      <input class="in" id="rfQ" value="${esc(state.search || f.q)}" placeholder="Report / batch / PO / invoice"></label>
+    <label class="f"><span class="lbl">Status</span>
+      <select class="in" id="rfStatus">${["", "draft", "submitted", "approved", "rejected"].map(v =>
+        `<option value="${v}" ${v === f.status ? "selected" : ""}>${v ? titleCase(v) : "All"}</option>`).join("")}</select></label>
+    <label class="f"><span class="lbl">Supplier</span>
+      <select class="in" id="rfSupplier"><option value="">All</option>${db.suppliers.map(s =>
+        `<option value="${s.id}" ${String(s.id) === f.supplier ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select></label>
+    <label class="f"><span class="lbl">From</span><input class="in" type="date" id="rfFrom" value="${esc(f.from)}"></label>
+    <label class="f"><span class="lbl">To</span><input class="in" type="date" id="rfTo" value="${esc(f.to)}"></label>
+  </div>`);
+
+  const body = rows.length ? `<div class="tablewrap"><table>
+    <thead><tr><th>Report no.</th><th>Part</th><th>Supplier</th><th>Batch</th><th>PO</th><th>Date</th>
+      <th>Shift</th><th>Inspector</th><th class="r">Checked</th><th class="r">Failed</th>
+      <th class="r">Critical</th><th>Result</th><th>Status</th><th></th></tr></thead>
+    <tbody>${rows.map(r => `<tr class="${r.critical_failures ? "row-fail" : ""}">
+      <td><a href="#/reports/${r.id}" class="mono">${esc(r.report_number)}</a></td>
+      <td class="mono" style="font-size:12px">${esc(byId("parts", r.part_id)?.part_number || "—")}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(byId("suppliers", r.supplier_id)?.name || "—")}</td>
+      <td class="mono" style="font-size:12px">${esc(r.batch_number || "—")}</td>
+      <td class="mono" style="font-size:12px">${esc(r.po_number || "—")}</td>
+      <td>${fmtDate(r.inspection_date)}</td><td>${esc(r.shift || "—")}</td>
+      <td>${esc(r.inspector_name || "—")}</td>
+      <td class="r num">${r.total_parameters}</td>
+      <td class="r num">${r.failed_parameters ? `<b style="color:var(--fail)">${r.failed_parameters}</b>` : "0"}</td>
+      <td class="r num">${r.critical_failures ? `<b style="color:var(--fail)">${r.critical_failures}</b>` : "0"}</td>
+      <td>${chip(r.overall_result)}</td><td>${chip(r.status)}</td>
+      <td class="r"><a class="btn sm" href="#/reports/${r.id}">Open</a></td></tr>`).join("")}</tbody></table></div>`
+    : emptyState("No reports match these filters", "Approve an inspection standard, then create a report against it.");
+
+  return pageHead("Inspection Reports", "Search by report number, batch, PO, invoice, supplier or date",
+      `<button class="btn" data-act="export-list">Export CSV</button>`) +
+    `<div style="margin-bottom:16px">${filters}</div>` +
+    card(`${rows.length} report${rows.length === 1 ? "" : "s"}`, body, { pad: false });
+}
+
+/* -------------------------------------------------------- report detail */
+function reportRows(report) {
+  return db.results.filter(r => r.report_id === report.id)
+    .sort((a, b) => a.seq - b.seq)
+    .map(row => {
+      const p = byId("parameters", row.parameter_id);
+      const draft = state.drafts?.[row.id];
+      const readings = draft && "readings" in draft ? draft.readings : (row.readings ?? "");
+      const manual = draft && "manual_result" in draft
+        ? draft.manual_result
+        : (p.is_attribute && row.result !== PENDING ? row.result : null);
+      return { row, p, draft, readings, manual, verdict: evaluateSample(p, readings, manual) };
+    });
+}
+
+function reportDetailView(id) {
+  const report = byId("reports", id);
+  if (!report) return `<div class="note fail">Inspection report not found.</div>`;
+  const rows = reportRows(report);
+  const part = byId("parts", report.part_id);
+  const drawing = byId("drawings", report.drawing_id);
+  const supplier = byId("suppliers", report.supplier_id);
+  const openForEdit = (report.status === "draft" || report.status === "submitted") && can("inspector");
+  const live = summarise(rows.map(r => ({ result: r.verdict.result, classification: r.p.classification })));
+  const dirty = !!state.drafts && Object.keys(state.drafts).length > 0;
+  const sampleQty = report.sample_quantity || 0;
+
+  const notices = [];
+  if (dirty) notices.push(`<div class="note warn">Unsaved measurements. The verdicts below are a live preview —
+    save to record them and update the summary.</div>`);
+  if (live.pending && openForEdit) notices.push(`<div class="note info">${live.pending} parameter${
+    live.pending === 1 ? "" : "s"} awaiting a result. The report cannot be submitted until every row is judged.</div>`);
+  if (report.critical_failures) notices.push(`<div class="note fail"><b>${report.critical_failures}</b>
+    critical characteristic${report.critical_failures === 1 ? "" : "s"} out of tolerance — this lot cannot ship on this report.</div>`);
+
+  return pageHead(report.report_number,
+    `${esc(part?.part_name || "—")} · ${esc(part?.part_number || "—")} · Drawing
+     ${esc(drawing?.drawing_number || "—")} Rev ${esc(report.drawing_revision || "—")}
+     ${chip(report.status)} ${chip(report.overall_result)}`,
+    `<a class="btn" href="#/reports">Back</a>
+     <a class="btn" href="#/reports/${report.id}/doc">Controlled document</a>
+     <button class="btn" data-act="export-report" data-id="${report.id}">Export CSV</button>
+     ${openForEdit ? `<button class="btn primary" data-act="save-results" data-id="${report.id}">
+        ${dirty ? "Save results" : "Re-evaluate"}</button>` : ""}
+     ${openForEdit && report.status === "draft"
+        ? `<button class="btn primary" data-act="sign" data-id="${report.id}">Sign &amp; submit</button>` : ""}
+     ${report.status === "submitted" && can("quality_manager")
+        ? `<button class="btn primary" data-act="qa" data-id="${report.id}">QA decision</button>` : ""}`) +
+
+  (notices.length ? `<div class="stack no-print" style="margin-bottom:16px">${notices.join("")}</div>` : "") +
+
+  `<div style="margin-bottom:16px">${titleBlock([
+    ["Company name", report.company_name], ["Supplier name", supplier?.name],
+    ["Customer name", report.customer_name], ["Part name", part?.part_name],
+    ["Part number", part?.part_number, true],
+    ["Drawing number", drawing?.drawing_number, true], ["Drawing revision", report.drawing_revision],
+    ["Batch / lot number", report.batch_number, true], ["PO number", report.po_number, true],
+    ["Invoice number", report.invoice_number, true],
+    ["Inspection date", fmtDate(report.inspection_date)], ["Shift", report.shift],
+    ["Machine number", report.machine_number], ["Operator name", report.operator_name],
+    ["Inspector name", report.inspector_name],
+  ])}</div>` +
+
+  card("Inspection results", `<div class="tablewrap"><table>
+    <thead><tr><th style="width:44px">S.No</th><th style="min-width:170px">Inspection parameter</th>
+      <th style="min-width:130px">Specification</th><th style="width:96px">Tolerance</th>
+      <th style="width:120px">Limits</th><th style="min-width:120px">Method</th>
+      <th style="min-width:140px">Instrument</th>
+      <th style="width:150px">Actual readings${sampleQty ? ` (${sampleQty} pcs)` : ""}</th>
+      <th class="r" style="width:74px">Min</th><th class="r" style="width:74px">Max</th>
+      <th style="width:96px">Result</th><th class="r" style="width:88px">Deviation</th>
+      <th style="min-width:150px">Defect description</th><th style="min-width:140px">Inspector remarks</th></tr></thead>
+    <tbody>${rows.map(({ row, p, draft, readings, manual, verdict }) => {
+      const failing = verdict.result === FAIL;
+      const d = draft || {};
+      const defectId = "defect_id" in d ? d.defect_id : row.defect_id;
+      const defectText = "defect_description" in d ? d.defect_description : row.defect_description;
+      const remarks = "remarks" in d ? d.remarks : row.remarks;
+      return `<tr class="${failing ? "row-fail" : verdict.result === PENDING ? "row-warn" : ""}">
+        <td class="sev ${esc(p.classification)} num" style="color:var(--ink-3)">${row.seq}</td>
+        <td><div style="font-weight:500">${esc(p.parameter)}</div>
+          <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">${chip(p.classification)}
+            ${p.requires_manual_verification ? `<span class="chip warn">Spec unverified</span>` : ""}</div></td>
+        <td class="mono" style="font-size:12px">${esc(p.specification || "—")}</td>
+        <td class="mono" style="font-size:12px">${esc(tolText(p))}</td>
+        <td class="mono" style="font-size:11.5px;color:var(--ink-3)">${esc(limitsText(p))}</td>
+        <td style="font-size:12px">${esc(p.inspection_method || "—")}</td>
+        <td style="font-size:12px">${esc(byId("instruments", p.instrument_id)?.name || p.instrument_text || "—")}</td>
+        <td>${p.is_attribute
+          ? `<select class="in cell" data-result="${row.id}" data-field="manual_result" ${openForEdit ? "" : "disabled"}>
+              <option value="">—</option>
+              ${[[PASS, "Conforms"], [FAIL, "Does not conform"], [NA, "Not applicable"]].map(([v, l]) =>
+                `<option value="${v}" ${manual === v ? "selected" : ""}>${l}</option>`).join("")}</select>`
+          : `<input class="in cell mono ${failing ? "bad" : ""}" data-result="${row.id}"
+              data-field="readings" value="${esc(readings ?? "")}"
+              placeholder="${p.requires_manual_verification ? "spec unverified" : "20.07, 20.11, 20.06"}"
+              title="One reading per piece, separated by commas or spaces"
+              ${openForEdit && !p.requires_manual_verification ? "" : "disabled"}>`}</td>
+        <td class="r mono num" style="font-size:12px">${verdict.min === null ? "—" : num(verdict.min)}</td>
+        <td class="r mono num" style="font-size:12px">${verdict.max === null ? "—" : num(verdict.max)}</td>
+        <td>${chip(verdict.result)}${verdict.result === PENDING
+          ? `<div style="font-size:11px;color:var(--ink-3);margin-top:3px">${esc(verdict.reason)}</div>` : ""}</td>
+        <td class="r mono num" style="font-size:12px">${verdict.deviation
+          ? `<b style="color:var(--fail)">${verdict.deviation > 0 ? "+" : ""}${num(verdict.deviation)}</b>` : "—"}</td>
+        <td>${failing ? `
+          <select class="in cell" data-result="${row.id}" data-field="defect_id" ${openForEdit ? "" : "disabled"}>
+            <option value="">— select defect —</option>
+            ${db.defects.map(x => `<option value="${x.id}" ${x.id === defectId ? "selected" : ""}>${esc(x.name)}</option>`).join("")}
+          </select>
+          <input class="in cell" style="margin-top:3px" placeholder="Description" data-result="${row.id}"
+            data-field="defect_description" value="${esc(defectText || "")}" ${openForEdit ? "" : "disabled"}>`
+          : `<span style="color:var(--ink-3);font-size:12px">—</span>`}</td>
+        <td><input class="in cell" data-result="${row.id}" data-field="remarks" value="${esc(remarks || "")}" ${openForEdit ? "" : "disabled"}></td>
+      </tr>`;
+    }).join("")}</tbody></table></div>`,
+    { pad: false, actions: `<span style="font-size:11.5px;color:var(--ink-3)" class="no-print">
+        Live: ${live.passed} pass · ${live.failed} fail · ${live.pending} pending</span>` }) +
+
+  `<h2 class="lbl" style="margin:20px 0 10px;font-size:12px">Final inspection summary</h2>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(168px,1fr));margin-bottom:16px">
+    ${kpi("Total parameters checked", report.total_parameters)}
+    ${kpi("Passed parameters", report.passed_parameters, null, "pass")}
+    ${kpi("Failed parameters", report.failed_parameters, null, report.failed_parameters ? "fail" : null)}
+    ${kpi("Critical failures", report.critical_failures,
+        `${report.major_failures} major · ${report.minor_failures} minor`,
+        report.critical_failures ? "fail" : "pass")}
+    ${kpi("Accepted quantity", report.accepted_quantity, `of ${report.lot_quantity} in lot`, "pass")}
+    ${kpi("Rejected quantity", report.rejected_quantity, null, report.rejected_quantity ? "fail" : null)}
+    ${kpi("Rework quantity", report.rework_quantity, null, report.rework_quantity ? "warn" : null)}
+    ${kpi("Overall result", chip(report.overall_result))}
+  </div>` +
+
+  card("Approvals", `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
+    <div><div class="lbl">Inspector signature</div>
+      <div class="sigline"><em>${esc(report.inspector_signature || "")}</em></div>
+      <div style="font-size:11.5px;color:var(--ink-3);margin-top:4px">${
+        report.inspector_signed_at ? fmtDateTime(report.inspector_signed_at) : "Not signed"}</div></div>
+    <div><div class="lbl">QA approval</div>
+      <div class="sigline"><em>${esc(report.qa_signature || "")}</em></div>
+      <div style="font-size:11.5px;color:var(--ink-3);margin-top:4px">${
+        report.qa_approved_at ? fmtDateTime(report.qa_approved_at) : "Not approved"}</div>
+      ${report.qa_remarks ? `<div style="font-size:12px;margin-top:5px">${esc(report.qa_remarks)}</div>` : ""}</div>
+    <div><div class="lbl">Digital approval status</div>
+      <div style="margin-top:8px">${chip(report.status)}</div>
+      <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">
+        Created ${fmtDateTime(report.created_at)}${report.qa_approver_id
+          ? ` · Decided by ${esc(byId("users", report.qa_approver_id)?.full_name)}` : ""}</div></div>
+  </div>`);
+}
+
+/* ------------------------------- BNC-format incoming inspection report ---- */
+function reportDocView(id) {
+  const report = byId("reports", id);
+  if (!report) return `<div class="note fail">Inspection report not found.</div>`;
+  const rows = reportRows(report);
+  const part = byId("parts", report.part_id);
+  const drawing = byId("drawings", report.drawing_id);
+  const supplier = byId("suppliers", report.supplier_id);
+
+  // Their form prints a fixed grid of reading cells; 6 matches the paper original.
+  const CELLS = 6;
+  const isAppearance = p => (p.characteristic_type || (p.is_attribute ? "appearance" : "dimensional")) === "appearance";
+  const appearance = rows.filter(r => isAppearance(r.p));
+  const dimensional = rows.filter(r => !isAppearance(r.p));
+
+  const body = list => list.map((r, i) => {
+    const values = parseReadings(r.readings);
+    const cells = [];
+    for (let c = 0; c < CELLS; c++) {
+      cells.push(r.p.is_attribute
+        ? (r.manual === PASS ? "Ok" : r.manual === FAIL ? "Not Ok" : r.manual === NA ? "NA" : "")
+        : (values[c] === undefined ? "" : num(values[c])));
+    }
+    const fail = r.verdict.result === FAIL;
+    return `<tr>
+      <td class="c">${i + 1}</td>
+      <td>${esc(r.p.parameter)}</td>
+      <td class="c ctq">${CTQ_MARK[r.p.classification] || "-"}</td>
+      <td>${esc(r.p.is_attribute ? r.p.specification : (r.p.acceptance_criteria || r.p.specification))}</td>
+      <td>${esc(byId("instruments", r.p.instrument_id)?.name || r.p.instrument_text || "-")}</td>
+      <td class="c">${esc(r.p.unit || "NA")}</td>
+      ${cells.map(v => `<td class="c mono">${esc(v)}</td>`).join("")}
+      <td class="c mono">${r.verdict.deviation ? (r.verdict.deviation > 0 ? "+" : "") + num(r.verdict.deviation) : "-"}</td>
+      <td class="c" style="${fail ? "font-weight:700" : ""}">${
+        r.verdict.result === PASS ? "Ok" : fail ? "Not Ok" : r.verdict.result === NA ? "NA" : "-"}</td>
+    </tr>`;
+  }).join("");
+
+  const cols = `<thead><tr>
+      <th style="width:34px">Sl.No.</th><th style="width:17%">Description</th>
+      <th style="width:34px">CTQ</th><th style="width:16%">Specification &amp; Characteristics</th>
+      <th style="width:15%">Method</th><th style="width:38px">UOM</th>
+      <th colspan="${CELLS}">Actual</th>
+      <th style="width:60px">Deviation</th><th style="width:56px">Remarks</th></tr></thead>`;
+
+  const tick = on => `<span style="display:inline-block;width:12px;height:12px;border:1px solid #000;
+    text-align:center;line-height:11px;font-size:10px;margin-right:5px">${on ? "✓" : ""}</span>`;
+
+  return `<div class="no-print" style="max-width:1180px;margin:0 auto 14px;display:flex;
+      justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div class="actions">
+        <a class="btn" href="#/reports/${report.id}">Back to entry form</a>
+        <button class="btn primary" data-act="print">Print / Save as PDF</button>
+      </div>
+      <span style="font-size:12px;color:var(--ink-3);align-self:center">
+        Controlled-document layout · ${esc(report.report_number)}</span>
+    </div>
+  <div class="doc-wrap"><div class="doc" style="max-width:1180px">
+    <table style="margin-bottom:-1px">
+      <tr>
+        <td rowspan="2" class="c" style="width:110px;font-weight:700;font-size:19px;
+            letter-spacing:.08em">BNC</td>
+        <td class="c" style="font-weight:700;font-size:13px">BNC MOTORS PRIVATE LIMITED</td>
+        <td style="width:150px">Rec. No: BNC-IQC-DIR01</td>
+      </tr>
+      <tr><td class="c"><h1>INCOMING INSPECTION REPORT</h1></td>
+          <td>Rev. No: 00 &nbsp;·&nbsp; Rev. Date: 15.03.2023</td></tr>
+    </table>
+    <table style="margin-bottom:-1px">
+      <tr>
+        <td style="width:80px">Part No.</td><td>: ${esc(part?.part_number || "-")}</td>
+        <td style="width:90px">Drg. Rev./Date</td><td>: ${esc(report.drawing_revision || "-")} / 22-06-2024</td>
+        <td style="width:80px">Invoice No.</td><td>: ${esc(report.invoice_number || "-")}</td>
+        <td style="width:90px">Supplier Name</td><td>: ${esc(supplier?.name || "-")}</td>
+        <td style="width:70px">Insp. Date</td><td>: ${esc(report.inspection_date || "-")}</td>
+      </tr>
+      <tr>
+        <td>Part Name</td><td>: ${esc(part?.part_name || "-")}</td>
+        <td>Model</td><td>: ${esc(report.customer_name || "-")}</td>
+        <td>PO No.</td><td>: ${esc(report.po_number || "-")}</td>
+        <td>Lot Qty.</td><td>: ${report.lot_quantity} no's</td>
+        <td>Sample Qty.</td><td>: ${report.sample_quantity} no's</td>
+      </tr>
+      <tr>
+        <td>Drawing No.</td><td>: ${esc(drawing?.drawing_number || "-")}</td>
+        <td>Batch / Lot</td><td>: ${esc(report.batch_number || "-")}</td>
+        <td>Shift</td><td>: ${esc(report.shift || "-")}</td>
+        <td>Machine No.</td><td>: ${esc(report.machine_number || "-")}</td>
+        <td>Sheet No.</td><td>: 1 / 1</td>
+      </tr>
+    </table>
+
+    <table style="margin-bottom:-1px"><tr><td colspan="14" class="band">Appearance Inspection</td></tr></table>
+    <table style="margin-bottom:-1px">${cols}<tbody>${body(appearance)}</tbody></table>
+
+    <table style="margin-bottom:-1px"><tr><td colspan="14" class="band">Dimensional Inspection</td></tr></table>
+    <table style="margin-bottom:-1px">${cols}<tbody>${body(dimensional)}</tbody></table>
+
+    <table style="margin-bottom:-1px">
+      <tr>
+        <td class="c" style="width:25%"><span class="ctq">●</span> CRITICAL</td>
+        <td class="c" style="width:25%"><span class="ctq">◐</span> MAJOR</td>
+        <td class="c" style="width:25%"><span class="ctq">▽</span> SAFETY</td>
+        <td class="c">Checked ${report.total_parameters} · Ok ${report.passed_parameters} ·
+            Not Ok ${report.failed_parameters} · Critical ${report.critical_failures}</td>
+      </tr>
+    </table>
+
+    <table style="margin-bottom:-1px">
+      <tr>
+        <td style="width:22%;vertical-align:top">
+          <div style="font-weight:700;margin-bottom:5px">Inspection Status :</div>
+          <div>${tick(report.overall_result === "ACCEPTED")}Accepted</div>
+          <div>${tick(report.overall_result === "ACCEPTED_WITH_DEVIATION")}Conditionally Accepted</div>
+          <div>${tick(report.overall_result === "REJECTED")}Rejected</div>
+        </td>
+        <td style="vertical-align:top">
+          <div style="font-weight:700;margin-bottom:5px">Remarks:</div>
+          <div>${esc(report.qa_remarks || "")}</div>
+          <div style="margin-top:6px">Accepted ${report.accepted_quantity} ·
+            Rejected ${report.rejected_quantity} · Rework ${report.rework_quantity}</div>
+        </td>
+        <td style="width:16%;vertical-align:top">
+          <div style="font-weight:700">For IQC Use:</div>
+        </td>
+      </tr>
+    </table>
+    <table>
+      <tr>
+        <td class="sig" style="width:33.33%">Inspected by :<br><br>
+          <b>${esc(report.inspector_signature || "")}</b></td>
+        <td class="sig" style="width:33.33%">Verified by :<br><br>
+          <b>${esc(report.qa_signature || "")}</b></td>
+        <td class="sig">Approved by :</td>
+      </tr>
+    </table>
+  </div></div>`;
+}
+
+/* --------------------------------------------------------- report actions */
+function recalcReport(report) {
+  const rows = db.results.filter(r => r.report_id === report.id)
+    .map(r => ({ result: r.result, classification: byId("parameters", r.parameter_id).classification }));
+  const s = summarise(rows);
+  Object.assign(report, {
+    total_parameters: s.total, passed_parameters: s.passed, failed_parameters: s.failed,
+    pending_parameters: s.pending, critical_failures: s.critical,
+    major_failures: s.major, minor_failures: s.minor, overall_result: s.overall,
+    updated_at: new Date().toISOString(),
+  });
+  if (report.status === "draft" && report.lot_quantity) {
+    if (s.overall === "ACCEPTED") {
+      report.accepted_quantity = report.lot_quantity;
+      report.rejected_quantity = report.rework_quantity = 0;
+    } else if (s.overall === "REJECTED") {
+      report.rejected_quantity = report.lot_quantity;
+      report.accepted_quantity = report.rework_quantity = 0;
+    }
+  }
+  return s;
+}
+
+function saveResults(reportId) {
+  const report = byId("reports", reportId);
+  const drafts = state.drafts || {};
+  Object.entries(drafts).forEach(([resultId, draft]) => {
+    const row = byId("results", resultId);
+    if (!row) return;
+    const p = byId("parameters", row.parameter_id);
+    if ("readings" in draft) row.readings = draft.readings;
+    if ("remarks" in draft) row.remarks = draft.remarks;
+    if ("defect_id" in draft) row.defect_id = draft.defect_id;
+    if ("defect_description" in draft) row.defect_description = draft.defect_description;
+    if ("manual_result" in draft) row.actual_text =
+      draft.manual_result === PASS ? "Conforms" : draft.manual_result === FAIL ? "Does not conform" : row.actual_text;
+
+    const manual = "manual_result" in draft
+      ? draft.manual_result
+      : (p.is_attribute && row.result !== PENDING ? row.result : null);
+    const verdict = evaluateSample(p, row.readings, manual);
+    row.result = verdict.result;
+    row.deviation = verdict.deviation;
+    row.reading_min = verdict.min;
+    row.reading_max = verdict.max;
+    // Keep a single representative value so summaries and exports stay simple.
+    row.actual_value = verdict.max ?? null;
+    if (verdict.result !== FAIL) { row.defect_id = null; row.defect_description = null; }
+    else if (!row.defect_description) row.defect_description = verdict.reason;
+  });
+
+  const s = recalcReport(report);
+  state.drafts = {};
+  audit("report.results.save", "report", report.id, { overall: s.overall });
+  save(); render();
+  toast(`Saved — ${titleCase(s.overall)} · ${s.passed} pass, ${s.failed} fail`,
+        s.overall === "ACCEPTED" ? "good" : s.failed ? "bad" : "");
+}
+
+function submitReport(reportId, signature) {
+  const report = byId("reports", reportId);
+  const s = recalcReport(report);
+  if (s.pending) { toast(`${s.pending} parameter(s) still pending a result`, "bad"); return false; }
+  report.status = "submitted";
+  report.inspector_signature = signature;
+  report.inspector_signed_at = new Date().toISOString();
+  audit("report.submit", "report", report.id);
+  save(); render();
+  toast("Report signed and submitted for QA approval", "good");
+  return true;
+}
+
+function qaDecide(reportId, decision, payload) {
+  const report = byId("reports", reportId);
+  report.accepted_quantity = payload.accepted;
+  report.rejected_quantity = payload.rejected;
+  report.rework_quantity = payload.rework;
+  report.status = decision;
+  report.qa_approver_id = state.user.id;
+  report.qa_signature = payload.signature;
+  report.qa_remarks = payload.remarks || null;
+  report.qa_approved_at = new Date().toISOString();
+  audit(`report.qa.${decision}`, "report", report.id, { remarks: payload.remarks });
+  save(); render();
+  toast(`Report ${decision}`, decision === "approved" ? "good" : "bad");
+}
+
+function createReport(standardId, form) {
+  const standard = byId("standards", standardId);
+  if (standard.status !== "approved") return toast("The standard must be approved first", "bad");
+  const rev = byId("revisions", standard.drawing_revision_id);
+  const year = new Date().getFullYear();
+  const seq = db.reports.filter(r => r.report_number.startsWith(`IR-${year}-`)).length + 1;
+  const part = byId("parts", standard.part_id);
+
+  const report = {
+    id: nextId("reports"), report_number: `IR-${year}-${String(seq).padStart(5, "0")}`,
+    standard_id: standard.id, part_id: standard.part_id,
+    drawing_id: rev ? rev.drawing_id : null, drawing_revision: rev ? rev.revision : null,
+    supplier_id: form.supplier_id ? Number(form.supplier_id) : null,
+    company_name: "BNC Motors Pvt Ltd",
+    customer_name: part?.customer_name || null,
+    batch_number: form.batch_number || null, po_number: form.po_number || null,
+    invoice_number: form.invoice_number || null,
+    inspection_date: form.inspection_date || todayISO(), shift: form.shift || null,
+    machine_number: form.machine_number || null, operator_name: form.operator_name || null,
+    inspector_id: state.user.id, inspector_name: state.user.full_name,
+    lot_quantity: Number(form.lot_quantity) || 0, sample_quantity: Number(form.sample_quantity) || 0,
+    accepted_quantity: 0, rejected_quantity: 0, rework_quantity: 0,
+    total_parameters: 0, passed_parameters: 0, failed_parameters: 0, pending_parameters: 0,
+    critical_failures: 0, major_failures: 0, minor_failures: 0, overall_result: "PENDING",
+    status: "draft", inspector_signature: null, inspector_signed_at: null,
+    qa_approver_id: null, qa_signature: null, qa_approved_at: null, qa_remarks: null,
+    created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  };
+  db.reports.push(report);
+  db.parameters.filter(p => p.standard_id === standard.id).sort((a, b) => a.seq - b.seq).forEach(p =>
+    db.results.push({ id: nextId("results"), report_id: report.id, parameter_id: p.id, seq: p.seq,
+      readings: "", reading_min: null, reading_max: null,
+      actual_value: null, actual_text: null, result: PENDING, deviation: null,
+      defect_id: null, defect_description: null, remarks: null }));
+  recalcReport(report);
+  audit("report.create", "report", report.id, { standard: standard.code });
+  save();
+  toast(`Created ${report.report_number}`, "good");
+  go(`#/reports/${report.id}`);
+}
+
+/* ============================================================== analytics */
+function analyticsView() {
+  const monthly = trendData("monthly");
+  const pareto = paretoData(14);
+  const cumulative = pareto.length ? pareto.find(p => p.cumulative >= 80) : null;
+
+  return pageHead("Analytics", "Defect distribution, supplier quality and long-run trends") + `
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr));margin-bottom:16px">
+    ${card("Monthly inspection volume", trendChart(monthly))}
+    ${card("Failures by severity", donut(severityData(),
+      { critical: "var(--fail)", major: "var(--warn)", minor: "var(--line-strong)" }))}
+  </div>
+  ${card("Pareto — top failing characteristics", paretoChart(pareto), {
+    actions: cumulative ? `<span style="font-size:11.5px;color:var(--ink-3)">
+      ${esc(cumulative.label)} is where cumulative failures cross 80%</span>` : "",
+  })}
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr));margin-top:16px">
+    ${card("Supplier quality ranking", supplierTable(), { pad: false })}
+    ${card("Part-wise defect analysis", rankedBars(partData(), () => "var(--warn)"))}
+  </div>`;
+}
+
+/* ================================================================== admin */
+function adminView() {
+  const tab = state.adminTab || "users";
+  const tabs = [["users", "Users"], ["suppliers", "Suppliers"], ["instruments", "Instruments"], ["audit", "Audit log"]];
+
+  let body = "";
+  if (tab === "users") {
+    body = card(`${db.users.length} users`, `<div class="tablewrap"><table>
+      <thead><tr><th>Name</th><th>Email</th><th>Employee code</th><th>Role</th><th>Status</th></tr></thead>
+      <tbody>${db.users.map(u => `<tr><td style="font-weight:500">${esc(u.full_name)}</td>
+        <td class="mono" style="font-size:12px">${esc(u.email)}</td>
+        <td>${esc(u.employee_code || "—")}</td><td>${chip(u.role)}</td>
+        <td>${u.is_active ? `<span class="chip pass">Active</span>` : `<span class="chip mute">Disabled</span>`}</td>
+      </tr>`).join("")}</tbody></table></div>`, { pad: false });
+  } else if (tab === "suppliers") {
+    body = card(`${db.suppliers.length} suppliers`, `<div class="tablewrap"><table>
+      <thead><tr><th>Code</th><th>Name</th><th>Contact</th><th>Rating</th><th class="r">Reports</th></tr></thead>
+      <tbody>${db.suppliers.map(s => `<tr><td class="mono" style="font-size:12px">${esc(s.code)}</td>
+        <td style="font-weight:500">${esc(s.name)}</td><td>${esc(s.contact_email || "—")}</td>
+        <td>${esc(s.rating || "—")}</td>
+        <td class="r num">${db.reports.filter(r => r.supplier_id === s.id).length}</td></tr>`).join("")}
+      </tbody></table></div>`, { pad: false });
+  } else if (tab === "instruments") {
+    body = card(`${db.instruments.length} instruments`, `<div class="tablewrap"><table>
+      <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Least count</th><th>Range</th><th>Calibration due</th></tr></thead>
+      <tbody>${db.instruments.map(i => {
+        const overdue = i.calibration_due && i.calibration_due < todayISO();
+        return `<tr class="${overdue ? "row-fail" : ""}">
+          <td class="mono" style="font-size:12px">${esc(i.code)}</td>
+          <td style="font-weight:500">${esc(i.name)}</td><td>${esc(i.type || "—")}</td>
+          <td class="mono" style="font-size:12px">${esc(i.least_count || "—")}</td>
+          <td class="mono" style="font-size:12px">${esc(i.range_text || "—")}</td>
+          <td>${fmtDate(i.calibration_due)}${overdue
+            ? ` <span class="chip fail">Overdue</span>` : ""}</td></tr>`;
+      }).join("")}</tbody></table></div>`, { pad: false });
+  } else {
+    body = card(`Last ${db.audit.length} events`, db.audit.length ? `<div class="tablewrap"><table>
+      <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead>
+      <tbody>${db.audit.slice(0, 120).map(a => `<tr>
+        <td style="white-space:nowrap">${fmtDateTime(a.at)}</td>
+        <td class="mono" style="font-size:12px">${esc(a.actor || "—")}</td>
+        <td class="mono" style="font-size:12px">${esc(a.action)}</td>
+        <td style="font-size:12px;color:var(--ink-3)">${esc(a.entity_type || "—")}${a.entity_id ? " #" + a.entity_id : ""}</td>
+        <td style="font-size:11.5px;color:var(--ink-3)">${esc(a.payload ? JSON.stringify(a.payload) : "—")}</td>
+      </tr>`).join("")}</tbody></table></div>` : emptyState("No audit events"), { pad: false });
+  }
+
+  return pageHead("Administration", "Users and roles, supplier and instrument masters, audit trail",
+    `<button class="btn" data-act="reset-demo">Reset demo data</button>`) +
+    `<div class="tabs">${tabs.map(([key, label]) =>
+      `<button data-tab="${key}" class="${tab === key ? "on" : ""}">${label}</button>`).join("")}</div>` + body;
+}
+
+/* =============================================================== settings */
+function settingsView() {
+  return pageHead("Settings", "AI provider and extraction thresholds",
+    `<a class="btn" href="#/dashboard">Back</a>`) + `
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+    ${card("AI vision provider", `
+      <div class="note info" style="margin-bottom:14px">Your key is stored in this browser's local storage
+        and sent only to <span class="mono">api.anthropic.com</span> when you run an analysis. It never
+        reaches any other server. Leave it blank to keep using the offline demo extractor.</div>
+      <label class="f" style="margin-bottom:12px"><span class="lbl">Anthropic API key</span>
+        <input class="in mono" type="password" id="setKey" value="${esc(settings.apiKey)}" placeholder="sk-ant-…"></label>
+      <label class="f" style="margin-bottom:12px"><span class="lbl">Model</span>
+        <select class="in" id="setModel">${["claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"].map(m =>
+          `<option value="${m}" ${m === settings.model ? "selected" : ""}>${m}</option>`).join("")}</select></label>
+      <label class="f" style="margin-bottom:14px">
+        <span class="lbl">Confidence threshold — ${(settings.threshold * 100).toFixed(0)}%</span>
+        <input class="in" type="range" min="0.4" max="0.98" step="0.01" id="setThreshold" value="${settings.threshold}"></label>
+      <p style="font-size:12.5px;color:var(--ink-3)">Any characteristic read below this confidence, and any
+        characteristic missing a nominal or a tolerance, is held as <em>Requires Manual Verification</em>.</p>
+      <div style="margin-top:14px"><button class="btn primary" data-act="save-settings">Save settings</button></div>`)}
+    ${card("Data", `
+      <p style="font-size:13px;color:var(--ink-2)">Everything lives in this browser. Uploaded drawing files are
+        held in memory for the session only — the record survives a reload, the preview does not.</p>
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:14px">
+        <div class="kpi"><div class="lbl">Drawings</div><div class="v">${db.drawings.length}</div></div>
+        <div class="kpi"><div class="lbl">Standards</div><div class="v">${db.standards.length}</div></div>
+        <div class="kpi"><div class="lbl">Reports</div><div class="v">${db.reports.length}</div></div>
+        <div class="kpi"><div class="lbl">Result rows</div><div class="v">${db.results.length}</div></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn" data-act="export-json">Export all data (JSON)</button>
+        <button class="btn danger" data-act="reset-demo">Reset to demo data</button>
+      </div>`)}
+  </div>`;
+}
+
+/* ================================================================ modals */
+function openModal(title, bodyHtml, footerHtml, opts = {}) {
+  closeModal();
+  const scrim = document.createElement("div");
+  scrim.className = "scrim";
+  scrim.id = "scrim";
+  scrim.innerHTML = `<div class="modal ${opts.wide ? "wide" : ""}" role="dialog" aria-modal="true">
+    <header><h2>${esc(title)}</h2><button class="btn sm" data-act="close-modal" aria-label="Close">✕</button></header>
+    <div class="body">${bodyHtml}</div>
+    ${footerHtml ? `<footer>${footerHtml}</footer>` : ""}</div>`;
+  scrim.addEventListener("click", e => { if (e.target === scrim) closeModal(); });
+  document.body.append(scrim);
+  const first = scrim.querySelector("input,select,textarea");
+  if (first) first.focus();
+}
+function closeModal() { $("#scrim")?.remove(); }
+
+function uploadModal() {
+  openModal("Upload engineering drawing", `
+    <div id="uploadError"></div>
+    <div class="dropzone" id="dropzone" tabindex="0" role="button">
+      <div style="font-weight:500" id="dropLabel">Drop a drawing here, or click to browse</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px">
+        PDF, PNG, JPG, TIFF up to 25 MB. DWG/DXF are recorded but must be exported to PDF for analysis.</div>
+      <input type="file" id="fileInput" hidden accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.dxf,.dwg">
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:16px">
+      <label class="f"><span class="lbl">Drawing number *</span><input class="in" id="upNumber" required></label>
+      <label class="f"><span class="lbl">Revision</span><input class="in" id="upRev" value="A"></label>
+      <label class="f"><span class="lbl">Drawing title</span><input class="in" id="upTitle"></label>
+      <label class="f"><span class="lbl">Part number</span><input class="in" id="upPartNo"
+        placeholder="Creates the part if new"></label>
+      <label class="f" style="grid-column:1/-1"><span class="lbl">Part name</span><input class="in" id="upPartName"></label>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13.5px">
+      <input type="checkbox" id="upAnalyze" checked> Run AI analysis immediately after upload</label>`,
+    `<button class="btn" data-act="close-modal">Cancel</button>
+     <button class="btn primary" data-act="do-upload">Upload</button>`, { wide: true });
+}
+
+function newReportModal(standardId) {
+  openModal("New inspection report", `
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+      <label class="f"><span class="lbl">Supplier</span><select class="in" id="nrSupplier">
+        <option value="">— none —</option>
+        ${db.suppliers.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select></label>
+      <label class="f"><span class="lbl">Batch / lot number</span><input class="in" id="nrBatch"></label>
+      <label class="f"><span class="lbl">Inspection date</span><input class="in" type="date" id="nrDate" value="${todayISO()}"></label>
+      <label class="f"><span class="lbl">PO number</span><input class="in" id="nrPo"></label>
+      <label class="f"><span class="lbl">Invoice number</span><input class="in" id="nrInv"></label>
+      <label class="f"><span class="lbl">Shift</span><select class="in" id="nrShift">
+        <option>A</option><option>B</option><option>C</option></select></label>
+      <label class="f"><span class="lbl">Machine number</span><input class="in" id="nrMachine"></label>
+      <label class="f"><span class="lbl">Operator name</span><input class="in" id="nrOperator"></label>
+      <label class="f"><span class="lbl">Lot quantity</span><input class="in" type="number" min="0" id="nrLot" value="100"></label>
+      <label class="f"><span class="lbl">Sample quantity</span><input class="in" type="number" min="0" id="nrSample" value="5"></label>
+    </div>`,
+    `<button class="btn" data-act="close-modal">Cancel</button>
+     <button class="btn primary" data-act="do-create-report" data-id="${standardId}">Create report</button>`, { wide: true });
+}
+
+function signModal(reportId) {
+  const report = byId("reports", reportId);
+  const s = recalcReport(report);
+  openModal("Sign and submit report", `
+    ${s.pending ? `<div class="note warn" style="margin-bottom:12px">${s.pending} parameter${
+      s.pending === 1 ? "" : "s"} still pending. Submission is refused until every parameter has a result.</div>` : ""}
+    <p style="font-size:13.5px;color:var(--ink-2);margin-bottom:14px">By signing you confirm the recorded
+      measurements are the values you actually observed.</p>
+    <label class="f"><span class="lbl">Inspector signature — type your full name</span>
+      <input class="in" id="signName" value="${esc(report.inspector_name || state.user.full_name)}"></label>`,
+    `<button class="btn" data-act="close-modal">Cancel</button>
+     <button class="btn primary" data-act="do-sign" data-id="${reportId}">Sign &amp; submit</button>`);
+}
+
+function qaModal(reportId) {
+  const report = byId("reports", reportId);
+  openModal("QA approval", `
+    <div class="note ${report.critical_failures ? "fail" : report.failed_parameters ? "warn" : "pass"}"
+         style="margin-bottom:14px">
+      Evaluated result: <b>${titleCase(report.overall_result)}</b> — ${report.failed_parameters} failed of
+      ${report.total_parameters} characteristics, ${report.critical_failures} critical.</div>
+    <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+      <label class="f"><span class="lbl">Accepted qty</span>
+        <input class="in" type="number" min="0" id="qaAccepted" value="${report.accepted_quantity}"></label>
+      <label class="f"><span class="lbl">Rejected qty</span>
+        <input class="in" type="number" min="0" id="qaRejected" value="${report.rejected_quantity}"></label>
+      <label class="f"><span class="lbl">Rework qty</span>
+        <input class="in" type="number" min="0" id="qaRework" value="${report.rework_quantity}"></label>
+    </div>
+    <div id="qaMismatch" style="margin-top:10px"></div>
+    <label class="f" style="margin-top:12px"><span class="lbl">QA signature — type your full name</span>
+      <input class="in" id="qaName" value="${esc(state.user.full_name)}"></label>
+    <label class="f" style="margin-top:12px"><span class="lbl">QA remarks</span>
+      <textarea class="in" id="qaRemarks" placeholder="Deviation acceptance, concession reference, corrective action…"></textarea></label>`,
+    `<button class="btn" data-act="close-modal">Cancel</button>
+     <button class="btn danger" data-act="do-qa" data-id="${reportId}" data-decision="rejected">Reject</button>
+     <button class="btn primary" data-act="do-qa" data-id="${reportId}" data-decision="approved">Approve</button>`,
+    { wide: true });
+  qaCheckQuantities(reportId);
+}
+
+function qaCheckQuantities(reportId) {
+  const report = byId("reports", reportId);
+  const box = $("#qaMismatch");
+  if (!box) return;
+  const total = ["qaAccepted", "qaRejected", "qaRework"].reduce((a, id) => a + (Number($("#" + id).value) || 0), 0);
+  box.innerHTML = report.lot_quantity && total !== report.lot_quantity
+    ? `<div class="note warn">Accepted + rejected + rework = ${total}, but the lot quantity is ${report.lot_quantity}.</div>`
+    : "";
+}
+
+/* ================================================================ exports */
+function toCsv(rows) {
+  return rows.map(r => r.map(v => {
+    const s = v === null || v === undefined ? "" : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }).join(",")).join("\r\n");
+}
+function downloadCsv(filename, rows) {
+  const blob = new Blob(["﻿" + toCsv(rows)], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast(`Downloaded ${filename}`, "good");
+}
+
+function exportReportCsv(reportId) {
+  const report = byId("reports", reportId);
+  const part = byId("parts", report.part_id), drawing = byId("drawings", report.drawing_id);
+  const rows = [
+    ["INSPECTION REPORT", report.report_number],
+    [],
+    ["Company name", report.company_name, "Supplier name", byId("suppliers", report.supplier_id)?.name || "", "Customer name", report.customer_name],
+    ["Part name", part?.part_name || "", "Part number", part?.part_number || "", "Drawing number", drawing?.drawing_number || ""],
+    ["Drawing revision", report.drawing_revision, "Batch / lot number", report.batch_number, "PO number", report.po_number],
+    ["Invoice number", report.invoice_number, "Inspection date", report.inspection_date, "Shift", report.shift],
+    ["Machine number", report.machine_number, "Operator name", report.operator_name, "Inspector name", report.inspector_name],
+    [],
+    ["S.No", "Inspection parameter", "Specification", "Tolerance", "Inspection method", "Instrument",
+     "Actual readings", "Min", "Max", "Result", "Deviation", "Defect description", "Inspector remarks"],
+  ];
+  db.results.filter(r => r.report_id === report.id).sort((a, b) => a.seq - b.seq).forEach(r => {
+    const p = byId("parameters", r.parameter_id);
+    rows.push([r.seq, p.parameter, `${p.specification} ${p.unit || ""}`.trim(), tolText(p),
+      p.inspection_method || "", byId("instruments", p.instrument_id)?.name || p.instrument_text || "",
+      p.is_attribute ? (r.actual_text || "") : (r.readings || ""),
+      r.reading_min ?? "", r.reading_max ?? "",
+      r.result, r.deviation ?? "", r.defect_description || "", r.remarks || ""]);
+  });
+  rows.push([], ["FINAL INSPECTION SUMMARY"],
+    ["Total parameters checked", report.total_parameters],
+    ["Passed parameters", report.passed_parameters],
+    ["Failed parameters", report.failed_parameters],
+    ["Critical failures", report.critical_failures],
+    ["Overall inspection result", report.overall_result],
+    ["Accepted quantity", report.accepted_quantity],
+    ["Rejected quantity", report.rejected_quantity],
+    ["Rework quantity", report.rework_quantity],
+    [], ["Inspector signature", report.inspector_signature || "", "Signed at", report.inspector_signed_at || ""],
+    ["QA approval", report.qa_signature || "", "Approved at", report.qa_approved_at || ""],
+    ["Digital approval status", report.status.toUpperCase()],
+    ["QA remarks", report.qa_remarks || ""]);
+  downloadCsv(`${report.report_number}.csv`, rows);
+}
+
+function exportReportListCsv() {
+  const rows = [["Report no.", "Part number", "Supplier", "Batch", "PO", "Invoice", "Date", "Shift",
+    "Inspector", "Checked", "Passed", "Failed", "Critical", "Accepted qty", "Rejected qty",
+    "Rework qty", "Result", "Status"]];
+  db.reports.forEach(r => rows.push([r.report_number, byId("parts", r.part_id)?.part_number || "",
+    byId("suppliers", r.supplier_id)?.name || "", r.batch_number, r.po_number, r.invoice_number,
+    r.inspection_date, r.shift, r.inspector_name, r.total_parameters, r.passed_parameters,
+    r.failed_parameters, r.critical_failures, r.accepted_quantity, r.rejected_quantity,
+    r.rework_quantity, r.overall_result, r.status]));
+  downloadCsv("inspection-reports.csv", rows);
+}
+
+function exportJson() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "inspection-portal-data.json";
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("Exported all data", "good");
+}
+
+/* ============================================================ interaction */
+let pendingFile = null;
+
+document.addEventListener("click", e => {
+  const tab = e.target.closest("[data-tab]");
+  if (tab) { state.adminTab = tab.dataset.tab; render(); return; }
+
+  const gran = e.target.closest("[data-gran]");
+  if (gran) { state.trendGranularity = gran.dataset.gran; render(); return; }
+
+  const btn = e.target.closest("[data-act]");
+  if (!btn) return;
+  const act = btn.dataset.act;
+  const id = btn.dataset.id;
+
+  switch (act) {
+    case "rail":
+      state.railOpen = !state.railOpen;
+      $("#rail").classList.toggle("open", state.railOpen);
+      break;
+
+    case "theme": {
+      const root = document.documentElement;
+      const now = root.getAttribute("data-theme");
+      const dark = now ? now === "dark"
+        : window.matchMedia("(prefers-color-scheme: dark)").matches;
+      root.setAttribute("data-theme", dark ? "light" : "dark");
+      localStorage.setItem("qip.theme", dark ? "light" : "dark");
+      break;
+    }
+
+    case "settings": go("#/settings"); break;
+    case "print": window.print(); break;
+    case "close-modal": closeModal(); break;
+
+    case "upload": uploadModal(); break;
+    case "do-upload": doUpload(); break;
+    case "analyze": runAnalysis(Number(id)); break;
+    case "save-extraction": persistExtraction(Number(btn.dataset.rev)); break;
+    case "gen-standard": generateStandard(Number(btn.dataset.rev)); break;
+
+    case "save-standard":
+      audit("standard.update", "standard", Number(id));
+      save(); render(); toast("Inspection standard saved", "good");
+      break;
+
+    case "add-param": {
+      const sid = Number(id);
+      const seq = db.parameters.filter(p => p.standard_id === sid).length + 1;
+      db.parameters.push({
+        id: nextId("parameters"), standard_id: sid, seq,
+        parameter: "New characteristic", specification: "",
+        nominal_value: null, upper_tolerance: null, lower_tolerance: null, unit: "mm",
+        inspection_method: "Variable measurement", instrument_id: null, instrument_text: null,
+        frequency: "5 pcs per lot", sampling_plan: "ISO 2859-1, Level II, AQL 0.65",
+        acceptance_criteria: "", classification: "major", reference_dimension: null, remarks: null,
+        is_attribute: false, requires_manual_verification: true,
+        source_confidence: null, source_note: "Added manually by Quality Engineer",
+      });
+      save(); render();
+      break;
+    }
+
+    case "approve-standard": {
+      const standard = byId("standards", id);
+      const params = db.parameters.filter(p => p.standard_id === standard.id);
+      if (!params.length) return toast("The standard has no inspection parameters", "bad");
+      const unver = params.filter(p => p.requires_manual_verification).map(p => p.seq);
+      if (unver.length)
+        return toast(`Cannot approve — S.No ${unver.join(", ")} still ` +
+          `${unver.length === 1 ? "requires" : "require"} manual verification`, "bad");
+      standard.status = "approved";
+      standard.approved_by_id = state.user.id;
+      standard.approved_at = new Date().toISOString();
+      audit("standard.approve", "standard", standard.id);
+      save(); render();
+      toast(`${standard.code} approved and released for inspection`, "good");
+      break;
+    }
+
+    case "new-report": newReportModal(Number(id)); break;
+    case "do-create-report":
+      createReport(Number(id), {
+        supplier_id: $("#nrSupplier").value, batch_number: $("#nrBatch").value,
+        inspection_date: $("#nrDate").value, po_number: $("#nrPo").value,
+        invoice_number: $("#nrInv").value, shift: $("#nrShift").value,
+        machine_number: $("#nrMachine").value, operator_name: $("#nrOperator").value,
+        lot_quantity: $("#nrLot").value, sample_quantity: $("#nrSample").value,
+      });
+      closeModal();
+      break;
+
+    case "save-results": saveResults(Number(id)); break;
+    case "sign": signModal(Number(id)); break;
+    case "do-sign": {
+      const name = $("#signName").value.trim();
+      if (!name) return toast("Enter your name to sign", "bad");
+      if (submitReport(Number(id), name)) closeModal();
+      break;
+    }
+    case "qa": qaModal(Number(id)); break;
+    case "do-qa": {
+      const name = $("#qaName").value.trim();
+      if (!name) return toast("Enter your name to sign", "bad");
+      qaDecide(Number(id), btn.dataset.decision, {
+        signature: name, remarks: $("#qaRemarks").value.trim(),
+        accepted: Number($("#qaAccepted").value) || 0,
+        rejected: Number($("#qaRejected").value) || 0,
+        rework: Number($("#qaRework").value) || 0,
+      });
+      closeModal();
+      break;
+    }
+
+    case "export-report": exportReportCsv(Number(id)); break;
+    case "export-list": exportReportListCsv(); break;
+    case "export-json": exportJson(); break;
+
+    case "save-settings":
+      settings.apiKey = $("#setKey").value.trim();
+      settings.model = $("#setModel").value;
+      settings.threshold = Number($("#setThreshold").value);
+      saveSettings(); render();
+      toast(settings.apiKey ? "Settings saved — live AI extraction enabled"
+                            : "Settings saved — running the offline extractor", "good");
+      break;
+
+    case "reset-demo":
+      if (!confirm("Discard all data in this browser and rebuild the demo dataset?")) return;
+      localStorage.removeItem(DB_KEY);
+      seed(); state.drafts = {}; state.draftExtraction = null;
+      render(); toast("Demo data rebuilt", "good");
+      break;
+  }
+});
+
+/* ------------------------------------------------------------ form input */
+document.addEventListener("change", e => {
+  if (e.target.id !== "roleSwitch") return;
+  const user = byId("users", e.target.value);
+  if (!user) return;
+  state.user = user;
+  localStorage.setItem(SESSION_KEY, String(user.id));
+  state.drafts = {};
+  state.draftExtraction = null;
+  audit("role.switch", "user", user.id, { role: user.role });
+  save();
+  const entry = ROUTES.find(x => x[0] === currentRoute().name);
+  if (entry && !can(entry[3])) go("#/dashboard"); else render();
+  toast(`Acting as ${user.full_name} — ${titleCase(user.role)}`);
+});
+
+document.addEventListener("input", e => {
+  const el = e.target;
+
+  if (el.id === "globalSearch") {
+    state.search = el.value;
+    if (currentRoute().name !== "reports") { go("#/reports"); return; }
+    clearTimeout(state.searchTimer);
+    state.searchTimer = setTimeout(() => { render(); $("#globalSearch")?.focus(); }, 220);
+    return;
+  }
+  if (el.id === "setThreshold") {
+    el.previousElementSibling.textContent = `Confidence threshold — ${(Number(el.value) * 100).toFixed(0)}%`;
+    return;
+  }
+  if (["qaAccepted", "qaRejected", "qaRework"].includes(el.id)) {
+    qaCheckQuantities(Number($("[data-act='do-qa']").dataset.id));
+    return;
+  }
+
+  /* list filters — re-render but keep the caret where it was */
+  const filterMap = {
+    drawingQuery: "drawingQuery", drawingStatus: "drawingStatus",
+    standardQuery: "standardQuery", standardStatus: "standardStatus",
+  };
+  if (filterMap[el.id]) {
+    state[filterMap[el.id]] = el.value;
+    rerenderKeepingFocus(el.id, el.selectionStart);
+    return;
+  }
+  if (el.id.startsWith("rf")) {
+    const f = state.reportFilters;
+    if (el.id === "rfQ") { f.q = el.value; state.search = el.value; }
+    if (el.id === "rfStatus") f.status = el.value;
+    if (el.id === "rfSupplier") f.supplier = el.value;
+    if (el.id === "rfFrom") f.from = el.value;
+    if (el.id === "rfTo") f.to = el.value;
+    rerenderKeepingFocus(el.id, el.selectionStart);
+    return;
+  }
+
+  /* extraction verification grid — edits go to a draft, never straight to the record */
+  if (el.dataset.dim !== undefined || el.dataset.verify !== undefined || el.dataset.header !== undefined) {
+    const rev = db.revisions.find(r => r.drawing_id === Number(currentRoute().id) && r.is_current);
+    if (!rev?.extraction) return;
+    if (!state.draftExtraction) state.draftExtraction = JSON.parse(JSON.stringify(rev.extraction));
+    const ex = state.draftExtraction;
+
+    if (el.dataset.header !== undefined) {
+      ex[el.dataset.header] = el.value;
+      ex.header_requires_verification[el.dataset.header] = el.value.trim() === "";
+      return;
+    }
+    if (el.dataset.verify !== undefined) {
+      const d = ex.dimensions[Number(el.dataset.verify)];
+      d.requires_manual_verification = !el.checked;
+      d.verification_reasons = el.checked ? [] : ["Marked for manual verification by Quality Engineer"];
+      rerenderKeepingFocus(null);
+      return;
+    }
+    const d = ex.dimensions[Number(el.dataset.dim)];
+    const field = el.dataset.field;
+    d[field] = ["nominal_value", "upper_tolerance", "lower_tolerance"].includes(field)
+      ? (el.value === "" ? null : Number(el.value)) : el.value;
+    return;
+  }
+
+  /* inspection-standard grid — writes straight through, saved on Save changes */
+  if (el.dataset.param !== undefined) {
+    const p = byId("parameters", el.dataset.param);
+    const field = el.dataset.field;
+    if (field === "is_attribute") { p.is_attribute = el.checked; rerenderKeepingFocus(null); return; }
+    if (field === "instrument_id") {
+      p.instrument_id = el.value ? Number(el.value) : null;
+      p.instrument_text = byId("instruments", p.instrument_id)?.name || p.instrument_text;
+      return;
+    }
+    p[field] = ["nominal_value", "upper_tolerance", "lower_tolerance"].includes(field)
+      ? (el.value === "" ? null : Number(el.value)) : el.value;
+    if (["nominal_value", "upper_tolerance", "lower_tolerance"].includes(field))
+      p.acceptance_criteria = acceptanceText(p);
+    return;
+  }
+  if (el.dataset.clearVerify !== undefined) {
+    const p = byId("parameters", el.dataset.clearVerify);
+    p.requires_manual_verification = false;
+    p.acceptance_criteria = acceptanceText(p);
+    save(); render();
+    return;
+  }
+
+  /* inspection result grid — live preview via drafts */
+  if (el.dataset.result !== undefined) {
+    const resultId = Number(el.dataset.result);
+    const field = el.dataset.field;
+    state.drafts = state.drafts || {};
+    const draft = state.drafts[resultId] || (state.drafts[resultId] = {});
+    if (field === "defect_id") draft.defect_id = el.value ? Number(el.value) : null;
+    else draft[field] = el.value;
+
+    if (field === "defect_id" && draft.defect_id)
+      draft.defect_description = byId("defects", draft.defect_id)?.name || "";
+
+    /* Only the verdict-changing fields need a repaint. */
+    if (field === "readings" || field === "manual_result" || field === "defect_id")
+      rerenderKeepingFocus(null, el.selectionStart, el);
+  }
+});
+
+/** Re-render, then put the caret back so typing in a grid is not interrupted. */
+function rerenderKeepingFocus(elementId, caret, sourceEl) {
+  const key = sourceEl
+    ? `[data-result="${sourceEl.dataset.result}"][data-field="${sourceEl.dataset.field}"]`
+    : elementId ? `#${elementId}` : null;
+  render();
+  if (!key) return;
+  const next = $(key);
+  if (!next) return;
+  next.focus();
+  if (caret != null && next.setSelectionRange && next.type !== "number") {
+    try { next.setSelectionRange(caret, caret); } catch (err) { /* unsupported input type */ }
+  }
+}
+
+/* ---------------------------------------------------------------- upload */
+function bindDropzone() {
+  const zone = $("#dropzone"), input = $("#fileInput");
+  if (!zone || !input) return;
+  const pick = file => {
+    if (!file) return;
+    pendingFile = file;
+    $("#dropLabel").textContent = `${file.name} — ${fmtBytes(file.size)}`;
+    if (!$("#upNumber").value) $("#upNumber").value = file.name.replace(/\.[^.]+$/, "");
+  };
+  zone.addEventListener("click", () => input.click());
+  zone.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+  input.addEventListener("change", () => pick(input.files[0]));
+  ["dragenter", "dragover"].forEach(ev => zone.addEventListener(ev, e => {
+    e.preventDefault(); zone.classList.add("over");
+  }));
+  ["dragleave", "drop"].forEach(ev => zone.addEventListener(ev, e => {
+    e.preventDefault(); zone.classList.remove("over");
+  }));
+  zone.addEventListener("drop", e => pick(e.dataTransfer.files[0]));
+}
+
+async function doUpload() {
+  const err = $("#uploadError");
+  const number = $("#upNumber").value.trim();
+  if (!pendingFile) return err.innerHTML = `<div class="note fail">Choose a drawing file first.</div>`;
+  if (!number) return err.innerHTML = `<div class="note fail">Enter a drawing number.</div>`;
+  if (pendingFile.size > 25 * 1024 * 1024)
+    return err.innerHTML = `<div class="note fail">That file is ${fmtBytes(pendingFile.size)} — the limit is 25 MB.</div>`;
+
+  const partNo = $("#upPartNo").value.trim();
+  const partName = $("#upPartName").value.trim();
+  let part = partNo ? db.parts.find(p => p.part_number === partNo) : null;
+  if (partNo && !part) {
+    part = { id: nextId("parts"), part_number: partNo, part_name: partName || partNo,
+             material: null, customer_name: null, supplier_id: null };
+    db.parts.push(part);
+  }
+
+  const drawing = {
+    id: nextId("drawings"), drawing_number: number, title: $("#upTitle").value.trim() || null,
+    part_id: part ? part.id : null, file_name: pendingFile.name,
+    mime_type: pendingFile.type || "application/octet-stream", file_size: pendingFile.size,
+    status: "uploaded", uploaded_by_id: state.user.id, created_at: new Date().toISOString(),
+  };
+  db.drawings.push(drawing);
+  db.revisions.push({
+    id: nextId("revisions"), drawing_id: drawing.id, revision: $("#upRev").value.trim() || "-",
+    is_current: true, status: "uploaded", extraction: null, extraction_confidence: null,
+    extraction_engine: null, extraction_error: null, analyzed_at: null,
+    verified_by_id: null, verified_at: null, created_at: new Date().toISOString(),
+  });
+
+  state.files = state.files || new Map();
+  state.files.set(drawing.id, pendingFile);
+  blobs.set(drawing.id, URL.createObjectURL(pendingFile));
+
+  const analyze = $("#upAnalyze").checked;
+  audit("drawing.upload", "drawing", drawing.id, { file: pendingFile.name });
+  save();
+  pendingFile = null;
+  closeModal();
+  go(`#/drawings/${drawing.id}`);
+  if (analyze) setTimeout(() => runAnalysis(drawing.id), 60);
+}
+
+/* ------------------------------------------------------------------ boot */
+window.addEventListener("hashchange", () => {
+  state.drafts = {};
+  state.draftExtraction = null;
+  state.railOpen = false;
+  render();
+  window.scrollTo(0, 0);
+});
+
+/* Modal DOM is created after render, so bind the dropzone when it appears. */
+new MutationObserver(() => { if ($("#dropzone")) bindDropzone(); })
+  .observe(document.body, { childList: true });
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+(function boot() {
+  const theme = localStorage.getItem("qip.theme");
+  if (theme) document.documentElement.setAttribute("data-theme", theme);
+  try { settings = { ...settings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") }; } catch (e) { /* defaults */ }
+
+  loadDb();
+  // No sign-in gate: open straight into the workspace. The rail's "Acting as"
+  // switcher changes role, so RBAC is still exercised without a login wall.
+  state.user = byId("users", localStorage.getItem(SESSION_KEY))
+    || db.users.find(u => u.role === "admin")
+    || db.users[0];
+  state.drafts = {};
+  if (!location.hash) location.hash = "#/dashboard";
+  render();
+})();
+</script>
+
+
