@@ -1587,8 +1587,9 @@ function render() {
           <label>
             <span class="lbl" style="color:#6d7f81;display:block;margin-top:10px">Acting as</span>
             <select id="roleSwitch" title="Switch role to see what each one may change">
-              ${db.users.map(u => `<option value="${u.id}" ${u.id === state.user.id ? "selected" : ""}
-                >${esc(u.full_name)} — ${esc(titleCase(u.role))}</option>`).join("")}
+              ${db.users.filter(u => u.is_active || u.id === state.user.id).map(u =>
+                `<option value="${u.id}" ${u.id === state.user.id ? "selected" : ""}
+                  >${esc(u.full_name)} — ${esc(titleCase(u.role))}${u.is_active ? "" : " (disabled)"}</option>`).join("")}
             </select>
           </label>
           <button class="btn sm" data-act="settings" style="width:100%;margin-top:8px;justify-content:center">Settings</button>
@@ -3054,20 +3055,55 @@ function adminView() {
   let body = "";
   if (tab === "users") {
     body = card(`${db.users.length} users`, `<div class="tablewrap"><table>
-      <thead><tr><th>Name</th><th>Email</th><th>Employee code</th><th>Role</th><th>Status</th></tr></thead>
-      <tbody>${db.users.map(u => `<tr><td style="font-weight:500">${esc(u.full_name)}</td>
+      <thead><tr><th>Name</th><th>Email</th><th>Employee code</th>
+        <th style="min-width:170px">Access level</th><th style="width:110px">Status</th>
+        <th class="r">Reports</th><th></th></tr></thead>
+      <tbody>${db.users.map(u => {
+        const last = isLastActiveAdmin(u.id);
+        return `<tr>
+        <td style="font-weight:500">${esc(u.full_name)}
+          ${state.user && state.user.id === u.id
+            ? `<span class="chip info" style="margin-left:6px">You</span>` : ""}</td>
         <td class="mono" style="font-size:12px">${esc(u.email)}</td>
-        <td>${esc(u.employee_code || "—")}</td><td>${chip(u.role)}</td>
-        <td>${u.is_active ? `<span class="chip pass">Active</span>` : `<span class="chip mute">Disabled</span>`}</td>
-      </tr>`).join("")}</tbody></table></div>`, { pad: false });
+        <td>${esc(u.employee_code || "—")}</td>
+        <td><select class="in cell" data-user-role="${u.id}" ${last ? "disabled" : ""}
+              title="${last ? "The only active administrator — promote someone else first"
+                            : esc(ROLE_ACCESS[u.role] || "")}">
+            ${Object.keys(ROLE_ACCESS).map(r =>
+              `<option value="${r}" ${u.role === r ? "selected" : ""}>${titleCase(r)}</option>`).join("")}
+          </select></td>
+        <td><label style="display:flex;align-items:center;gap:6px;font-size:12px">
+            <input type="checkbox" data-user-active="${u.id}" ${u.is_active ? "checked" : ""}
+              ${last ? "disabled" : ""}>
+            ${u.is_active ? "Active" : "Disabled"}</label></td>
+        <td class="r num">${db.reports.filter(r => r.inspector_id === u.id).length}</td>
+        <td class="r"><button class="btn sm" data-act="edit-user" data-id="${u.id}">Edit</button></td>
+      </tr>`;
+      }).join("")}</tbody></table></div>
+      <div style="padding:12px 14px;border-top:1px solid var(--line)">
+        <div class="lbl" style="margin-bottom:6px">What each access level grants</div>
+        <div style="display:grid;gap:5px;font-size:12.5px">
+          ${Object.entries(ROLE_ACCESS).map(([r, text]) =>
+            `<div style="display:flex;gap:8px"><span style="min-width:130px">${chip(r)}</span>
+              <span style="color:var(--ink-2)">${esc(text)}</span></div>`).join("")}
+        </div>
+      </div>`,
+      { pad: false, actions: `<button class="btn sm" data-act="add-user">Add user</button>` });
   } else if (tab === "suppliers") {
     body = card(`${db.suppliers.length} suppliers`, `<div class="tablewrap"><table>
-      <thead><tr><th>Code</th><th>Name</th><th>Contact</th><th>Rating</th><th class="r">Reports</th></tr></thead>
-      <tbody>${db.suppliers.map(s => `<tr><td class="mono" style="font-size:12px">${esc(s.code)}</td>
-        <td style="font-weight:500">${esc(s.name)}</td><td>${esc(s.contact_email || "—")}</td>
-        <td>${esc(s.rating || "—")}</td>
-        <td class="r num">${db.reports.filter(r => r.supplier_id === s.id).length}</td></tr>`).join("")}
-      </tbody></table></div>`, { pad: false });
+      <thead><tr><th>Code</th><th>Name</th><th>Contact email</th><th>Phone</th><th>Rating</th>
+        <th>Status</th><th class="r">Reports</th><th></th></tr></thead>
+      <tbody>${db.suppliers.map(s => `<tr>
+        <td class="mono" style="font-size:12px">${esc(s.code)}</td>
+        <td style="font-weight:500">${esc(s.name)}</td>
+        <td>${esc(s.contact_email || "—")}</td>
+        <td>${esc(s.contact_phone || "—")}</td>
+        <td>${s.rating ? chip(s.rating === "A" ? "PASS" : s.rating === "B" ? "PENDING" : "FAIL", s.rating) : "—"}</td>
+        <td>${s.is_active ? `<span class="chip pass">Active</span>` : `<span class="chip mute">Inactive</span>`}</td>
+        <td class="r num">${db.reports.filter(r => r.supplier_id === s.id).length}</td>
+        <td class="r"><button class="btn sm" data-act="edit-supplier" data-id="${s.id}">Edit</button></td>
+      </tr>`).join("")}</tbody></table></div>`,
+      { pad: false, actions: `<button class="btn sm" data-act="add-supplier">Add supplier</button>` });
   } else if (tab === "instruments") {
     const used = id => db.parameters.filter(p => p.instrument_id === id).length;
     body = card(`${db.instruments.length} instruments`, `<div class="tablewrap"><table>
@@ -3195,6 +3231,184 @@ function uploadModal() {
       <input type="checkbox" id="upAnalyze" checked> Run AI analysis immediately after upload</label>`,
     `<button class="btn" data-act="close-modal">Cancel</button>
      <button class="btn primary" data-act="do-upload">Upload</button>`, { wide: true });
+}
+
+/* ---------------------------------------------------------- user accounts */
+const ROLE_ACCESS = {
+  viewer:          "Read everything. Cannot upload, record or approve.",
+  inspector:       "Upload and analyse drawings, record measurements, sign and submit reports.",
+  quality_manager: "Everything an inspector can do, plus verify extractions, edit and approve standards, QA-approve reports, and manage masters.",
+  admin:           "Everything, plus user accounts, the audit log, and unlocking approved standards.",
+};
+
+/** The last active administrator must not be able to lock everyone out. */
+function isLastActiveAdmin(userId) {
+  const admins = db.users.filter(u => u.role === "admin" && u.is_active);
+  return admins.length === 1 && admins[0].id === Number(userId);
+}
+
+function userModal(userId) {
+  const u = userId ? byId("users", userId) : null;
+  openModal(u ? `Edit ${u.full_name}` : "Add user", `
+    <div id="userError"></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      <label class="f"><span class="lbl">Full name *</span>
+        <input class="in" id="usrName" value="${esc(u?.full_name || "")}" placeholder="Priya Raghavan"></label>
+      <label class="f"><span class="lbl">Email *</span>
+        <input class="in mono" id="usrEmail" type="email" value="${esc(u?.email || "")}"
+          placeholder="name@bncmotors.in"></label>
+      <label class="f"><span class="lbl">Employee code</span>
+        <input class="in" id="usrCode" value="${esc(u?.employee_code || "")}" placeholder="EMP-005"></label>
+      <label class="f"><span class="lbl">Access level *</span>
+        <select class="in" id="usrRole">
+          ${Object.keys(ROLE_ACCESS).map(r =>
+            `<option value="${r}" ${u?.role === r ? "selected" : ""}>${titleCase(r)}</option>`).join("")}
+        </select></label>
+    </div>
+    <div class="note info" style="margin-top:12px" id="usrAccessNote"></div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13.5px">
+      <input type="checkbox" id="usrActive" ${!u || u.is_active ? "checked" : ""}>
+      Account active — can sign in and appear in the Acting as list</label>`,
+    `<button class="btn" data-act="close-modal">Cancel</button>
+     <button class="btn primary" data-act="save-user" data-id="${userId || ""}">
+       ${u ? "Save changes" : "Add user"}</button>`, { wide: true });
+  updateAccessNote();
+}
+
+function updateAccessNote() {
+  const select = $("#usrRole"), note = $("#usrAccessNote");
+  if (select && note) note.textContent = ROLE_ACCESS[select.value] || "";
+}
+
+function saveUser(userId) {
+  const err = $("#userError");
+  const full_name = $("#usrName").value.trim();
+  const email = $("#usrEmail").value.trim().toLowerCase();
+  const role = $("#usrRole").value;
+  const is_active = $("#usrActive").checked;
+  const fail = msg => { err.innerHTML = `<div class="note fail" style="margin-bottom:12px">${esc(msg)}</div>`; };
+
+  if (!full_name || !email) return fail("Name and email are both required.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("That does not look like an email address.");
+  const clash = db.users.find(u => u.email === email && u.id !== Number(userId));
+  if (clash) return fail(`${email} is already used by ${clash.full_name}.`);
+  if (userId && isLastActiveAdmin(userId) && (role !== "admin" || !is_active))
+    return fail("This is the only active administrator. Promote another user to admin first, "
+      + "otherwise no one could manage accounts or unlock standards.");
+
+  const data = { full_name, email, role, is_active, employee_code: $("#usrCode").value.trim() || null };
+  let user;
+  if (userId) {
+    user = byId("users", userId);
+    Object.assign(user, data);
+    audit("user.update", "user", user.id, { email, role, is_active });
+  } else {
+    user = { id: nextId("users"), ...data };
+    db.users.push(user);
+    audit("user.create", "user", user.id, { email, role });
+  }
+  if (state.user && state.user.id === user.id) state.user = user;
+
+  save(); closeModal(); render();
+  toast(userId ? `Updated ${user.full_name}` : `Added ${user.full_name} as ${titleCase(role)}`, "good");
+}
+
+/** Change one user's access level straight from the table. */
+function setUserRole(userId, role) {
+  const u = byId("users", userId);
+  if (!u) return;
+  if (isLastActiveAdmin(userId) && role !== "admin") {
+    toast("Cannot change the only active administrator's access. Promote someone else first.", "bad");
+    render();
+    return;
+  }
+  u.role = role;
+  if (state.user && state.user.id === u.id) state.user = u;
+  audit("user.role", "user", u.id, { role });
+  save(); render();
+  toast(`${u.full_name} is now ${titleCase(role)}`, "good");
+}
+
+function setUserActive(userId, active) {
+  const u = byId("users", userId);
+  if (!u) return;
+  if (!active && isLastActiveAdmin(userId)) {
+    toast("Cannot deactivate the only active administrator.", "bad");
+    render();
+    return;
+  }
+  u.is_active = active;
+  audit(active ? "user.activate" : "user.deactivate", "user", u.id);
+  // Don't leave the session acting as a disabled account.
+  if (!active && state.user && state.user.id === u.id) {
+    const fallback = db.users.find(x => x.is_active && x.role === "admin")
+      || db.users.find(x => x.is_active);
+    if (fallback) {
+      state.user = fallback;
+      localStorage.setItem(SESSION_KEY, String(fallback.id));
+      toast(`Now acting as ${fallback.full_name} — ${u.full_name} was disabled`);
+    }
+  }
+  save(); render();
+  toast(`${u.full_name} ${active ? "activated" : "deactivated"}`, "good");
+}
+
+/* -------------------------------------------------------------- suppliers */
+function supplierModal(supplierId) {
+  const s = supplierId ? byId("suppliers", supplierId) : null;
+  openModal(s ? `Edit ${s.name}` : "Add supplier", `
+    <div id="supplierError"></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      <label class="f"><span class="lbl">Code *</span>
+        <input class="in mono" id="supCode" value="${esc(s?.code || "")}" placeholder="SUP-004"></label>
+      <label class="f"><span class="lbl">Name *</span>
+        <input class="in" id="supName" value="${esc(s?.name || "")}" placeholder="Raghavendra Plastics"></label>
+      <label class="f"><span class="lbl">Contact email</span>
+        <input class="in" id="supEmail" value="${esc(s?.contact_email || "")}"></label>
+      <label class="f"><span class="lbl">Contact phone</span>
+        <input class="in" id="supPhone" value="${esc(s?.contact_phone || "")}"></label>
+      <label class="f"><span class="lbl">Rating</span>
+        <select class="in" id="supRating">
+          ${["", "A", "B", "C"].map(r =>
+            `<option value="${r}" ${s?.rating === r ? "selected" : ""}>${r || "— not rated —"}</option>`).join("")}
+        </select></label>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13.5px">
+      <input type="checkbox" id="supActive" ${!s || s.is_active ? "checked" : ""}>
+      Active — available when creating an inspection report</label>`,
+    `<button class="btn" data-act="close-modal">Cancel</button>
+     <button class="btn primary" data-act="save-supplier" data-id="${supplierId || ""}">
+       ${s ? "Save changes" : "Add supplier"}</button>`, { wide: true });
+}
+
+function saveSupplier(supplierId) {
+  const err = $("#supplierError");
+  const code = $("#supCode").value.trim();
+  const name = $("#supName").value.trim();
+  const fail = msg => { err.innerHTML = `<div class="note fail" style="margin-bottom:12px">${esc(msg)}</div>`; };
+  if (!code || !name) return fail("Code and name are both required.");
+  const clash = db.suppliers.find(x => x.code.toLowerCase() === code.toLowerCase() && x.id !== Number(supplierId));
+  if (clash) return fail(`Code ${code} is already used by ${clash.name}.`);
+
+  const data = {
+    code, name,
+    contact_email: $("#supEmail").value.trim() || null,
+    contact_phone: $("#supPhone").value.trim() || null,
+    rating: $("#supRating").value || null,
+    is_active: $("#supActive").checked,
+  };
+  let supplier;
+  if (supplierId) {
+    supplier = byId("suppliers", supplierId);
+    Object.assign(supplier, data);
+    audit("supplier.update", "supplier", supplier.id, { code });
+  } else {
+    supplier = { id: nextId("suppliers"), ...data };
+    db.suppliers.push(supplier);
+    audit("supplier.create", "supplier", supplier.id, { code });
+  }
+  save(); closeModal(); render();
+  toast(supplierId ? `Updated ${supplier.name}` : `Added ${supplier.name}`, "good");
 }
 
 /**
@@ -3604,6 +3818,14 @@ document.addEventListener("click", e => {
 
     case "reset-cols": resetColumnWidths(btn.dataset.key); break;
 
+    case "add-user": userModal(null); break;
+    case "edit-user": userModal(Number(id)); break;
+    case "save-user": saveUser(btn.dataset.id || null); break;
+
+    case "add-supplier": supplierModal(null); break;
+    case "edit-supplier": supplierModal(Number(id)); break;
+    case "save-supplier": saveSupplier(btn.dataset.id || null); break;
+
     case "add-instrument": instrumentModal(null, null); break;
     case "edit-instrument": instrumentModal(Number(id), null); break;
     case "save-instrument":
@@ -3667,6 +3889,15 @@ document.addEventListener("click", e => {
 
 /* ------------------------------------------------------------ form input */
 document.addEventListener("change", e => {
+  if (e.target.dataset.userRole !== undefined) {
+    setUserRole(Number(e.target.dataset.userRole), e.target.value);
+    return;
+  }
+  if (e.target.dataset.userActive !== undefined) {
+    setUserActive(Number(e.target.dataset.userActive), e.target.checked);
+    return;
+  }
+  if (e.target.id === "usrRole") { updateAccessNote(); return; }
   if (e.target.id !== "roleSwitch") return;
   const user = byId("users", e.target.value);
   if (!user) return;
