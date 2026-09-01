@@ -2236,9 +2236,15 @@ function standardDetailView(id) {
   if (unver) notices.push(`<div class="note warn">${unver} parameter${unver === 1 ? "" : "s"} still marked
     <em>Requires Manual Verification</em>. Enter the nominal and tolerance from the drawing and clear the flag —
     approval is refused until then.</div>`);
-  if (s.status !== "draft") notices.push(`<div class="note info">This standard is ${esc(s.status)}, so the grid
-    is read-only — instruments, tolerances and the verification flags cannot be changed while it is released.
-    Use <b>Revise</b> to return it to draft and edit it.</div>`);
+  if (s.status !== "draft" && can("quality_manager")) notices.push(`<div class="note warn"
+      style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="flex:1;min-width:260px">This standard is <b>${esc(s.status)}</b>, so every parameter is
+        read-only. Unlock it to edit tolerances, methods, instruments, classes and verification flags —
+        the approval is withdrawn and it needs approving again before new reports can be raised.</span>
+      <button class="btn primary" data-act="revise-standard" data-id="${s.id}">Unlock all parameters</button>
+    </div>`);
+  else if (s.status !== "draft") notices.push(`<div class="note info">This standard is ${esc(s.status)} and
+    read-only. A Quality Manager can unlock it for editing.</div>`);
 
   return pageHead(s.code,
     `${esc(s.title)} · v${s.version} ${chip(s.status)}
@@ -2251,8 +2257,8 @@ function standardDetailView(id) {
         <button class="btn primary" data-act="approve-standard" data-id="${s.id}">Approve standard</button>` : ""}
      ${s.status !== "draft" && can("quality_manager")
         ? `<button class="btn primary" data-act="revise-standard" data-id="${s.id}"
-             title="Return this standard to draft so units, methods and instruments can be changed"
-             >Revise to edit</button>` : ""}
+             title="Withdraw approval so every parameter becomes editable"
+             >Unlock all parameters</button>` : ""}
      ${s.status === "approved" && can("inspector")
         ? `<button class="btn primary" data-act="new-report" data-id="${s.id}">Create inspection report</button>` : ""}`) +
 
@@ -2268,7 +2274,9 @@ function standardDetailView(id) {
   ])}</div>` +
 
   pickLists() +
-  card(`Inspection parameters — ${params.length}`, `<div class="tablewrap wide" data-cols="standard"><table>
+  card(`Inspection parameters — ${params.length}`,
+    `<div class="tablewrap wide" data-cols="standard"
+       ${editable ? "" : `data-locked-standard="${s.id}"`}><table>
     <caption style="caption-side:top;text-align:left;padding:0 0 8px;font-size:11.5px;color:var(--ink-3)">
       Drag a column's right edge to widen it, or double-click that edge to fit the content.
       <button class="btn sm" data-act="reset-cols" data-key="standard" style="margin-left:8px">Reset widths</button>
@@ -2675,6 +2683,20 @@ function reportDetailView(id) {
         Created ${fmtDateTime(report.created_at)}${report.qa_approver_id
           ? ` · Decided by ${esc(byId("users", report.qa_approver_id)?.full_name)}` : ""}</div></div>
   </div>`);
+}
+
+/** Withdraw a standard's approval so every parameter becomes editable again. */
+function unlockStandard(standardId) {
+  const s = byId("standards", standardId);
+  if (!s || s.status === "draft") return;
+  s.status = "draft";
+  s.approved_by_id = null;
+  s.approved_at = null;
+  audit("standard.revise", "standard", s.id, { code: s.code });
+  save();
+  go(`#/standards/${s.id}/edit`);
+  render();
+  toast(`${s.code} unlocked — all parameters are editable`, "good");
 }
 
 /* ------------------------------- BNC-format incoming inspection report ---- */
@@ -3335,6 +3357,19 @@ function exportJson() {
 let pendingFile = null;
 
 document.addEventListener("click", e => {
+  /* A disabled field swallows its own click, but the click still reaches the
+     cell. Offer to unlock rather than leaving the user tapping a dead grid. */
+  const lockedGrid = e.target.closest("[data-locked-standard]");
+  if (lockedGrid && e.target.closest("td") && can("quality_manager")) {
+    const id = Number(lockedGrid.dataset.lockedStandard);
+    const s = byId("standards", id);
+    if (s && confirm(
+      `${s.code} is ${s.status} and locked.\n\nUnlock all parameters for editing? ` +
+      `Its approval is withdrawn and it must be approved again before new reports can be raised.`
+    )) unlockStandard(id);
+    return;
+  }
+
   const tab = e.target.closest("[data-tab]");
   if (tab) { state.adminTab = tab.dataset.tab; render(); return; }
 
@@ -3447,19 +3482,13 @@ document.addEventListener("click", e => {
 
     case "revise-standard": {
       const s = byId("standards", id);
-      const reports = db.reports.filter(r => r.standard_id === s.id);
-      const closed = reports.filter(r => CLOSED_STATES.has(r.status)).length;
+      const closed = db.reports.filter(r => r.standard_id === s.id && CLOSED_STATES.has(r.status)).length;
       if (!confirm(
-        `Return ${s.code} to draft so it can be edited?\n\n` +
+        `Unlock ${s.code} for editing?\n\n` +
         `Its approval is withdrawn and it must be approved again before new reports can be raised.` +
         (closed ? `\n\n${closed} closed report(s) already reference it; those keep the values they were inspected against.` : "")
       )) return;
-      s.status = "draft";
-      s.approved_by_id = null;
-      s.approved_at = null;
-      audit("standard.revise", "standard", s.id, { code: s.code });
-      save(); render();
-      toast(`${s.code} returned to draft — the grid is now editable`, "good");
+      unlockStandard(Number(id));
       break;
     }
 
