@@ -214,7 +214,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tablewrap { overflow-x: auto; }
 /* Grids with many columns must scroll rather than squeeze every cell to
    nothing — a "mm" clipped to "n" is worse than a horizontal scrollbar. */
-.tablewrap.wide > table { min-width: 2380px; }
+.tablewrap.wide > table { min-width: 2450px; }
 .tablewrap.wide-report > table { min-width: 1880px; }
 .tablewrap.wide-extract > table { min-width: 1420px; }
 
@@ -2289,6 +2289,7 @@ function standardDetailView(id) {
       <th style="min-width:190px">Measuring instrument</th><th style="min-width:110px">Frequency</th>
       <th style="min-width:205px">Sampling plan</th><th style="min-width:165px">Acceptance criteria</th>
       <th style="width:98px">Class</th><th style="width:80px">Ref. dim.</th>
+      <th style="width:58px" title="Remove this characteristic"></th>
       <th style="min-width:150px">Remarks</th></tr></thead>
     <tbody>${params.map(p => `
       <tr class="${p.requires_manual_verification ? "row-warn" : ""}">
@@ -2332,6 +2333,10 @@ function standardDetailView(id) {
               ${p.requires_manual_verification ? "checked" : ""} ${editable ? "" : "disabled"}>
             ${p.requires_manual_verification ? "Requires manual verification" : "Verified"}
           </label></td>
+        <td class="r">${editable
+          ? `<button class="btn sm" data-act="delete-param" data-id="${p.id}"
+               title="Remove this characteristic from the standard">✕</button>`
+          : ""}</td>
       </tr>`).join("")}</tbody></table></div>`, { pad: false });
 }
 
@@ -2684,6 +2689,53 @@ function reportDetailView(id) {
         Created ${fmtDateTime(report.created_at)}${report.qa_approver_id
           ? ` · Decided by ${esc(byId("users", report.qa_approver_id)?.full_name)}` : ""}</div></div>
   </div>`);
+}
+
+/**
+ * Remove one characteristic from a standard. Results already recorded against
+ * it go too, so nothing is orphaned — but only from reports still in draft. A
+ * submitted or closed report is evidence and blocks the deletion outright.
+ */
+function deleteParameter(parameterId) {
+  const p = byId("parameters", parameterId);
+  if (!p) return;
+  const s = byId("standards", p.standard_id);
+  if (!can("quality_manager") || !s || s.status !== "draft") {
+    return toast("The standard must be unlocked as a draft before parameters can be removed.", "bad");
+  }
+
+  const rows = db.results.filter(r => r.parameter_id === parameterId);
+  const reportIds = [...new Set(rows.map(r => r.report_id))];
+  const locked = reportIds.map(id => byId("reports", id))
+    .filter(r => r && CLOSED_STATES.has(r.status));
+  if (locked.length) {
+    return toast(`Cannot remove — ${locked.length} submitted or closed report(s) recorded a result ` +
+      `against "${p.parameter}". Those are quality records.`, "bad");
+  }
+
+  audit("parameter.delete", "standard", s.id,
+    { parameter: p.parameter, seq: p.seq, results_removed: rows.length });
+
+  db.results = db.results.filter(r => r.parameter_id !== parameterId);
+  db.parameters = db.parameters.filter(x => x.id !== parameterId);
+
+  // Close the gap the deletion leaves in the numbering, on the standard and
+  // on every draft report that was built from it.
+  db.parameters.filter(x => x.standard_id === s.id)
+    .sort((a, b) => a.seq - b.seq)
+    .forEach((x, i) => { x.seq = i + 1; });
+  reportIds.forEach(id => {
+    const report = byId("reports", id);
+    if (!report) return;
+    db.results.filter(r => r.report_id === id)
+      .sort((a, b) => a.seq - b.seq)
+      .forEach((r, i) => { r.seq = i + 1; });
+    recalcReport(report);
+  });
+
+  save();
+  render();
+  toast(`Removed "${p.parameter}"${rows.length ? ` and ${rows.length} recorded result(s)` : ""}`, "good");
 }
 
 /** Withdraw a standard's approval so every parameter becomes editable again. */
@@ -3500,6 +3552,17 @@ document.addEventListener("click", e => {
         (closed ? `\n\n${closed} closed report(s) already reference it; those keep the values they were inspected against.` : "")
       )) return;
       unlockStandard(Number(id));
+      break;
+    }
+
+    case "delete-param": {
+      const p = byId("parameters", id);
+      if (!p) return;
+      const recorded = db.results.filter(r => r.parameter_id === p.id).length;
+      if (!confirm(`Remove "${p.parameter}" (S.No ${p.seq}) from this standard?` +
+        (recorded ? `\n\n${recorded} recorded result(s) will be removed with it.` : "") +
+        `\n\nThis cannot be undone.`)) return;
+      deleteParameter(Number(id));
       break;
     }
 
