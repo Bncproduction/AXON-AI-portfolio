@@ -3157,7 +3157,22 @@ function openModal(title, bodyHtml, footerHtml, opts = {}) {
   const first = scrim.querySelector("input,select,textarea");
   if (first) first.focus();
 }
-function closeModal() { $("#scrim")?.remove(); }
+function closeModal() { pendingConfirm = null; $("#scrim")?.remove(); }
+
+/* The browser's own confirm() can be switched off — Chrome offers "prevent
+   this page from creating additional dialogs" after a few, and from then on it
+   returns false without showing anything, which makes every button that relies
+   on it look broken. Ask in our own modal instead. */
+let pendingConfirm = null;
+
+function askConfirm({ title, body, confirmLabel = "Confirm", danger = false, onConfirm }) {
+  // openModal closes any existing modal first, and closing clears the pending
+  // callback — so arm it only once the dialog is on screen.
+  openModal(title, body,
+    `<button class="btn" data-act="close-modal">Cancel</button>
+     <button class="btn ${danger ? "danger" : "primary"}" data-act="modal-confirm">${esc(confirmLabel)}</button>`);
+  pendingConfirm = onConfirm;
+}
 
 function uploadModal() {
   openModal("Upload engineering drawing", `
@@ -3426,10 +3441,14 @@ document.addEventListener("click", e => {
       toast(`${s.code} is ${s.status} and read-only. Only a System Administrator can unlock it.`);
       return;
     }
-    if (confirm(
-      `${s.code} is ${s.status} and locked.\n\nUnlock all parameters for editing? ` +
-      `Its approval is withdrawn and it must be approved again before new reports can be raised.`
-    )) unlockStandard(id);
+    askConfirm({
+      title: `${s.code} is locked`,
+      confirmLabel: "Unlock all parameters",
+      body: `<p style="font-size:13.5px">This standard is <b>${esc(s.status)}</b>, so its parameters
+        are read-only. Unlocking withdraws the approval; it must be approved again before new
+        inspection reports can be raised.</p>`,
+      onConfirm: () => unlockStandard(id),
+    });
     return;
   }
 
@@ -3546,12 +3565,23 @@ document.addEventListener("click", e => {
     case "revise-standard": {
       const s = byId("standards", id);
       const closed = db.reports.filter(r => r.standard_id === s.id && CLOSED_STATES.has(r.status)).length;
-      if (!confirm(
-        `Unlock ${s.code} for editing?\n\n` +
-        `Its approval is withdrawn and it must be approved again before new reports can be raised.` +
-        (closed ? `\n\n${closed} closed report(s) already reference it; those keep the values they were inspected against.` : "")
-      )) return;
-      unlockStandard(Number(id));
+      askConfirm({
+        title: `Unlock ${s.code}?`,
+        confirmLabel: "Unlock all parameters",
+        body: `<p style="font-size:13.5px">Its approval is withdrawn and it must be approved again
+            before new inspection reports can be raised.</p>
+          ${closed ? `<div class="note info" style="margin-top:10px">${closed} closed report(s)
+            already reference it. Those keep the values they were inspected against.</div>` : ""}`,
+        onConfirm: () => unlockStandard(Number(id)),
+      });
+      break;
+    }
+
+    case "modal-confirm": {
+      const run = pendingConfirm;
+      pendingConfirm = null;
+      closeModal();
+      if (run) run();
       break;
     }
 
@@ -3559,10 +3589,16 @@ document.addEventListener("click", e => {
       const p = byId("parameters", id);
       if (!p) return;
       const recorded = db.results.filter(r => r.parameter_id === p.id).length;
-      if (!confirm(`Remove "${p.parameter}" (S.No ${p.seq}) from this standard?` +
-        (recorded ? `\n\n${recorded} recorded result(s) will be removed with it.` : "") +
-        `\n\nThis cannot be undone.`)) return;
-      deleteParameter(Number(id));
+      askConfirm({
+        title: `Remove S.No ${p.seq}?`,
+        danger: true,
+        confirmLabel: "Remove characteristic",
+        body: `<p style="font-size:13.5px">Remove <b>${esc(p.parameter)}</b> from this standard?</p>
+          ${recorded ? `<div class="note warn" style="margin-top:10px">${recorded} recorded
+            result(s) will be removed with it.</div>` : ""}
+          <div class="note fail" style="margin-top:10px">This cannot be undone.</div>`,
+        onConfirm: () => deleteParameter(Number(id)),
+      });
       break;
     }
 
@@ -3579,14 +3615,23 @@ document.addEventListener("click", e => {
 
     case "delete-standard": {
       const s = byId("standards", id);
-      if (!confirm(`Delete draft standard ${s.code} and its parameters? This cannot be undone.`)) return;
-      deleteStandard(Number(id));
+      askConfirm({
+        title: `Delete ${s.code}?`, danger: true, confirmLabel: "Delete standard",
+        body: `<p style="font-size:13.5px">This draft standard and its
+            ${db.parameters.filter(p => p.standard_id === s.id).length} parameters will be removed.</p>
+          <div class="note fail" style="margin-top:10px">This cannot be undone.</div>`,
+        onConfirm: () => deleteStandard(Number(id)),
+      });
       break;
     }
     case "delete-report": {
       const r = byId("reports", id);
-      if (!confirm(`Delete draft report ${r.report_number}? This cannot be undone.`)) return;
-      deleteReport(Number(id));
+      askConfirm({
+        title: `Delete ${r.report_number}?`, danger: true, confirmLabel: "Delete report",
+        body: `<p style="font-size:13.5px">This draft report and its recorded results will be removed.</p>
+          <div class="note fail" style="margin-top:10px">This cannot be undone.</div>`,
+        onConfirm: () => deleteReport(Number(id)),
+      });
       break;
     }
 
@@ -3604,10 +3649,18 @@ document.addEventListener("click", e => {
       break;
 
     case "reset-demo":
-      if (!confirm("Discard all data in this browser and rebuild the demo dataset?")) return;
-      localStorage.removeItem(DB_KEY);
-      seed(); state.drafts = {}; state.draftExtraction = null;
-      render(); toast("Demo data rebuilt", "good");
+      askConfirm({
+        title: "Rebuild the demo dataset?", danger: true, confirmLabel: "Discard and rebuild",
+        body: `<p style="font-size:13.5px">Every drawing, standard and report stored in this
+            browser is discarded and the seeded example is rebuilt.</p>
+          <div class="note fail" style="margin-top:10px">This cannot be undone. Export your data
+            first from Settings if you need it.</div>`,
+        onConfirm: () => {
+          localStorage.removeItem(DB_KEY);
+          seed(); state.drafts = {}; state.draftExtraction = null;
+          render(); toast("Demo data rebuilt", "good");
+        },
+      });
       break;
   }
 });
