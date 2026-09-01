@@ -2236,15 +2236,16 @@ function standardDetailView(id) {
   if (unver) notices.push(`<div class="note warn">${unver} parameter${unver === 1 ? "" : "s"} still marked
     <em>Requires Manual Verification</em>. Enter the nominal and tolerance from the drawing and clear the flag —
     approval is refused until then.</div>`);
-  if (s.status !== "draft" && can("quality_manager")) notices.push(`<div class="note warn"
+  if (s.status !== "draft" && can("admin")) notices.push(`<div class="note warn"
       style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <span style="flex:1;min-width:260px">This standard is <b>${esc(s.status)}</b>, so every parameter is
         read-only. Unlock it to edit tolerances, methods, instruments, classes and verification flags —
         the approval is withdrawn and it needs approving again before new reports can be raised.</span>
       <button class="btn primary" data-act="revise-standard" data-id="${s.id}">Unlock all parameters</button>
     </div>`);
-  else if (s.status !== "draft") notices.push(`<div class="note info">This standard is ${esc(s.status)} and
-    read-only. A Quality Manager can unlock it for editing.</div>`);
+  else if (s.status !== "draft") notices.push(`<div class="note info">This standard is
+    <b>${esc(s.status)}</b> and read-only. Only a <b>System Administrator</b> can unlock it for editing —
+    ask one to do so, or generate a new version from the drawing.</div>`);
 
   return pageHead(s.code,
     `${esc(s.title)} · v${s.version} ${chip(s.status)}
@@ -2255,9 +2256,9 @@ function standardDetailView(id) {
      ${editable ? `<button class="btn" data-act="add-param" data-id="${s.id}">Add parameter</button>
         <button class="btn" data-act="save-standard" data-id="${s.id}">Save changes</button>
         <button class="btn primary" data-act="approve-standard" data-id="${s.id}">Approve standard</button>` : ""}
-     ${s.status !== "draft" && can("quality_manager")
+     ${s.status !== "draft" && can("admin")
         ? `<button class="btn primary" data-act="revise-standard" data-id="${s.id}"
-             title="Withdraw approval so every parameter becomes editable"
+             title="Administrator only — withdraws approval so every parameter becomes editable"
              >Unlock all parameters</button>` : ""}
      ${s.status === "approved" && can("inspector")
         ? `<button class="btn primary" data-act="new-report" data-id="${s.id}">Create inspection report</button>` : ""}`) +
@@ -2689,6 +2690,11 @@ function reportDetailView(id) {
 function unlockStandard(standardId) {
   const s = byId("standards", standardId);
   if (!s || s.status === "draft") return;
+  // Withdrawing a release is an administrator's call, wherever it is triggered from.
+  if (!can("admin")) {
+    toast("Only a System Administrator can unlock an approved standard.", "bad");
+    return;
+  }
   s.status = "draft";
   s.approved_by_id = null;
   s.approved_at = null;
@@ -3360,10 +3366,15 @@ document.addEventListener("click", e => {
   /* A disabled field swallows its own click, but the click still reaches the
      cell. Offer to unlock rather than leaving the user tapping a dead grid. */
   const lockedGrid = e.target.closest("[data-locked-standard]");
-  if (lockedGrid && e.target.closest("td") && can("quality_manager")) {
+  if (lockedGrid && e.target.closest("td")) {
     const id = Number(lockedGrid.dataset.lockedStandard);
     const s = byId("standards", id);
-    if (s && confirm(
+    if (!s) return;
+    if (!can("admin")) {
+      toast(`${s.code} is ${s.status} and read-only. Only a System Administrator can unlock it.`);
+      return;
+    }
+    if (confirm(
       `${s.code} is ${s.status} and locked.\n\nUnlock all parameters for editing? ` +
       `Its approval is withdrawn and it must be approved again before new reports can be raised.`
     )) unlockStandard(id);
