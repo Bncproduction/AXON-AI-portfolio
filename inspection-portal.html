@@ -216,6 +216,19 @@ button, input, select, textarea { font: inherit; color: inherit; }
    nothing — a "mm" clipped to "n" is worse than a horizontal scrollbar. */
 .tablewrap.wide > table { min-width: 2380px; }
 .tablewrap.wide-report > table { min-width: 1880px; }
+
+/* Drag the right edge of any header cell to widen or narrow that column. */
+.tablewrap[data-cols] thead th { position: relative; }
+.col-grip {
+  position: absolute; top: 0; right: -3px; width: 7px; height: 100%;
+  cursor: col-resize; user-select: none; z-index: 6;
+}
+.col-grip::after {
+  content: ""; position: absolute; top: 18%; bottom: 18%; left: 3px;
+  width: 1px; background: var(--accent); opacity: 0;
+}
+.col-grip:hover::after, .col-grip.dragging::after { opacity: 1; width: 2px; }
+body.col-resizing { cursor: col-resize; user-select: none; }
 table { border-collapse: collapse; width: 100%; font-size: 13px; }
 thead th {
   position: sticky; top: 0; z-index: 5;
@@ -1591,6 +1604,7 @@ function render() {
       </div>
     </div>`;
 
+  setupResizableColumns();
   refreshCellTooltips();
 }
 
@@ -2236,7 +2250,11 @@ function standardDetailView(id) {
   ])}</div>` +
 
   pickLists() +
-  card(`Inspection parameters — ${params.length}`, `<div class="tablewrap wide"><table>
+  card(`Inspection parameters — ${params.length}`, `<div class="tablewrap wide" data-cols="standard"><table>
+    <caption style="caption-side:top;text-align:left;padding:0 0 8px;font-size:11.5px;color:var(--ink-3)">
+      Drag a column's right edge to widen it, or double-click that edge to fit the content.
+      <button class="btn sm" data-act="reset-cols" data-key="standard" style="margin-left:8px">Reset widths</button>
+    </caption>
     <thead><tr><th style="width:40px">S.No</th><th style="min-width:165px">Inspection parameter</th>
       <th style="min-width:145px">Specification</th><th class="r" style="width:90px">Nominal</th>
       <th class="r" style="width:84px">Upper tol.</th><th class="r" style="width:84px">Lower tol.</th>
@@ -2554,7 +2572,7 @@ function reportDetailView(id) {
     ["Inspector name", report.inspector_name],
   ])}</div>` +
 
-  card("Inspection results", `<div class="tablewrap wide-report"><table>
+  card("Inspection results", `<div class="tablewrap wide-report" data-cols="report"><table>
     <thead><tr><th style="width:44px">S.No</th><th style="min-width:170px">Inspection parameter</th>
       <th style="min-width:130px">Specification</th><th style="width:96px">Tolerance</th>
       <th style="width:120px">Limits</th><th style="min-width:120px">Method</th>
@@ -3427,6 +3445,8 @@ document.addEventListener("click", e => {
       break;
     }
 
+    case "reset-cols": resetColumnWidths(btn.dataset.key); break;
+
     case "add-instrument": instrumentModal(null, null); break;
     case "edit-instrument": instrumentModal(Number(id), null); break;
     case "save-instrument":
@@ -3598,6 +3618,123 @@ document.addEventListener("input", e => {
       rerenderKeepingFocus(null, el.selectionStart, el);
   }
 });
+
+/* ==================================================== resizable columns
+   Any grid marked data-cols can have its columns dragged wider or narrower by
+   the header's right edge. Widths are remembered per grid so they survive a
+   re-render and a reload. The table switches to a fixed layout once sized, so
+   widening one column extends the table rather than squeezing its neighbours.
+   ======================================================================== */
+const MIN_COL = 44;
+
+function columnWidths(key) {
+  settings.columnWidths = settings.columnWidths || {};
+  return settings.columnWidths[key] || null;
+}
+
+function setupResizableColumns() {
+  $$(".tablewrap[data-cols]").forEach(wrap => {
+    const table = wrap.querySelector("table");
+    const heads = table ? [...table.querySelectorAll("thead th")] : [];
+    if (!heads.length) return;
+    const key = wrap.dataset.cols;
+
+    // First sight of this grid: adopt whatever the browser laid out as the baseline.
+    let widths = columnWidths(key);
+    if (!widths || widths.length !== heads.length) {
+      widths = heads.map(th => Math.round(th.getBoundingClientRect().width));
+    }
+
+    table.style.tableLayout = "fixed";
+    table.style.width = widths.reduce((a, b) => a + b, 0) + "px";
+    heads.forEach((th, i) => {
+      th.style.width = widths[i] + "px";
+      if (!th.querySelector(".col-grip")) {
+        const grip = document.createElement("div");
+        grip.className = "col-grip";
+        grip.dataset.col = String(i);
+        grip.title = "Drag to resize · double-click to fit the content";
+        th.append(grip);
+      }
+    });
+  });
+}
+
+function storeColumnWidths(wrap) {
+  const table = wrap.querySelector("table");
+  const heads = [...table.querySelectorAll("thead th")];
+  settings.columnWidths = settings.columnWidths || {};
+  settings.columnWidths[wrap.dataset.cols] = heads.map(th => Math.round(th.getBoundingClientRect().width));
+  saveSettings();
+}
+
+function applyColumnWidth(wrap, index, px) {
+  const table = wrap.querySelector("table");
+  const heads = [...table.querySelectorAll("thead th")];
+  const width = Math.max(MIN_COL, Math.round(px));
+  heads[index].style.width = width + "px";
+  const total = heads.reduce((sum, th) => sum + parseFloat(th.style.width || 0), 0);
+  table.style.width = total + "px";
+}
+
+/** Widest content in a column, so double-click can fit it. */
+function naturalColumnWidth(wrap, index) {
+  const table = wrap.querySelector("table");
+  let widest = MIN_COL;
+  table.querySelectorAll("tbody tr").forEach(tr => {
+    const cell = tr.children[index];
+    if (!cell) return;
+    const field = cell.querySelector("input, select");
+    widest = Math.max(widest, field ? field.scrollWidth + 26 : cell.scrollWidth + 16);
+  });
+  const th = table.querySelectorAll("thead th")[index];
+  return Math.min(560, Math.max(widest, th.scrollWidth + 20));
+}
+
+let dragCol = null;
+
+document.addEventListener("mousedown", e => {
+  const grip = e.target.closest(".col-grip");
+  if (!grip) return;
+  const wrap = grip.closest(".tablewrap[data-cols]");
+  const index = Number(grip.dataset.col);
+  const th = wrap.querySelectorAll("thead th")[index];
+  dragCol = { wrap, index, startX: e.clientX, startWidth: th.getBoundingClientRect().width, grip };
+  grip.classList.add("dragging");
+  document.body.classList.add("col-resizing");
+  e.preventDefault();
+});
+
+document.addEventListener("mousemove", e => {
+  if (!dragCol) return;
+  applyColumnWidth(dragCol.wrap, dragCol.index, dragCol.startWidth + (e.clientX - dragCol.startX));
+});
+
+document.addEventListener("mouseup", () => {
+  if (!dragCol) return;
+  dragCol.grip.classList.remove("dragging");
+  document.body.classList.remove("col-resizing");
+  storeColumnWidths(dragCol.wrap);
+  dragCol = null;
+  refreshCellTooltips();
+});
+
+document.addEventListener("dblclick", e => {
+  const grip = e.target.closest(".col-grip");
+  if (!grip) return;
+  const wrap = grip.closest(".tablewrap[data-cols]");
+  const index = Number(grip.dataset.col);
+  applyColumnWidth(wrap, index, naturalColumnWidth(wrap, index));
+  storeColumnWidths(wrap);
+  refreshCellTooltips();
+});
+
+function resetColumnWidths(key) {
+  if (settings.columnWidths) delete settings.columnWidths[key];
+  saveSettings();
+  render();
+  toast("Column widths reset");
+}
 
 /** A grid cell can only be so wide; hovering shows whatever does not fit. */
 function refreshCellTooltips() {
