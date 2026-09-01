@@ -216,6 +216,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
    nothing — a "mm" clipped to "n" is worse than a horizontal scrollbar. */
 .tablewrap.wide > table { min-width: 2380px; }
 .tablewrap.wide-report > table { min-width: 1880px; }
+.tablewrap.wide-extract > table { min-width: 1420px; }
 
 /* Drag the right edge of any header cell to widen or narrow that column. */
 .tablewrap[data-cols] thead th { position: relative; }
@@ -1906,35 +1907,49 @@ function drawingDetailView(id) {
     </div>
   </div>
 
-  ${ex ? card(`Extracted characteristics — ${ex.dimensions.length}`, `<div class="tablewrap"><table>
-    <thead><tr><th style="width:44px">Ref</th><th style="min-width:180px">Characteristic</th>
-      <th style="min-width:150px">Callout</th><th>Type</th><th class="r" style="width:96px">Nominal</th>
-      <th class="r" style="width:88px">Upper tol.</th><th class="r" style="width:88px">Lower tol.</th>
-      <th style="width:62px">Unit</th><th style="width:104px">Class</th>
-      <th class="r" style="width:60px">Conf.</th><th style="width:104px">Verified</th></tr></thead>
-    <tbody>${ex.dimensions.map((d, i) => `
-      <tr class="${d.requires_manual_verification ? "row-warn" : ""}">
+  ${ex ? pickLists() : ""}
+  ${ex ? card(`Extracted characteristics — ${ex.dimensions.length}`, `<div class="tablewrap wide-extract" data-cols="extraction"><table>
+    <caption style="caption-side:top;text-align:left;padding:0 0 8px;font-size:11.5px;color:var(--ink-3)">
+      A row locks once it is ticked <b>Verified</b> — untick it to make changes again.
+      Drag a column's right edge to resize, or double-click that edge to fit the content.
+      <button class="btn sm" data-act="reset-cols" data-key="extraction" style="margin-left:8px">Reset widths</button>
+    </caption>
+    <thead><tr><th style="width:52px">Ref</th><th style="min-width:190px">Characteristic</th>
+      <th style="min-width:165px">Callout</th><th style="width:104px">Type</th><th class="r" style="width:96px">Nominal</th>
+      <th class="r" style="width:92px">Upper tol.</th><th class="r" style="width:92px">Lower tol.</th>
+      <th style="width:82px">Unit</th><th style="width:108px">Class</th>
+      <th class="r" style="width:64px">Conf.</th><th style="width:118px">Verified</th></tr></thead>
+    <tbody>${ex.dimensions.map((d, i) => {
+      // Verifying a characteristic freezes it; unticking Verified reopens the row.
+      const frozen = editable && !d.requires_manual_verification;
+      const off = editable && !frozen ? "" : "disabled";
+      return `
+      <tr class="${d.requires_manual_verification ? "row-warn" : ""}"
+          style="${frozen ? "opacity:.82" : ""}">
         <td class="sev ${esc(d.classification)} mono num" style="color:var(--ink-3)">${esc(d.reference || i + 1)}</td>
-        <td><input class="in cell" data-dim="${i}" data-field="label" value="${esc(d.label)}" ${editable ? "" : "disabled"}>
+        <td><input class="in cell" data-dim="${i}" data-field="label" value="${esc(d.label)}" ${off}>
           ${d.requires_manual_verification && d.verification_reasons?.length
             ? `<div style="font-size:11.5px;color:var(--warn);margin-top:3px">${esc(d.verification_reasons.join("; "))}</div>` : ""}
           ${d.gdt_symbol ? `<div style="font-size:11.5px;color:var(--ink-3);margin-top:3px">GD&amp;T ${esc(d.gdt_symbol)}${
             d.datums ? ` | datums ${esc(d.datums)}` : ""}</div>` : ""}</td>
         <td><input class="in cell mono" data-dim="${i}" data-field="specification_text"
-              value="${esc(d.specification_text)}" ${editable ? "" : "disabled"}></td>
+              value="${esc(d.specification_text)}" ${off}></td>
         <td style="font-size:11.5px;color:var(--ink-3)">${esc(d.dimension_type)}</td>
         ${["nominal_value", "upper_tolerance", "lower_tolerance"].map(f =>
           `<td><input class="in cell r" type="number" step="any" data-dim="${i}" data-field="${f}"
-             value="${d[f] ?? ""}" placeholder="—" ${editable ? "" : "disabled"}></td>`).join("")}
-        <td><input class="in cell" data-dim="${i}" data-field="unit" value="${esc(d.unit || "")}" ${editable ? "" : "disabled"}></td>
-        <td><select class="in cell" data-dim="${i}" data-field="classification" ${editable ? "" : "disabled"}>
+             value="${d[f] ?? ""}" placeholder="—" ${off}></td>`).join("")}
+        <td><input class="in cell" list="unitOptions" data-dim="${i}" data-field="unit" value="${esc(d.unit || "")}" ${off}></td>
+        <td><select class="in cell" data-dim="${i}" data-field="classification" ${off}>
           ${["critical", "major", "minor"].map(c =>
             `<option value="${c}" ${c === d.classification ? "selected" : ""}>${titleCase(c)}</option>`).join("")}</select></td>
         <td class="r num mono" style="font-size:11.5px;color:var(--ink-3)">${(d.confidence * 100).toFixed(0)}%</td>
         <td><label style="display:flex;align-items:center;gap:6px;font-size:11.5px">
           <input type="checkbox" data-verify="${i}" ${d.requires_manual_verification ? "" : "checked"} ${editable ? "" : "disabled"}>
-          ${d.requires_manual_verification ? `<span style="color:var(--warn)">Pending</span>` : "Verified"}</label></td>
-      </tr>`).join("")}</tbody></table></div>`,
+          ${d.requires_manual_verification
+            ? `<span style="color:var(--warn)">Pending</span>`
+            : `<span title="Row locked — untick to edit">Verified 🔒</span>`}</label></td>
+      </tr>`;
+    }).join("")}</tbody></table></div>`,
     { pad: false, actions: `<span style="font-size:11.5px;color:var(--ink-3)">
         Amber rows block approval until a value is supplied</span>` }) : ""}`;
 }
