@@ -130,13 +130,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-bottom: 1px solid rgba(255,255,255,.09);
 }
 .rail-mark {
-  width: 30px; height: 30px; flex: none;
-  display: grid; place-items: center;
-  border: 1.5px solid var(--accent);
+  flex: none; display: grid; place-items: center;
+  width: 38px; height: 30px;
   color: var(--accent);
-  font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 15px;
-  letter-spacing: .04em;
 }
+.rail-mark svg { display: block; width: 38px; height: auto; }
 .rail-brand strong { color: var(--rail-hi); font-size: 14px; font-weight: 600; display: block; letter-spacing: .01em; }
 .rail-brand span { font-size: 11px; color: #6d7f81; letter-spacing: .05em; text-transform: uppercase;
   font-family: "Barlow Condensed", sans-serif; font-weight: 600; }
@@ -1580,6 +1578,23 @@ function donut(rows, colours) {
     <div style="display:grid;gap:8px;flex:1;min-width:150px">${legend}</div></div>`;
 }
 
+/* ==================================================================== logo
+   The BNC mark: a lemniscate broken where the bolt passes through it, drawn in
+   currentColor so it takes the theme's accent and needs no image asset.
+   ======================================================================== */
+function logoSvg() {
+  // Proportions taken off the supplied mark: two loops open toward each other,
+  // nearly touching at the centre, with the bolt running past them top and
+  // bottom. Redrawn as vector so it is crisp at any size and needs no asset.
+  return `<svg viewBox="0 -2 120 70" role="img" aria-label="BNC">
+    <g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round">
+      <path d="M53.1 28.8 A24 24 0 1 1 33.7 9.4"/>
+      <path d="M86.3 56.6 A24 24 0 1 0 66.9 37.2"/>
+    </g>
+    <path fill="currentColor" d="M68 -1 L52 34 L60.5 33 L53 67 L70 30 L61.5 31 Z"/>
+  </svg>`;
+}
+
 /* ============================================================== fragments */
 const CHIP_TONE = {
   PASS: "pass", ACCEPTED: "pass", approved: "pass", analyzed: "pass", Verified: "pass",
@@ -1666,7 +1681,7 @@ function render() {
     <div class="app">
       <aside class="rail ${state.railOpen ? "open" : ""}" id="rail">
         <div class="rail-brand">
-          <div class="rail-mark">QI</div>
+          <div class="rail-mark">${logoSvg()}</div>
           <div><strong>Inspection Portal</strong><span>Quality Management</span></div>
         </div>
         <nav>
@@ -4345,11 +4360,24 @@ new MutationObserver(() => { if ($("#dropzone")) bindDropzone(); })
 
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
+/** Same mark in the browser tab, as an inline data URI. */
+function setFavicon() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -6 128 78">` +
+    logoSvg().replace(/^<svg[^>]*>|<\/svg>$/g, "").replace(/currentColor/g, "#1a6b7a") +
+    `</svg>`;
+  const link = document.createElement("link");
+  link.rel = "icon";
+  link.type = "image/svg+xml";
+  link.href = "data:image/svg+xml," + encodeURIComponent(svg);
+  document.head.append(link);
+}
+
 (function boot() {
   const theme = localStorage.getItem("qip.theme");
   if (theme) document.documentElement.setAttribute("data-theme", theme);
   try { settings = { ...settings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") }; } catch (e) { /* defaults */ }
 
+  setFavicon();
   loadDb();
   // No sign-in gate: open straight into the workspace. The rail's "Acting as"
   // switcher changes role, so RBAC is still exercised without a login wall.
