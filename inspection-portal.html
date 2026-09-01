@@ -212,6 +212,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ============================================================ tables */
 .tablewrap { overflow-x: auto; }
+/* Grids with many columns must scroll rather than squeeze every cell to
+   nothing — a "mm" clipped to "n" is worse than a horizontal scrollbar. */
+.tablewrap.wide > table { min-width: 2380px; }
+.tablewrap.wide-report > table { min-width: 1880px; }
 table { border-collapse: collapse; width: 100%; font-size: 13px; }
 thead th {
   position: sticky; top: 0; z-index: 5;
@@ -737,8 +741,13 @@ const FREQ = {
   major: "Every incoming lot",
   minor: "Every incoming lot",
 };
-/* BNC sampling per IS:2500 — sample size by lot quantity, rejection number 0. */
-const IS2500 = "IS:2500 — 3 (0-99) / 5 (100-199) / 8 (200-499) / 10 (500-999) / 20 (>1000); Rej. no. 0";
+/* BNC sampling per IS:2500 — sample size by lot quantity, rejection number 0.
+   The grid cell carries the short form; the full breakdown lives in the
+   standard's notes and is printed as a table on the controlled document, so
+   repeating it in all 24 rows only truncates. */
+const IS2500 = "IS:2500 — sample by lot size";
+const IS2500_FULL =
+  "IS:2500 — 3 (0-99) / 5 (100-199) / 8 (200-499) / 10 (500-999) / 20 (>1000); rejection no. 0";
 const PLAN = {
   critical: "100% — no sampling permitted",
   major: IS2500,
@@ -861,7 +870,7 @@ function seed() {
   db.standards.push({ id: 1, code: "BNC-IQC-DIM02",
     title: "Inspection Standard — Ignition Sleeve (Drg. Rev L4)",
     drawing_revision_id: 1, part_id: 1, version: 1, status: "approved",
-    notes: "Model: Challenger · Sampling per " + IS2500 +
+    notes: "Model: Challenger · Sampling per " + IS2500_FULL +
       " · Record the minimum and maximum reading in the inspection report.",
     created_by_id: 2, approved_by_id: 2,
     approved_at: new Date(Date.now() - 86400e3 * 72).toISOString(),
@@ -1580,6 +1589,8 @@ function render() {
         <div class="content">${view}</div>
       </div>
     </div>`;
+
+  refreshCellTooltips();
 }
 
 /* ============================================================== dashboard */
@@ -2207,7 +2218,9 @@ function standardDetailView(id) {
         <button class="btn" data-act="save-standard" data-id="${s.id}">Save changes</button>
         <button class="btn primary" data-act="approve-standard" data-id="${s.id}">Approve standard</button>` : ""}
      ${s.status !== "draft" && can("quality_manager")
-        ? `<button class="btn" data-act="revise-standard" data-id="${s.id}">Revise</button>` : ""}
+        ? `<button class="btn primary" data-act="revise-standard" data-id="${s.id}"
+             title="Return this standard to draft so units, methods and instruments can be changed"
+             >Revise to edit</button>` : ""}
      ${s.status === "approved" && can("inspector")
         ? `<button class="btn primary" data-act="new-report" data-id="${s.id}">Create inspection report</button>` : ""}`) +
 
@@ -2222,13 +2235,14 @@ function standardDetailView(id) {
     ["Characteristics", `${params.length} (${params.filter(p => p.classification === "critical").length} critical)`],
   ])}</div>` +
 
-  card(`Inspection parameters — ${params.length}`, `<div class="tablewrap"><table>
+  pickLists() +
+  card(`Inspection parameters — ${params.length}`, `<div class="tablewrap wide"><table>
     <thead><tr><th style="width:40px">S.No</th><th style="min-width:165px">Inspection parameter</th>
       <th style="min-width:145px">Specification</th><th class="r" style="width:90px">Nominal</th>
       <th class="r" style="width:84px">Upper tol.</th><th class="r" style="width:84px">Lower tol.</th>
-      <th style="width:56px">Unit</th><th style="min-width:135px">Inspection method</th>
-      <th style="min-width:150px">Measuring instrument</th><th style="min-width:110px">Frequency</th>
-      <th style="min-width:140px">Sampling plan</th><th style="min-width:140px">Acceptance criteria</th>
+      <th style="width:82px">Unit</th><th style="min-width:235px">Inspection method</th>
+      <th style="min-width:190px">Measuring instrument</th><th style="min-width:110px">Frequency</th>
+      <th style="min-width:205px">Sampling plan</th><th style="min-width:165px">Acceptance criteria</th>
       <th style="width:98px">Class</th><th style="width:80px">Ref. dim.</th>
       <th style="min-width:150px">Remarks</th></tr></thead>
     <tbody>${params.map(p => `
@@ -2242,8 +2256,10 @@ function standardDetailView(id) {
         ${["nominal_value", "upper_tolerance", "lower_tolerance"].map(f =>
           `<td><input class="in cell r" type="number" step="any" data-param="${p.id}" data-field="${f}"
              value="${p[f] ?? ""}" placeholder="—" ${editable ? "" : "disabled"}></td>`).join("")}
-        <td><input class="in cell" data-param="${p.id}" data-field="unit" value="${esc(p.unit || "")}" ${editable ? "" : "disabled"}></td>
-        <td><input class="in cell" data-param="${p.id}" data-field="inspection_method" value="${esc(p.inspection_method || "")}" ${editable ? "" : "disabled"}></td>
+        <td><input class="in cell" list="unitOptions" data-param="${p.id}" data-field="unit"
+              value="${esc(p.unit || "")}" ${editable ? "" : "disabled"}></td>
+        <td><input class="in cell" list="methodOptions" data-param="${p.id}" data-field="inspection_method"
+              value="${esc(p.inspection_method || "")}" ${editable ? "" : "disabled"}></td>
         <td><select class="in cell" data-param="${p.id}" data-field="instrument_id" ${editable ? "" : "disabled"}>
             <option value="">${esc(p.instrument_text || "— select —")}</option>
             ${db.instruments.filter(i => i.is_active || i.id === p.instrument_id).map(i =>
@@ -2253,8 +2269,10 @@ function standardDetailView(id) {
           </select>
           ${p.instrument_id && byId("instruments", p.instrument_id)?.calibration_due < todayISO()
             ? `<div style="margin-top:3px"><span class="chip fail">Calibration overdue</span></div>` : ""}</td>
-        <td><input class="in cell" data-param="${p.id}" data-field="frequency" value="${esc(p.frequency || "")}" ${editable ? "" : "disabled"}></td>
-        <td><input class="in cell" data-param="${p.id}" data-field="sampling_plan" value="${esc(p.sampling_plan || "")}" ${editable ? "" : "disabled"}></td>
+        <td><input class="in cell" list="frequencyOptions" data-param="${p.id}" data-field="frequency"
+              value="${esc(p.frequency || "")}" ${editable ? "" : "disabled"}></td>
+        <td><input class="in cell" list="samplingOptions" data-param="${p.id}" data-field="sampling_plan"
+              value="${esc(p.sampling_plan || "")}" ${editable ? "" : "disabled"}></td>
         <td><input class="in cell" data-param="${p.id}" data-field="acceptance_criteria" value="${esc(p.acceptance_criteria || "")}" ${editable ? "" : "disabled"}>
           <div style="font-size:11px;color:var(--ink-3);margin-top:3px" class="mono">${esc(limitsText(p))}</div></td>
         <td><select class="in cell" data-param="${p.id}" data-field="classification" ${editable ? "" : "disabled"}>
@@ -2270,6 +2288,39 @@ function standardDetailView(id) {
             ${p.requires_manual_verification ? "Requires manual verification" : "Verified"}
           </label></td>
       </tr>`).join("")}</tbody></table></div>`, { pad: false });
+}
+
+/* Pick-lists for the standard grid. These are datalists rather than selects so
+   a Quality Engineer can choose a common value or type one that is not listed. */
+const UNIT_OPTIONS = ["mm", "°", "µm", "inch", "g", "kg", "HRC", "HV", "N", "Nm", "NA"];
+const METHOD_OPTIONS = [
+  "Variable measurement",
+  "Attribute gauging (Go/No-Go)",
+  "Optical comparison",
+  "Optical comparison against drawing",
+  "Angular measurement",
+  "Bore measurement",
+  "Surface roughness test",
+  "Coordinate measurement (CMM)",
+  "Visual inspection",
+  "Visual inspection / document check",
+  "Hardness test",
+  "Weight check",
+  "Functional / assembly check",
+];
+const FREQUENCY_OPTIONS = [
+  "100% inspection", "Every incoming lot", "First article + last piece",
+  "Once per lot", "Once per shift", "2 pcs per lot", "5 pcs per lot", "Hourly",
+];
+
+function pickLists() {
+  const list = (id, values) =>
+    `<datalist id="${id}">${values.map(v => `<option value="${esc(v)}"></option>`).join("")}</datalist>`;
+  return list("unitOptions", UNIT_OPTIONS) +
+         list("methodOptions", METHOD_OPTIONS) +
+         list("frequencyOptions", FREQUENCY_OPTIONS) +
+         list("samplingOptions", [IS2500, IS2500_FULL, "100% — no sampling permitted",
+           "ISO 2859-1, Level II, AQL 0.65", "ISO 2859-1, Level II, AQL 1.5", "1 pc per lot"]);
 }
 
 /* ------------------------------------ BNC-format controlled standard sheet */
@@ -2491,7 +2542,7 @@ function reportDetailView(id) {
     ["Inspector name", report.inspector_name],
   ])}</div>` +
 
-  card("Inspection results", `<div class="tablewrap"><table>
+  card("Inspection results", `<div class="tablewrap wide-report"><table>
     <thead><tr><th style="width:44px">S.No</th><th style="min-width:170px">Inspection parameter</th>
       <th style="min-width:130px">Specification</th><th style="width:96px">Tolerance</th>
       <th style="width:120px">Limits</th><th style="min-width:120px">Method</th>
@@ -3535,6 +3586,14 @@ document.addEventListener("input", e => {
       rerenderKeepingFocus(null, el.selectionStart, el);
   }
 });
+
+/** A grid cell can only be so wide; hovering shows whatever does not fit. */
+function refreshCellTooltips() {
+  $$(".tablewrap input.in.cell").forEach(el => {
+    if (el.value && el.scrollWidth > el.clientWidth + 1) el.title = el.value;
+    else el.removeAttribute("title");
+  });
+}
 
 /** Re-render, then put the caret back so typing in a grid is not interrupted. */
 function rerenderKeepingFocus(elementId, caret, sourceEl) {
