@@ -2192,8 +2192,9 @@ function standardDetailView(id) {
   if (unver) notices.push(`<div class="note warn">${unver} parameter${unver === 1 ? "" : "s"} still marked
     <em>Requires Manual Verification</em>. Enter the nominal and tolerance from the drawing and clear the flag —
     approval is refused until then.</div>`);
-  if (s.status !== "draft") notices.push(`<div class="note info">This standard is ${esc(s.status)} and therefore
-    read-only. Generate a new version from the drawing to make changes.</div>`);
+  if (s.status !== "draft") notices.push(`<div class="note info">This standard is ${esc(s.status)}, so the grid
+    is read-only — instruments, tolerances and the verification flags cannot be changed while it is released.
+    Use <b>Revise</b> to return it to draft and edit it.</div>`);
 
   return pageHead(s.code,
     `${esc(s.title)} · v${s.version} ${chip(s.status)}
@@ -2205,6 +2206,8 @@ function standardDetailView(id) {
      ${editable ? `<button class="btn" data-act="add-param" data-id="${s.id}">Add parameter</button>
         <button class="btn" data-act="save-standard" data-id="${s.id}">Save changes</button>
         <button class="btn primary" data-act="approve-standard" data-id="${s.id}">Approve standard</button>` : ""}
+     ${s.status !== "draft" && can("quality_manager")
+        ? `<button class="btn" data-act="revise-standard" data-id="${s.id}">Revise</button>` : ""}
      ${s.status === "approved" && can("inspector")
         ? `<button class="btn primary" data-act="new-report" data-id="${s.id}">Create inspection report</button>` : ""}`) +
 
@@ -2243,8 +2246,13 @@ function standardDetailView(id) {
         <td><input class="in cell" data-param="${p.id}" data-field="inspection_method" value="${esc(p.inspection_method || "")}" ${editable ? "" : "disabled"}></td>
         <td><select class="in cell" data-param="${p.id}" data-field="instrument_id" ${editable ? "" : "disabled"}>
             <option value="">${esc(p.instrument_text || "— select —")}</option>
-            ${db.instruments.map(i => `<option value="${i.id}" ${i.id === p.instrument_id ? "selected" : ""}>${esc(i.name)}</option>`).join("")}
-          </select></td>
+            ${db.instruments.filter(i => i.is_active || i.id === p.instrument_id).map(i =>
+              `<option value="${i.id}" ${i.id === p.instrument_id ? "selected" : ""}
+                >${esc(i.name)}${i.is_active ? "" : " (retired)"}</option>`).join("")}
+            <option value="__new__">+ Add a new instrument...</option>
+          </select>
+          ${p.instrument_id && byId("instruments", p.instrument_id)?.calibration_due < todayISO()
+            ? `<div style="margin-top:3px"><span class="chip fail">Calibration overdue</span></div>` : ""}</td>
         <td><input class="in cell" data-param="${p.id}" data-field="frequency" value="${esc(p.frequency || "")}" ${editable ? "" : "disabled"}></td>
         <td><input class="in cell" data-param="${p.id}" data-field="sampling_plan" value="${esc(p.sampling_plan || "")}" ${editable ? "" : "disabled"}></td>
         <td><input class="in cell" data-param="${p.id}" data-field="acceptance_criteria" value="${esc(p.acceptance_criteria || "")}" ${editable ? "" : "disabled"}>
@@ -2254,10 +2262,13 @@ function standardDetailView(id) {
         </select></td>
         <td><input class="in cell" data-param="${p.id}" data-field="reference_dimension" value="${esc(p.reference_dimension || "")}" ${editable ? "" : "disabled"}></td>
         <td><input class="in cell" data-param="${p.id}" data-field="remarks" value="${esc(p.remarks || "")}" ${editable ? "" : "disabled"}>
-          ${p.requires_manual_verification
-            ? `<label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--warn);margin-top:3px">
-                 <input type="checkbox" data-clear-verify="${p.id}" ${editable ? "" : "disabled"}> Requires manual verification</label>`
-            : `<div style="margin-top:3px"><span class="chip pass">Verified</span></div>`}</td>
+          <label style="display:flex;align-items:center;gap:5px;font-size:11px;margin-top:4px;
+                 color:${p.requires_manual_verification ? "var(--warn)" : "var(--ink-3)"}"
+                 title="Tick to hold this parameter for manual verification; untick once you have confirmed the value against the drawing">
+            <input type="checkbox" data-verify-param="${p.id}"
+              ${p.requires_manual_verification ? "checked" : ""} ${editable ? "" : "disabled"}>
+            ${p.requires_manual_verification ? "Requires manual verification" : "Verified"}
+          </label></td>
       </tr>`).join("")}</tbody></table></div>`, { pad: false });
 }
 
@@ -2879,8 +2890,10 @@ function adminView() {
         <td class="r num">${db.reports.filter(r => r.supplier_id === s.id).length}</td></tr>`).join("")}
       </tbody></table></div>`, { pad: false });
   } else if (tab === "instruments") {
+    const used = id => db.parameters.filter(p => p.instrument_id === id).length;
     body = card(`${db.instruments.length} instruments`, `<div class="tablewrap"><table>
-      <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Least count</th><th>Range</th><th>Calibration due</th></tr></thead>
+      <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Least count</th><th>Range</th>
+        <th>Calibration due</th><th class="r">Used by</th><th>Status</th><th></th></tr></thead>
       <tbody>${db.instruments.map(i => {
         const overdue = i.calibration_due && i.calibration_due < todayISO();
         return `<tr class="${overdue ? "row-fail" : ""}">
@@ -2889,8 +2902,13 @@ function adminView() {
           <td class="mono" style="font-size:12px">${esc(i.least_count || "—")}</td>
           <td class="mono" style="font-size:12px">${esc(i.range_text || "—")}</td>
           <td>${fmtDate(i.calibration_due)}${overdue
-            ? ` <span class="chip fail">Overdue</span>` : ""}</td></tr>`;
-      }).join("")}</tbody></table></div>`, { pad: false });
+            ? ` <span class="chip fail">Overdue</span>` : ""}</td>
+          <td class="r num">${used(i.id)}</td>
+          <td>${i.is_active ? `<span class="chip pass">Active</span>` : `<span class="chip mute">Retired</span>`}</td>
+          <td class="r"><button class="btn sm" data-act="edit-instrument" data-id="${i.id}">Edit</button></td>
+        </tr>`;
+      }).join("")}</tbody></table></div>`,
+      { pad: false, actions: `<button class="btn sm" data-act="add-instrument">Add instrument</button>` });
   } else {
     body = card(`Last ${db.audit.length} events`, db.audit.length ? `<div class="tablewrap"><table>
       <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead>
@@ -2983,6 +3001,85 @@ function uploadModal() {
       <input type="checkbox" id="upAnalyze" checked> Run AI analysis immediately after upload</label>`,
     `<button class="btn" data-act="close-modal">Cancel</button>
      <button class="btn primary" data-act="do-upload">Upload</button>`, { wide: true });
+}
+
+/**
+ * Add or edit a measuring instrument. `assignToParameter` is set when the
+ * dialog was opened from a standard's instrument dropdown, so the new
+ * instrument is selected for that parameter as soon as it is saved.
+ */
+function instrumentModal(instrumentId, assignToParameter) {
+  const i = instrumentId ? byId("instruments", instrumentId) : null;
+  openModal(i ? `Edit ${i.name}` : "Add measuring instrument", `
+    <div id="instrumentError"></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+      <label class="f"><span class="lbl">Code *</span>
+        <input class="in mono" id="insCode" value="${esc(i?.code || "")}" placeholder="DVC-150"></label>
+      <label class="f"><span class="lbl">Name *</span>
+        <input class="in" id="insName" value="${esc(i?.name || "")}" placeholder="Digital Vernier Caliper 0-150 mm"></label>
+      <label class="f"><span class="lbl">Type</span>
+        <select class="in" id="insType">
+          ${["Variable", "Attribute"].map(t =>
+            `<option ${i?.type === t ? "selected" : ""}>${t}</option>`).join("")}
+        </select></label>
+      <label class="f"><span class="lbl">Least count</span>
+        <input class="in" id="insLc" value="${esc(i?.least_count || "")}" placeholder="0.01 mm"></label>
+      <label class="f"><span class="lbl">Range</span>
+        <input class="in" id="insRange" value="${esc(i?.range_text || "")}" placeholder="0-150 mm"></label>
+      <label class="f"><span class="lbl">Calibration due</span>
+        <input class="in" type="date" id="insCal" value="${esc(i?.calibration_due || "")}"></label>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13.5px">
+      <input type="checkbox" id="insActive" ${i && !i.is_active ? "" : "checked"}>
+      Available for selection</label>`,
+    `<button class="btn" data-act="close-modal">Cancel</button>
+     <button class="btn primary" data-act="save-instrument"
+       data-id="${instrumentId || ""}" data-param="${assignToParameter || ""}">
+       ${i ? "Save changes" : "Add instrument"}</button>`, { wide: true });
+}
+
+function saveInstrument(instrumentId, assignToParameter) {
+  const code = $("#insCode").value.trim();
+  const name = $("#insName").value.trim();
+  const err = $("#instrumentError");
+  if (!code || !name)
+    return err.innerHTML = `<div class="note fail" style="margin-bottom:12px">Code and name are both required.</div>`;
+  const clash = db.instruments.find(x => x.code.toLowerCase() === code.toLowerCase() && x.id !== Number(instrumentId));
+  if (clash)
+    return err.innerHTML = `<div class="note fail" style="margin-bottom:12px">Code ${esc(code)} is already used by ${esc(clash.name)}.</div>`;
+
+  const data = {
+    code, name, type: $("#insType").value,
+    least_count: $("#insLc").value.trim() || null,
+    range_text: $("#insRange").value.trim() || null,
+    calibration_due: $("#insCal").value || null,
+    is_active: $("#insActive").checked,
+  };
+
+  let instrument;
+  if (instrumentId) {
+    instrument = byId("instruments", instrumentId);
+    Object.assign(instrument, data);
+    audit("instrument.update", "instrument", instrument.id, { code });
+  } else {
+    instrument = { id: nextId("instruments"), ...data };
+    db.instruments.push(instrument);
+    audit("instrument.create", "instrument", instrument.id, { code });
+  }
+
+  if (assignToParameter) {
+    const p = byId("parameters", assignToParameter);
+    if (p) { p.instrument_id = instrument.id; p.instrument_text = instrument.name; }
+  }
+  // Keep every parameter's cached instrument name in step with the master.
+  db.parameters.forEach(p => {
+    if (p.instrument_id === instrument.id) p.instrument_text = instrument.name;
+  });
+
+  save();
+  closeModal();
+  render();
+  toast(instrumentId ? `Updated ${instrument.name}` : `Added ${instrument.name}`, "good");
 }
 
 function newReportModal(standardId) {
@@ -3249,6 +3346,30 @@ document.addEventListener("click", e => {
       break;
     }
 
+    case "revise-standard": {
+      const s = byId("standards", id);
+      const reports = db.reports.filter(r => r.standard_id === s.id);
+      const closed = reports.filter(r => CLOSED_STATES.has(r.status)).length;
+      if (!confirm(
+        `Return ${s.code} to draft so it can be edited?\n\n` +
+        `Its approval is withdrawn and it must be approved again before new reports can be raised.` +
+        (closed ? `\n\n${closed} closed report(s) already reference it; those keep the values they were inspected against.` : "")
+      )) return;
+      s.status = "draft";
+      s.approved_by_id = null;
+      s.approved_at = null;
+      audit("standard.revise", "standard", s.id, { code: s.code });
+      save(); render();
+      toast(`${s.code} returned to draft — the grid is now editable`, "good");
+      break;
+    }
+
+    case "add-instrument": instrumentModal(null, null); break;
+    case "edit-instrument": instrumentModal(Number(id), null); break;
+    case "save-instrument":
+      saveInstrument(btn.dataset.id || null, btn.dataset.param || null);
+      break;
+
     case "ask-delete-drawing": confirmDeleteDrawing(Number(id)); break;
     case "do-delete-drawing": closeModal(); deleteDrawing(Number(id)); break;
 
@@ -3375,8 +3496,10 @@ document.addEventListener("input", e => {
     const field = el.dataset.field;
     if (field === "is_attribute") { p.is_attribute = el.checked; rerenderKeepingFocus(null); return; }
     if (field === "instrument_id") {
+      if (el.value === "__new__") { instrumentModal(null, p.id); return; }
       p.instrument_id = el.value ? Number(el.value) : null;
       p.instrument_text = byId("instruments", p.instrument_id)?.name || p.instrument_text;
+      save(); rerenderKeepingFocus(null);
       return;
     }
     p[field] = ["nominal_value", "upper_tolerance", "lower_tolerance"].includes(field)
@@ -3385,10 +3508,12 @@ document.addEventListener("input", e => {
       p.acceptance_criteria = acceptanceText(p);
     return;
   }
-  if (el.dataset.clearVerify !== undefined) {
-    const p = byId("parameters", el.dataset.clearVerify);
-    p.requires_manual_verification = false;
+  if (el.dataset.verifyParam !== undefined) {
+    const p = byId("parameters", el.dataset.verifyParam);
+    p.requires_manual_verification = el.checked;
     p.acceptance_criteria = acceptanceText(p);
+    audit(el.checked ? "parameter.hold" : "parameter.verify", "parameter", p.id,
+      { parameter: p.parameter });
     save(); render();
     return;
   }
