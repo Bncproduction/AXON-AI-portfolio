@@ -27,6 +27,7 @@ documents/
 *.dwg
 *.dxf
 
-# Vercel build output
+# Vercel: build output and the generated deploy artifact
 public/
+site/index.html
 .vercel/
