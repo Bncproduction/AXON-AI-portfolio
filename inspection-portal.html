@@ -1542,8 +1542,9 @@ function render() {
     view = ({
       dashboard: dashboardView,
       drawings:  () => r.id ? drawingDetailView(r.id) : drawingsView(),
+      // The controlled document is what a standard *is*; the grid is how you edit it.
       standards: () => !r.id ? standardsView()
-        : r.sub === "doc" ? standardDocView(r.id) : standardDetailView(r.id),
+        : r.sub === "edit" ? standardDetailView(r.id) : standardDocView(r.id),
       reports:   () => !r.id ? reportsView()
         : r.sub === "doc" ? reportDocView(r.id) : reportDetailView(r.id),
       analytics: analyticsView,
@@ -2127,7 +2128,7 @@ function generateStandard(revId) {
   state.draftExtraction = null;
   save();
   toast(`Generated ${standard.code}`, "good");
-  go(`#/standards/${standard.id}`);
+  go(`#/standards/${standard.id}/edit`);   // straight into review, before it is released
 }
 
 function persistExtraction(revId, opts = {}) {
@@ -2211,9 +2212,8 @@ function standardDetailView(id) {
     `${esc(s.title)} · v${s.version} ${chip(s.status)}
      ${s.approved_by_id ? `<span style="font-size:12px;color:var(--ink-3)">Approved by
         ${esc(byId("users", s.approved_by_id)?.full_name)} on ${fmtDate(s.approved_at)}</span>` : ""}`,
-    `<a class="btn" href="#/standards">Back</a>
+    `<a class="btn" href="#/standards/${s.id}">Back to document</a>
      ${drawing ? `<a class="btn" href="#/drawings/${drawing.id}">View drawing</a>` : ""}
-     <a class="btn" href="#/standards/${s.id}/doc">Controlled document</a>
      ${editable ? `<button class="btn" data-act="add-param" data-id="${s.id}">Add parameter</button>
         <button class="btn" data-act="save-standard" data-id="${s.id}">Save changes</button>
         <button class="btn primary" data-act="approve-standard" data-id="${s.id}">Approve standard</button>` : ""}
@@ -2350,15 +2350,27 @@ function standardDocView(id) {
     <th style="width:44px">CTQ</th><th style="width:26%">SPECIFICATIONS</th>
     <th style="width:44px">UOM</th><th>MEASURING METHOD</th></tr></thead>`;
 
-  return `<div class="no-print" style="max-width:1000px;margin:0 auto 14px;display:flex;
-      justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <div class="actions">
-        <a class="btn" href="#/standards/${s.id}">Back to editor</a>
-        <button class="btn primary" data-act="print">Print / Save as PDF</button>
+  const unverified = params.filter(p => p.requires_manual_verification).length;
+
+  return `<div class="no-print" style="max-width:1000px;margin:0 auto 14px">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div class="actions">
+          <a class="btn" href="#/standards">All standards</a>
+          ${drawing ? `<a class="btn" href="#/drawings/${drawing.id}">Drawing</a>` : ""}
+          ${can("quality_manager")
+            ? `<a class="btn" href="#/standards/${s.id}/edit">Edit parameters</a>` : ""}
+          <button class="btn" data-act="print">Print / Save as PDF</button>
+          ${s.status === "draft" && can("quality_manager")
+            ? `<button class="btn primary" data-act="approve-standard" data-id="${s.id}">Approve standard</button>` : ""}
+          ${s.status === "approved" && can("inspector")
+            ? `<button class="btn primary" data-act="new-report" data-id="${s.id}">Create inspection report</button>` : ""}
+        </div>
+        <span style="font-size:12px;color:var(--ink-3);align-self:center">
+          ${params.length} characteristics · ${chip(s.status)}</span>
       </div>
-      <span style="font-size:12px;color:var(--ink-3);align-self:center">
-        Controlled-document layout — ${params.length} characteristics
-        ${s.status === "draft" ? "· DRAFT, not yet approved" : ""}</span>
+      ${unverified ? `<div class="note warn" style="margin-top:10px">${unverified} parameter${
+        unverified === 1 ? "" : "s"} still marked <em>Requires Manual Verification</em>.
+        Approval is blocked until they are resolved in <b>Edit parameters</b>.</div>` : ""}
     </div>
   <div class="doc-wrap"><div class="doc">
     <table style="margin-bottom:-1px">
@@ -2392,8 +2404,8 @@ function standardDocView(id) {
     <table style="margin-bottom:-1px">${cols}<tbody>${head(dimensional, 0)}</tbody></table>
 
     <table style="margin-bottom:-1px">
-      <tr><td class="c" style="width:33.33%"><span class="ctq">●</span> CRITICAL</td>
-          <td class="c" style="width:33.33%"><span class="ctq">◐</span> MAJOR</td>
+      <tr><td class="c" style="width:33.33%"><span class="ctq">◐</span> MAJOR</td>
+          <td class="c" style="width:33.33%"><span class="ctq">●</span> CRITICAL</td>
           <td class="c"><span class="ctq">▽</span> SAFETY</td></tr>
     </table>
 
