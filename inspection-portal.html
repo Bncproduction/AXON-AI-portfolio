@@ -553,12 +553,104 @@ function can(minRole) { return state.user ? RANK[state.user.role] >= RANK[minRol
 /* ================================================================== store */
 const DB_KEY = "qip.db.v2", SESSION_KEY = "qip.session.v1", SETTINGS_KEY = "qip.settings.v1";
 
-/* Drawing sheets bundled with the file, keyed by drawing number, held outside
-   localStorage so the record persists while the bitmap lives in the page.
-   Empty in the published build: this repository is public and released
-   customer drawings do not belong in it. Upload the PDF through
-   Drawings → Upload to get the preview back, or paste a data URI here. */
+/* Drawing sheets bundled with this file, keyed by drawing number. Empty in the
+   published build: released customer drawings do not belong in the repository.
+   Upload the sheet instead — it is then stored permanently in the browser. */
 const SHEETS = {};
+
+/* ================================================== drawing file storage
+   Uploaded sheets live in IndexedDB, not localStorage: a scanned A3 PDF runs
+   to megabytes, which base64 in localStorage cannot hold, and IndexedDB keeps
+   the Blob as-is. Record and file therefore both survive a reload. Falls back
+   to memory-only when IndexedDB is unavailable (private browsing) rather than
+   failing outright.
+   ======================================================================== */
+const FILE_DB = "qip.files.v1", FILE_STORE = "sheets";
+let fileDbPromise = null;
+
+function fileDb() {
+  if (fileDbPromise) return fileDbPromise;
+  fileDbPromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error("IndexedDB unavailable"));
+    const req = indexedDB.open(FILE_DB, 1);
+    req.onupgradeneeded = () => {
+      const idb = req.result;
+      if (!idb.objectStoreNames.contains(FILE_STORE)) idb.createObjectStore(FILE_STORE, { keyPath: "id" });
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error("IndexedDB blocked"));
+  }).catch(err => { fileDbPromise = null; throw err; });
+  return fileDbPromise;
+}
+
+function fileTx(mode, run) {
+  return fileDb().then(idb => new Promise((resolve, reject) => {
+    const tx = idb.transaction(FILE_STORE, mode);
+    const request = run(tx.objectStore(FILE_STORE));
+    tx.oncomplete = () => resolve(request ? request.result : undefined);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  }));
+}
+
+async function putSheet(drawingId, file) {
+  try {
+    await fileTx("readwrite", store =>
+      store.put({ id: drawingId, blob: file, name: file.name, type: file.type }));
+    return true;
+  } catch (err) {
+    console.warn("Could not store the drawing file:", err);
+    return false;
+  }
+}
+
+async function getSheet(drawingId) {
+  try { return await fileTx("readonly", store => store.get(drawingId)); }
+  catch (err) { return undefined; }
+}
+
+async function deleteSheet(drawingId) {
+  try { await fileTx("readwrite", store => store.delete(drawingId)); }
+  catch (err) { /* nothing stored, or storage unavailable */ }
+}
+
+/** The original file for a drawing — from this session, or from storage. */
+async function sheetFile(drawingId) {
+  const inSession = state.files?.get(drawingId);
+  if (inSession) return inSession;
+  const stored = await getSheet(drawingId);
+  return stored ? new File([stored.blob], stored.name || "drawing", { type: stored.type }) : null;
+}
+
+/** Fill in each drawing-preview placeholder once its file has loaded. */
+async function hydrateSheets() {
+  for (const host of $$("[data-sheet]")) {
+    const id = Number(host.dataset.sheet);
+    const bundled = SHEETS[host.dataset.number];
+    let url = blobs.get(id) || bundled || null;
+    let isImage = bundled ? true : (host.dataset.mime || "").startsWith("image/");
+
+    if (!url) {
+      const stored = await getSheet(id);
+      if (stored) {
+        url = URL.createObjectURL(stored.blob);
+        blobs.set(id, url);
+        isImage = (stored.type || "").startsWith("image/");
+      }
+    }
+
+    if (!url) {
+      host.innerHTML = `<div class="empty" style="padding:28px 18px">
+        <div style="font-weight:500;color:var(--ink-2)">No sheet stored</div>
+        <div style="margin-top:4px;max-width:42ch;margin-inline:auto">Upload the drawing file — it is
+          kept in this browser from then on, so the preview is there every time.</div></div>`;
+      continue;
+    }
+    host.innerHTML = isImage
+      ? `<img src="${url}" alt="Drawing sheet" style="display:block;width:100%">`
+      : `<iframe src="${url}" title="Drawing sheet" style="border:0;width:100%;height:100%"></iframe>`;
+  }
+}
 
 let db;                                   // persisted relational data
 const state = { user: null, route: "", railOpen: false };
@@ -1608,6 +1700,7 @@ function render() {
 
   setupResizableColumns();
   refreshCellTooltips();
+  hydrateSheets();
 }
 
 /* ============================================================== dashboard */
@@ -1830,10 +1923,6 @@ function drawingDetailView(id) {
   const part = byId("parts", drawing.part_id);
   const unverified = ex ? ex.dimensions.filter(d => d.requires_manual_verification).length : 0;
   const editable = can("quality_manager");
-  const blobUrl = blobs.get(drawing.id) || SHEETS[drawing.drawing_number] || null;
-  const isImage = blobs.has(drawing.id)
-    ? drawing.mime_type.startsWith("image/")
-    : !!SHEETS[drawing.drawing_number];
 
   const notices = [];
   if (rev?.extraction_error) notices.push(`<div class="note fail">Last analysis failed: ${esc(rev.extraction_error)}</div>`);
@@ -1849,13 +1938,10 @@ function drawingDetailView(id) {
     <b>dimensions and tolerances</b> in the views, and it reads nothing at all from a scanned sheet.
     Add a key under Settings for full extraction.</div>`);
 
-  const preview = blobUrl
-    ? (isImage
-        ? `<div class="preview" style="overflow:auto"><img src="${blobUrl}"
-             alt="Drawing sheet ${esc(drawing.drawing_number)}" style="width:100%"></div>`
-        : `<iframe class="preview" src="${blobUrl}" title="Drawing sheet ${esc(drawing.drawing_number)}"></iframe>`)
-    : emptyState("No preview in this session",
-        "Uploaded files are held in memory only, so a page reload keeps the record but drops the image. Re-upload to preview.");
+  // Filled in by hydrateSheets() once the stored file has been read back.
+  const preview = `<div class="preview" style="overflow:auto" data-sheet="${drawing.id}"
+      data-number="${esc(drawing.drawing_number)}" data-mime="${esc(drawing.mime_type)}">
+      <div class="empty" style="padding:28px 18px">Loading sheet…</div></div>`;
 
   const headerFields = [
     ["part_name", "Part name"], ["part_number", "Part number"], ["drawing_number", "Drawing number"],
@@ -2009,6 +2095,7 @@ function deleteDrawing(drawingId) {
   const url = blobs.get(drawingId);
   if (url) { URL.revokeObjectURL(url); blobs.delete(drawingId); }
   state.files?.delete(drawingId);
+  deleteSheet(drawingId);
   state.draftExtraction = null;
   state.drafts = {};
 
@@ -2094,7 +2181,8 @@ async function runAnalysis(drawingId) {
   toast("Reading the drawing…");
 
   try {
-    const file = state.files?.get(drawing.id);
+    // Reads the stored sheet, so re-analysis works after a reload too.
+    const file = await sheetFile(drawing.id);
     let extraction;
     if (settings.apiKey && file) {
       extraction = await extractWithAI(file);
@@ -4227,12 +4315,18 @@ async function doUpload() {
   state.files.set(drawing.id, pendingFile);
   blobs.set(drawing.id, URL.createObjectURL(pendingFile));
 
+  // Keep the sheet permanently, so the preview survives a reload.
+  const stored = await putSheet(drawing.id, pendingFile);
+  if (!stored) toast("Sheet kept for this session only — browser storage refused it", "bad");
+
   const analyze = $("#upAnalyze").checked;
-  audit("drawing.upload", "drawing", drawing.id, { file: pendingFile.name });
+  audit("drawing.upload", "drawing", drawing.id,
+    { file: pendingFile.name, persisted: stored });
   save();
   pendingFile = null;
   closeModal();
   go(`#/drawings/${drawing.id}`);
+  render();
   if (analyze) setTimeout(() => runAnalysis(drawing.id), 60);
 }
 
