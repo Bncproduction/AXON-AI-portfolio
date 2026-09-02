@@ -2268,8 +2268,16 @@ function drawingDetailView(id) {
     `<a class="btn" href="#/drawings">Back</a>
      ${can("inspector") ? `<button class="btn" data-act="analyze" data-id="${drawing.id}">
         ${rev?.extraction ? "Re-run AI analysis" : "Run AI analysis"}</button>` : ""}
-     ${editable && ex ? `<button class="btn" data-act="save-extraction" data-rev="${rev.id}">Save verification</button>
-        <button class="btn primary" data-act="gen-standard" data-rev="${rev.id}">Generate standard</button>` : ""}
+     ${editable && ex ? (() => {
+        const existing = db.standards.filter(s => s.drawing_revision_id === rev.id)
+          .sort((a, b) => b.version - a.version)[0];
+        return `<button class="btn primary" data-act="save-extraction" data-rev="${rev.id}"
+            title="Save the verified extraction and go to the inspection standard"
+            >Save verification &amp; ${existing ? "open" : "create"} standard</button>
+          ${existing ? `<button class="btn" data-act="gen-standard" data-rev="${rev.id}"
+            title="Create a further version of the standard from this revision"
+            >New standard version</button>` : ""}`;
+      })() : ""}
      ${can("quality_manager")
         ? `<button class="btn danger" data-act="ask-delete-drawing" data-id="${drawing.id}">Delete drawing</button>` : ""}`) +
 
@@ -2563,6 +2571,26 @@ function generateStandard(revId) {
   save();
   toast(`Generated ${standard.code}`, "good");
   go(`#/standards/${standard.id}/edit`);   // straight into review, before it is released
+}
+
+/**
+ * Save the verified extraction and carry straight on to the standard: create
+ * it if this revision has none yet, otherwise open the one it already has.
+ * "Generate standard" stays separate because that deliberately makes a new
+ * version each time it is pressed.
+ */
+function completeVerification(revId) {
+  const existing = db.standards
+    .filter(s => s.drawing_revision_id === revId)
+    .sort((a, b) => b.version - a.version)[0];
+
+  if (!existing) { generateStandard(revId); return; }
+
+  persistExtraction(revId, { silent: true });
+  save();
+  go(`#/standards/${existing.id}`);
+  render();
+  toast(`Verification saved — opening ${existing.code}`, "good");
 }
 
 function persistExtraction(revId, opts = {}) {
@@ -4172,7 +4200,7 @@ document.addEventListener("click", e => {
     case "upload": uploadModal(); break;
     case "do-upload": doUpload(); break;
     case "analyze": runAnalysis(Number(id)); break;
-    case "save-extraction": persistExtraction(Number(btn.dataset.rev)); break;
+    case "save-extraction": completeVerification(Number(btn.dataset.rev)); break;
     case "gen-standard": generateStandard(Number(btn.dataset.rev)); break;
 
     case "save-standard":
