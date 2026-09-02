@@ -1198,7 +1198,7 @@ function addWasherPart() {
  * standard — the equivalent of a printed blank form waiting on the bench.
  * No measurements are invented; every row starts PENDING.
  */
-function seedBlankReport(standardId) {
+function seedBlankReport(standardId, opts = {}) {
   const standard = byId("standards", standardId);
   const revision = byId("revisions", standard.drawing_revision_id);
   const part = byId("parts", standard.part_id);
@@ -1214,7 +1214,7 @@ function seedBlankReport(standardId) {
     company_name: "BNC Motors Pvt Ltd", customer_name: part ? part.customer_name : null,
     batch_number: null, po_number: null, invoice_number: null,
     inspection_date: todayISO(), shift: null, machine_number: null, operator_name: null,
-    inspector_id: 3, inspector_name: null,
+    inspector_id: opts.inspectorId ?? 3, inspector_name: opts.inspectorName ?? null,
     lot_quantity: 0, sample_quantity: 3,
     accepted_quantity: 0, rejected_quantity: 0, rework_quantity: 0,
     total_parameters: params.length, passed_parameters: 0, failed_parameters: 0,
@@ -1231,6 +1231,7 @@ function seedBlankReport(standardId) {
     actual_value: null, actual_text: null, result: PENDING, deviation: null,
     defect_id: null, defect_description: null, remarks: null,
   }));
+  return report;
 }
 
 function loadDb() {
@@ -4208,8 +4209,27 @@ document.addEventListener("click", e => {
       standard.approved_by_id = state.user.id;
       standard.approved_at = new Date().toISOString();
       audit("standard.approve", "standard", standard.id);
-      save(); render();
-      toast(`${standard.code} approved and released for inspection`, "good");
+
+      // Releasing a standard raises its first inspection report automatically —
+      // a blank form carrying every parameter, ready for measurements. Further
+      // reports (next lot, next batch) are still raised by hand.
+      let raised = null;
+      if (!db.reports.some(r => r.standard_id === standard.id)) {
+        raised = seedBlankReport(standard.id, {
+          inspectorId: state.user.id,
+          inspectorName: can("inspector") ? state.user.full_name : null,
+        });
+        audit("report.create", "report", raised.id,
+          { standard: standard.code, auto: true });
+      }
+
+      save();
+      go(raised ? `#/reports/${raised.id}` : `#/standards/${standard.id}`);
+      render();
+      toast(raised
+        ? `${standard.code} approved — report ${raised.report_number} raised with all ` +
+          `${raised.total_parameters} parameters`
+        : `${standard.code} approved and released for inspection`, "good");
       break;
     }
 
