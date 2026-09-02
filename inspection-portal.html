@@ -772,6 +772,75 @@ const SLEEVE_APPEARANCE = [
   ["Warpage",           "Carried over from BNC-IQC-DIM02. Not classified on the drawing."],
 ];
 
+/* ---------------------------------------------------------------------------
+   M4 SHOULDER WASHER — drawing 2A041814B014 rev NR, BITS (Booma Innovative
+   Transport Solutions). Nylon, bought out, scale 3:1, first angle projection.
+
+   Only the six ballooned characteristics are listed, as requested. Everything
+   else on the sheet — R0.2, the rework-area note, the ISO 2768-1 general
+   tolerance table — is deliberately left out because it carries no balloon.
+
+   The drawing's own legend reads "● Critical, ◐ Major, (None) Minor". None of
+   the six balloons carries a symbol, so all six are Minor. That is what the
+   sheet says rather than an assessment of their importance; set a class in the
+   editor if your process ranks them differently.
+   label, balloon, type, nominal, +tol, -tol, callout, instrument, method, note
+   --------------------------------------------------------------------------- */
+const WASHER_CHARACTERISTICS = [
+  ["Outside diameter", "1", "diameter", 12, 0.2, -0.2, "Ø12 ±0.2", "DVC-150",
+   "Variable measurement", "Front view, balloon 1 — leader to the outer circle."],
+  ["Centre to rework flat", "2", "length", 4.5, 0.2, -0.2, "4.5 ±0.2", "PPJ-300",
+   "Optical comparison",
+   "Front view, balloon 2 — axis to the machined flat at the rework area."],
+  ["Overall length", "3", "length", 4, 0.1, -0.1, "4 ±0.1", "DVC-150",
+   "Variable measurement", "Section B-B, balloon 3 — full height of the washer."],
+  ["Shoulder outside diameter", "4", "diameter", 8, 0, -0.2, "Ø8 +0/-0.2", "DVC-150",
+   "Variable measurement", "Section B-B, balloon 4 — unilateral, 7.8 to 8.0."],
+  ["Shoulder length", "5", "length", 2, 0.1, -0.1, "2 ±0.1", "DVC-150",
+   "Variable measurement", "Section B-B, balloon 5 — length of the reduced step."],
+  ["Bore diameter", "6", "diameter", 4.3, 0.1, -0.1, "Ø4.3 ±0.1", "PPJ-300",
+   "Optical comparison",
+   "Section B-B, balloon 6 — through bore. Too small to caliper reliably."],
+];
+
+function washerExtraction() {
+  return {
+    part_name: "M4 SHOULDER WASHER",
+    part_number: "2A041814B014",
+    drawing_number: "2A041814B014",
+    drawing_revision: "NR",
+    material: "NYLON (bought out)",
+    units: "mm",
+    scale: "3:1",
+    general_tolerance_note:
+      "Permissible deviations as per ISO 2768-1 — up to 6: ±0.3 · 6-30: ±0.5 · " +
+      "30-120: ±0.8 · 120-400: ±1.2 · 400-1000: ±2.0 · 1000-2000: ±3 · 2000-4000: ±4. " +
+      "Applies to unballooned dimensions only.",
+    title_block_confidence: 0.95,
+    header_requires_verification: {},
+    dimensions: WASHER_CHARACTERISTICS.map(
+      ([label, ref, type, nom, up, lo, spec, inst, method, note]) => ({
+        label, reference: ref, dimension_type: type,
+        nominal_value: nom, upper_tolerance: up, lower_tolerance: lo,
+        unit: "mm", specification_text: spec, gdt_symbol: null, datums: null,
+        classification: "minor", instrument_code: inst, inspection_method: method,
+        is_attribute: false, confidence: 0.95, source_note: note,
+        requires_manual_verification: false, verification_reasons: [],
+      })),
+    notes: [
+      { text: "Part material: nylon.", is_inspection_requirement: false, confidence: 0.97 },
+      { text: "R0.2 and the rework area are shown on the sheet but carry no balloon, so they are not in this standard.", is_inspection_requirement: false, confidence: 0.95 },
+      { text: "Drawn NANTHA 10/06, checked VIJAY 10/06, approved VINOTH 12/06 (2023) · L4 mass production · sheet 1 of 1 (A4) · product group BITS.21.004.", is_inspection_requirement: false, confidence: 0.93 },
+    ],
+    unreadable_areas: [],
+    pages_analysed: 1,
+    ballooned: true,
+    engine: "vision:verified-2A041814B014-NR",
+    confidence_threshold: 0.75,
+    overall_confidence: 0.95,
+  };
+}
+
 function demoExtraction() {
   const dims = SLEEVE_CHARACTERISTICS.map(
     ([label, ref, type, nom, up, lo, spec, cls, inst, method, note, flags, attr]) => ({
@@ -983,9 +1052,63 @@ function seed() {
   buildParameters(extraction).forEach(p =>
     db.parameters.push({ id: nextId("parameters"), standard_id: 1, ...p }));
 
-  seedBlankReport();
+  seedBlankReport(1);
+  addWasherPart();
   audit("system.seed", "standard", 1, { characteristics: db.parameters.length });
   save();
+}
+
+/**
+ * M4 Shoulder Washer, built from the six ballooned characteristics only.
+ * Written as an additive step so it can also be applied to a database that was
+ * seeded before this part existed, without disturbing anything already there.
+ */
+function addWasherPart() {
+  if (db.drawings.some(d => d.drawing_number === "2A041814B014")) return false;
+
+  const part = {
+    id: nextId("parts"), part_number: "2A041814B014", part_name: "M4 SHOULDER WASHER",
+    material: "NYLON (bought out)", customer_name: "BITS.21.004", supplier_id: null,
+  };
+  db.parts.push(part);
+
+  const drawing = {
+    id: nextId("drawings"), drawing_number: "2A041814B014", title: "M4 Shoulder Washer",
+    part_id: part.id, file_name: "M4 shoulder washer.pdf", mime_type: "application/pdf",
+    file_size: 298291, status: "analyzed", uploaded_by_id: 3,
+    created_at: new Date().toISOString(),
+  };
+  db.drawings.push(drawing);
+
+  const extraction = washerExtraction();
+  const revision = {
+    id: nextId("revisions"), drawing_id: drawing.id, revision: "NR", is_current: true,
+    status: "analyzed", extraction, extraction_confidence: extraction.overall_confidence,
+    extraction_engine: extraction.engine, extraction_error: null,
+    analyzed_at: new Date().toISOString(),
+    verified_by_id: 2, verified_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  };
+  db.revisions.push(revision);
+
+  const standard = {
+    id: nextId("standards"), code: "BNC-IQC-DIM03",
+    title: "Inspection Standard — M4 Shoulder Washer (Drg. Rev NR)",
+    drawing_revision_id: revision.id, part_id: part.id, version: 1, status: "approved",
+    notes: "Ballooned characteristics only (6 of them). Sampling per " + IS2500_FULL +
+      " · Record the minimum and maximum reading in the inspection report.",
+    created_by_id: 2, approved_by_id: 2,
+    approved_at: new Date().toISOString(), created_at: new Date().toISOString(),
+  };
+  db.standards.push(standard);
+
+  buildParameters(extraction).forEach(p =>
+    db.parameters.push({ id: nextId("parameters"), standard_id: standard.id, ...p }));
+
+  seedBlankReport(standard.id);
+  audit("standard.generate", "standard", standard.id,
+    { code: standard.code, characteristics: 6, source: "ballooned dimensions only" });
+  return true;
 }
 
 /**
@@ -993,13 +1116,20 @@ function seed() {
  * standard — the equivalent of a printed blank form waiting on the bench.
  * No measurements are invented; every row starts PENDING.
  */
-function seedBlankReport() {
-  const params = db.parameters.filter(p => p.standard_id === 1).sort((a, b) => a.seq - b.seq);
+function seedBlankReport(standardId) {
+  const standard = byId("standards", standardId);
+  const revision = byId("revisions", standard.drawing_revision_id);
+  const part = byId("parts", standard.part_id);
+  const params = db.parameters.filter(p => p.standard_id === standardId).sort((a, b) => a.seq - b.seq);
+  const year = new Date().getFullYear();
+  const seq = db.reports.filter(r => r.report_number.startsWith(`IR-${year}-`)).length + 1;
   const report = {
-    id: 1, report_number: `IR-${new Date().getFullYear()}-00001`,
-    standard_id: 1, part_id: 1, drawing_id: 1, drawing_revision: "L4",
+    id: nextId("reports"), report_number: `IR-${year}-${String(seq).padStart(5, "0")}`,
+    standard_id: standardId, part_id: standard.part_id,
+    drawing_id: revision ? revision.drawing_id : null,
+    drawing_revision: revision ? revision.revision : null,
     supplier_id: null,
-    company_name: "BNC Motors Pvt Ltd", customer_name: "Challenger",
+    company_name: "BNC Motors Pvt Ltd", customer_name: part ? part.customer_name : null,
     batch_number: null, po_number: null, invoice_number: null,
     inspection_date: todayISO(), shift: null, machine_number: null, operator_name: null,
     inspector_id: 3, inspector_name: null,
@@ -1023,7 +1153,15 @@ function seedBlankReport() {
 
 function loadDb() {
   const raw = localStorage.getItem(DB_KEY);
-  if (raw) { try { db = JSON.parse(raw); return; } catch (e) { /* fall through to reseed */ } }
+  if (raw) {
+    try {
+      db = JSON.parse(raw);
+      // Parts added after a database was first seeded are applied on load, so
+      // existing drawings, standards and reports are left untouched.
+      if (addWasherPart()) save();
+      return;
+    } catch (e) { /* unreadable — fall through and reseed */ }
+  }
   seed();
 }
 
@@ -1055,6 +1193,17 @@ printed on the drawing". Use the units printed on the drawing.`;
 
 const USER_PROMPT = `Read this engineering drawing and return the structured extraction.
 
+BALLOONS COME FIRST. Many drawings mark the characteristics to be inspected with
+balloons — a number in a circle, often with the dimension highlighted. If this
+drawing has them:
+  - extract exactly those ballooned characteristics, in balloon order, and put
+    the balloon number in "reference";
+  - do not add unballooned dimensions, general-tolerance tables, radii or notes
+    as characteristics — they are context, not inspection points;
+  - set "ballooned" true.
+If it has no balloons, extract every dimension you can read and set "ballooned"
+false.
+
 Cover: title block (part name/number, drawing number, revision, material, scale, units, general
 tolerance note), every dimension with its tolerance, every geometric tolerance (GD&T frame:
 symbol, value, datums, material condition), surface finish callouts, hole specifications, thread
@@ -1080,6 +1229,11 @@ const EXTRACTION_TOOL = {
       general_tolerance_note: { type: ["string", "null"],
         description: "Verbatim general-tolerance note, or null if not legible." },
       title_block_confidence: { type: "number" },
+      ballooned: {
+        type: "boolean",
+        description: "True when the drawing marks its inspection points with numbered balloons "
+          + "and only those were extracted.",
+      },
       dimensions: {
         type: "array",
         items: {
@@ -1169,6 +1323,7 @@ function postprocess(raw, engine) {
     title_block_confidence: titleConf, header_requires_verification: headerFlags,
     dimensions: dims, notes: raw.notes || [], unreadable_areas: raw.unreadable_areas || [],
     pages_analysed: raw.pages_analysed ?? 1, engine,
+    ballooned: raw.ballooned ?? false,
     confidence_threshold: threshold, overall_confidence: overall,
   };
 }
@@ -1251,6 +1406,28 @@ function unescapePdfString(raw) {
   return out;
 }
 
+/**
+ * PDF strings may be PDFDocEncoding or UTF-16BE, with or without a byte-order
+ * mark. Read as latin-1, a UTF-16BE string arrives as "\0M\04\0 ..." — every
+ * character preceded by a NUL — which no pattern can match. Detect that and
+ * fold it back down.
+ */
+function decodePdfText(s) {
+  if (!s) return s;
+  if (s.charCodeAt(0) === 0xFE && s.charCodeAt(1) === 0xFF) s = s.slice(2);   // BOM
+  else if (s.charCodeAt(0) === 0xFF && s.charCodeAt(1) === 0xFE) {
+    let out = "";                                                            // UTF-16LE
+    for (let i = 2; i + 1 < s.length; i += 2) out += s[i];
+    return out;
+  }
+  let nulls = 0;
+  for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) === 0) nulls += 1;
+  if (nulls < s.length * 0.3) return s;
+  let out = "";
+  for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) !== 0) out += s[i];
+  return out;
+}
+
 /** Text-showing operators from one decoded content stream. */
 function textFromContentStream(content) {
   const pieces = [];
@@ -1261,9 +1438,9 @@ function textFromContentStream(content) {
       const hex = m[1].replace(/\s+/g, "");
       let s = "";
       for (let i = 0; i + 1 < hex.length; i += 2) s += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-      pieces.push(s);
+      pieces.push(decodePdfText(s));
     } else {
-      pieces.push(unescapePdfString(m[0].slice(1, -1)));
+      pieces.push(decodePdfText(unescapePdfString(m[0].slice(1, -1))));
     }
   }
   // One line per text-showing run, so a title-block label and its value stay together
@@ -1308,7 +1485,21 @@ const TITLE_BLOCK_PATTERNS = {
 
 /* Words that are labels, not values — a capture landing on one means the cell
    was empty and we ran into the next field. */
-const LABEL_WORDS = /^(no|name|number|date|sign|rev|revision|scale|material|model|drawn|checked|approved|title|sheet|units?)\b[.:]?$/i;
+const LABEL_WORDS = /^(no|name|number|date|sign|rev|revision|scale|material|model|drawn|checked|approved|title|sheet|units?|nominal|tolerance|modification|deviation|permissible|zone|description|designation)\b[.:]?$/i;
+
+/* A scanned drawing's OCR layer is noisy enough that a pattern will happily
+   match a neighbouring cell or a fragment of a dimension. Each field therefore
+   has to look like itself before it is accepted; anything else is left null and
+   flagged, which is the whole point of the extraction contract. */
+const FIELD_SHAPE = {
+  drawing_number:   v => /\d/.test(v) && /^[A-Z0-9][A-Z0-9._\-\/]{4,}$/i.test(v),
+  part_number:      v => /\d/.test(v) && /^[A-Z0-9][A-Z0-9._\-\/]{4,}$/i.test(v),
+  part_name:        v => /^[A-Za-z][A-Za-z0-9 .\-\/]{2,44}$/.test(v) && /[A-Za-z]{3}/.test(v)
+                         && !/[+±]/.test(v),
+  material:         v => /[A-Za-z]{3}/.test(v) && v.length <= 60,
+  drawing_revision: v => /^[A-Z0-9]{1,4}$/i.test(v),
+  scale:            v => /^\d+\s*:\s*\d+$/.test(v),
+};
 
 function cleanValue(raw) {
   const value = String(raw).trim().replace(/\s{2,}/g, " ").replace(/^[:\-–]\s*/, "").replace(/[,:;]+$/, "");
@@ -1316,20 +1507,21 @@ function cleanValue(raw) {
   return value;
 }
 
-function matchField(text, patterns) {
+function matchField(text, patterns, shape) {
+  const ok = v => v && (!shape || shape(v));
   const lines = text.split("\n");
   for (const re of patterns) {
     const m = text.match(re);
     if (m && m[1]) {
       const value = cleanValue(m[1]);
-      if (value) return value;
+      if (ok(value)) return value;
     }
     // Some title blocks put the label in one text run and the value in the next.
     const labelOnly = new RegExp(re.source.replace(/\(\[\^\\n\][^)]*\)|\([^)]*\)/, "") + "\\s*:?\\s*$", "i");
     for (let i = 0; i < lines.length - 1; i++) {
       if (labelOnly.test(lines[i])) {
         const value = cleanValue(lines[i + 1]);
-        if (value) return value;
+        if (ok(value)) return value;
       }
     }
   }
@@ -1339,13 +1531,16 @@ function matchField(text, patterns) {
 /** Build an extraction from a PDF's own text layer. No AI involved. */
 function extractionFromText(text, fileName) {
   const found = {};
-  for (const [field, patterns] of Object.entries(TITLE_BLOCK_PATTERNS)) found[field] = matchField(text, patterns);
+  for (const [field, patterns] of Object.entries(TITLE_BLOCK_PATTERNS))
+    found[field] = matchField(text, patterns, FIELD_SHAPE[field]);
 
   // A drawing number in the file name is a reasonable last resort.
   if (!found.drawing_number) {
+    // Only accept a file-name token that actually looks like a part number —
+    // it must carry digits, so a word like "shoulder" is not mistaken for one.
     const stem = (fileName || "").replace(/\.[^.]+$/, "");
-    const m = stem.match(/([A-Z0-9]{6,}[A-Z0-9._\-]*)/i);
-    if (m) found.drawing_number = m[1];
+    const m = stem.match(/\b(?=[A-Z0-9._\-]*\d)[A-Z][A-Z0-9._\-]{5,}\b/i);
+    if (m) found.drawing_number = m[0];
   }
   const units = /dimensions?\s+in\s+mm|\bin\s+mm\b/i.test(text) ? "mm"
               : /dimensions?\s+in\s+inch/i.test(text) ? "inch" : "mm";
@@ -1948,11 +2143,28 @@ function drawingDetailView(id) {
     the drawing and tick Verified — the standard cannot be approved until every row is cleared.</div>`);
   if (ex && !unverified && ex.dimensions.length) notices.push(`<div class="note pass">
     All ${ex.dimensions.length} characteristics verified. Ready to generate the inspection standard.</div>`);
-  if (!settings.apiKey) notices.push(`<div class="note info">
-    No AI key configured. <b>Run AI analysis</b> still reads the title block straight out of the PDF's
-    text layer, which is why the fields below may already be filled — but it cannot read the
-    <b>dimensions and tolerances</b> in the views, and it reads nothing at all from a scanned sheet.
-    Add a key under Settings for full extraction.</div>`);
+  if (ex && ex.ballooned) notices.push(`<div class="note pass">
+    This drawing is ballooned, so only the ${ex.dimensions.length} ballooned characteristics were
+    extracted. Unballooned dimensions, general-tolerance tables and notes are deliberately left out.</div>`);
+
+  // A scan either has no text layer at all, or an OCR one too garbled to parse.
+  // Both look the same to the user, so say the same clear thing about both.
+  const HEADER_FIELDS_READ = ["part_name", "part_number", "drawing_number", "drawing_revision", "material"];
+  const readCount = ex ? HEADER_FIELDS_READ.filter(f => ex[f]).length : 0;
+  const offlineEngine = rev?.extraction_engine === "offline-scanned"
+    || rev?.extraction_engine === "offline-stub"
+    || (rev?.extraction_engine === "pdf-text-layer" && readCount <= 1);
+
+  if (!settings.apiKey && rev?.extraction && offlineEngine) notices.push(`<div class="note warn">
+    <b>Almost nothing could be read from this sheet, because no AI key is configured.</b>
+    It is a scan — a picture of a drawing. There is no reliable text to parse and no way to see the
+    balloons without AI vision. Add an Anthropic key under <b>Settings</b> and run the analysis again;
+    it will then fill the title block and pull out the ballooned characteristics. Until then, type the
+    values in below by hand — the rows are editable.</div>`);
+  else if (!settings.apiKey) notices.push(`<div class="note info">
+    No AI key configured. <b>Run AI analysis</b> reads the title block out of the PDF's own text layer,
+    which is why some fields below are filled — but it cannot see the views, so
+    <b>dimensions, tolerances and balloons</b> are not extracted. Add a key under Settings for that.</div>`);
 
   // Filled in by hydrateSheets() once the stored file has been read back.
   const preview = `<div class="preview" style="overflow:auto" data-sheet="${drawing.id}"
@@ -2548,15 +2760,15 @@ function standardDocView(id) {
           <td>DRAWING NO</td><td>: ${esc(drawing?.drawing_number || "-")}</td></tr>
     </table>
 
-    <table style="margin-bottom:-1px">
+    ${appearance.length ? `<table style="margin-bottom:-1px">
       <tr><td colspan="6" class="band">APPEARANCE INSPECTION</td></tr>
     </table>
-    <table style="margin-bottom:-1px">${cols}<tbody>${head(appearance, 0)}</tbody></table>
+    <table style="margin-bottom:-1px">${cols}<tbody>${head(appearance, 0)}</tbody></table>` : ""}
 
-    <table style="margin-bottom:-1px">
+    ${dimensional.length ? `<table style="margin-bottom:-1px">
       <tr><td colspan="6" class="band">DIMENSION INSPECTION</td></tr>
     </table>
-    <table style="margin-bottom:-1px">${cols}<tbody>${head(dimensional, 0)}</tbody></table>
+    <table style="margin-bottom:-1px">${cols}<tbody>${head(dimensional, 0)}</tbody></table>` : ""}
 
     <table style="margin-bottom:-1px">
       <tr><td class="c" style="width:33.33%"><span class="ctq">◐</span> MAJOR</td>
@@ -2954,11 +3166,11 @@ function reportDocView(id) {
       </tr>
     </table>
 
-    <table style="margin-bottom:-1px"><tr><td colspan="14" class="band">Appearance Inspection</td></tr></table>
-    <table style="margin-bottom:-1px">${cols}<tbody>${body(appearance)}</tbody></table>
+    ${appearance.length ? `<table style="margin-bottom:-1px"><tr><td colspan="14" class="band">Appearance Inspection</td></tr></table>
+    <table style="margin-bottom:-1px">${cols}<tbody>${body(appearance)}</tbody></table>` : ""}
 
-    <table style="margin-bottom:-1px"><tr><td colspan="14" class="band">Dimensional Inspection</td></tr></table>
-    <table style="margin-bottom:-1px">${cols}<tbody>${body(dimensional)}</tbody></table>
+    ${dimensional.length ? `<table style="margin-bottom:-1px"><tr><td colspan="14" class="band">Dimensional Inspection</td></tr></table>
+    <table style="margin-bottom:-1px">${cols}<tbody>${body(dimensional)}</tbody></table>` : ""}
 
     <table style="margin-bottom:-1px">
       <tr>
