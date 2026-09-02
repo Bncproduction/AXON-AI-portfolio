@@ -841,6 +841,87 @@ function washerExtraction() {
   };
 }
 
+/* ---------------------------------------------------------------------------
+   CENTER STAND OUTER STAND spring — drawing 2A040519B009, BNC Motors.
+   Spring steel grade 2 (IS 4454 Part 1), chrome silicon per ASTM A401.
+
+   Five balloons. Unballooned dimensions (47, 20.3, 21, 25, Ø13, 5° TYP) are
+   left out, as is the load test in note 4, which is not ballooned either.
+
+   Where the sheet's "TOL. FOR PRESSING" table covers the dimension its
+   tolerance is applied and the derivation recorded. Where it does not, the
+   tolerance stays null and the row is flagged rather than guessed — that table
+   gives LENGTH and INSIDE Ø only, so it says nothing about wire diameter or
+   coil outside diameter.
+   label, balloon, type, nominal, +tol, -tol, callout, instrument, method, note, flags, attr
+   --------------------------------------------------------------------------- */
+const SPRING_CHARACTERISTICS = [
+  ["Coil body length", "1", "length", 68, 1.2, -1.2, "68", "DVC-150",
+   "Variable measurement",
+   "Balloon 1. No tolerance stated; applied TOL. FOR PRESSING, LENGTH, 63-250 band → ±1.2.",
+   [], false],
+  ["Active coils", "2", "other", 19, null, null, "ACTIVE COIL = 19 Nos", "VIS",
+   "Count against the drawing",
+   "Balloon 2. A count, not a measurement — the inspector confirms 19 active coils.",
+   [], true],
+  ["Wire diameter", "3", "diameter", 3.5, null, null, "Ø3.5 TYP", "OM-25",
+   "Variable measurement",
+   "Balloon 3. Nominal is legible, but the sheet's pressing table covers LENGTH and " +
+   "INSIDE Ø only — it defines no wire-diameter tolerance.",
+   ["No wire-diameter tolerance on the drawing. Take it from the wire spec " +
+    "(IS 4454 Part 1 / ASTM A401) and enter it here."], false],
+  ["Free length", "4", "length", 142, 1.2, -1.2, "142", "DVC-150",
+   "Variable measurement",
+   "Balloon 4. No tolerance stated; applied TOL. FOR PRESSING, LENGTH, 63-250 band → ±1.2.",
+   [], false],
+  ["Coil outside diameter", "5", "diameter", 20, null, null, "Ø20", "DVC-150",
+   "Variable measurement",
+   "Balloon 5. Leader points to the outer coil. The pressing table gives a tolerance for " +
+   "INSIDE Ø, not outside, so none applies here directly.",
+   ["No outside-diameter tolerance on the drawing. Confirm whether the INSIDE Ø column " +
+    "(16-63, t>2.3 → +1.2/0) is intended to apply, and enter it here."], false],
+];
+
+function springExtraction() {
+  return {
+    part_name: "CENTER STAND OUTER STAND",
+    part_number: "2A040519B009",
+    drawing_number: "2A040519B009",
+    drawing_revision: "NR",
+    material: "Spring steel grade 2, IS 4454 Part 1 — chrome silicon per ASTM A401 (note 1)",
+    units: "mm",
+    scale: "1:1",
+    general_tolerance_note:
+      "TOL. FOR PRESSING — LENGTH ≤4: ±0.3 · 4-16: ±0.5 · 16-63: ±0.7 · 63-250: ±1.2 · " +
+      "250-1000: ±2.0. INSIDE Ø (t>2.3) ≤4: +0.4 · 4-16: +0.8 · 16-63: +1.2 · 63-250: +2.0 · " +
+      "250-1000: +3.2. Wire diameter and outside coil diameter are not covered.",
+    title_block_confidence: 0.94,
+    header_requires_verification: {},
+    dimensions: SPRING_CHARACTERISTICS.map(
+      ([label, ref, type, nom, up, lo, spec, inst, method, note, flags, attr]) => ({
+        label, reference: ref, dimension_type: type,
+        nominal_value: nom, upper_tolerance: up, lower_tolerance: lo,
+        unit: attr ? "Nos" : "mm", specification_text: spec, gdt_symbol: null, datums: null,
+        classification: "minor", instrument_code: inst, inspection_method: method,
+        is_attribute: !!attr, confidence: flags.length ? 0.6 : 0.94, source_note: note,
+        requires_manual_verification: flags.length > 0, verification_reasons: flags,
+      })),
+    notes: [
+      { text: "Material of the spring as per ASTM A401 chrome silicon.", is_inspection_requirement: false, confidence: 0.96 },
+      { text: "Maximum operating temperature 250°.", is_inspection_requirement: false, confidence: 0.96 },
+      { text: "Surface treatment of the product: silver chrome plating.", is_inspection_requirement: false, confidence: 0.96 },
+      { text: "Load test at 10 mm deflection: 32.59 kgf ±10%. Stated on the sheet but not ballooned, so it is not in this standard — add it if the lot is to be load tested.", is_inspection_requirement: false, confidence: 0.95 },
+      { text: "Model CHALLENGER · next assembly 2A043A3A016 · finished mass 0.026 kg · drawn RATHENA, checked ANAND, approved VINOTH 12/01/24 · sheet 1 of 2 (A3).", is_inspection_requirement: false, confidence: 0.9 },
+    ],
+    unreadable_areas: [],
+    pages_analysed: 1,
+    ballooned: true,
+    engine: "vision:verified-2A040519B009-NR",
+    confidence_threshold: 0.75,
+    overall_confidence: 0.83,
+  };
+}
+
 function demoExtraction() {
   const dims = SLEEVE_CHARACTERISTICS.map(
     ([label, ref, type, nom, up, lo, spec, cls, inst, method, note, flags, attr]) => ({
@@ -1054,6 +1135,7 @@ function seed() {
 
   seedBlankReport(1);
   addWasherPart();
+  addSpringPart();
   audit("system.seed", "standard", 1, { characteristics: db.parameters.length });
   save();
 }
@@ -1158,7 +1240,9 @@ function loadDb() {
       db = JSON.parse(raw);
       // Parts added after a database was first seeded are applied on load, so
       // existing drawings, standards and reports are left untouched.
-      if (addWasherPart()) save();
+      let added = addWasherPart();
+      added = addSpringPart() || added;
+      if (added) save();
       return;
     } catch (e) { /* unreadable — fall through and reseed */ }
   }
@@ -3053,6 +3137,77 @@ function deleteParameter(parameterId) {
   save();
   render();
   toast(`Removed "${p.parameter}"${rows.length ? ` and ${rows.length} recorded result(s)` : ""}`, "good");
+}
+
+/** Add an instrument to the master if that code is not already there. */
+function ensureInstrument(code, name, type, leastCount, range) {
+  const existing = db.instruments.find(i => i.code === code);
+  if (existing) return existing;
+  const due = new Date();
+  due.setDate(due.getDate() + 180);
+  const instrument = {
+    id: nextId("instruments"), code, name, type,
+    least_count: leastCount, range_text: range,
+    calibration_due: due.toISOString().slice(0, 10), is_active: true,
+  };
+  db.instruments.push(instrument);
+  return instrument;
+}
+
+/**
+ * Center Stand Outer Stand spring, from its five balloons. Left as a draft:
+ * two of the five have no tolerance anywhere on the sheet, and the standard
+ * deliberately cannot be approved — or a report raised — until an engineer
+ * supplies them.
+ */
+function addSpringPart() {
+  if (db.drawings.some(d => d.drawing_number === "2A040519B009")) return false;
+
+  ensureInstrument("OM-25", "Outside Micrometer 0-25 mm", "Variable", "0.001 mm", "0-25 mm");
+
+  const part = {
+    id: nextId("parts"), part_number: "2A040519B009", part_name: "CENTER STAND OUTER STAND",
+    material: "Spring steel grade 2, IS 4454 Part 1", customer_name: "Challenger",
+    supplier_id: null,
+  };
+  db.parts.push(part);
+
+  const drawing = {
+    id: nextId("drawings"), drawing_number: "2A040519B009", title: "Center Stand Outer Stand Spring",
+    part_id: part.id, file_name: "center stand outer spring.pdf", mime_type: "application/pdf",
+    file_size: 261222, status: "analyzed", uploaded_by_id: 3,
+    created_at: new Date().toISOString(),
+  };
+  db.drawings.push(drawing);
+
+  const extraction = springExtraction();
+  const revision = {
+    id: nextId("revisions"), drawing_id: drawing.id, revision: "NR", is_current: true,
+    status: "analyzed", extraction, extraction_confidence: extraction.overall_confidence,
+    extraction_engine: extraction.engine, extraction_error: null,
+    analyzed_at: new Date().toISOString(),
+    verified_by_id: 2, verified_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  };
+  db.revisions.push(revision);
+
+  const standard = {
+    id: nextId("standards"), code: "BNC-IQC-DIM04",
+    title: "Inspection Standard — Center Stand Outer Stand Spring (Drg. Rev NR)",
+    drawing_revision_id: revision.id, part_id: part.id, version: 1, status: "draft",
+    notes: "Ballooned characteristics only (5). Wire diameter and coil outside diameter have no " +
+      "tolerance on the drawing and must be supplied before approval. Sampling per " + IS2500_FULL,
+    created_by_id: 2, approved_by_id: null, approved_at: null,
+    created_at: new Date().toISOString(),
+  };
+  db.standards.push(standard);
+
+  buildParameters(extraction).forEach(p =>
+    db.parameters.push({ id: nextId("parameters"), standard_id: standard.id, ...p }));
+
+  audit("standard.generate", "standard", standard.id,
+    { code: standard.code, characteristics: 5, source: "ballooned dimensions only" });
+  return true;
 }
 
 /** Withdraw a standard's approval so every parameter becomes editable again. */
