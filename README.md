@@ -34,6 +34,14 @@ Nylon Black). The sheet itself is embedded, so Drawings → 2A041514B008 shows t
 layout (appearance + dimension sections, CTQ symbols, IS:2500 sampling table, sign-off blocks)
 ready to print or save as PDF.
 
+Three further parts are built from their **ballooned characteristics only** — the balloons are what
+the drawing itself nominates for inspection, so nothing unballooned is pulled in:
+**BNC-IQC-DIM03** M4 Shoulder Washer (6 balloons, approved), **BNC-IQC-DIM04** Center Stand Outer
+Stand spring (5 balloons) and **BNC-IQC-DIM05** Side Stand Weld Assembly (13 balloons). The last two
+stay **draft**: some of their balloons carry no tolerance anywhere on the sheet, so those rows are
+marked *Requires Manual Verification* rather than filled in from a general-tolerance table, and
+approval is refused until a Quality Engineer supplies the limits.
+
 Reports opens on **IR-2026-00001**, a blank incoming-inspection report carrying all 24 parameters —
 the equivalent of a printed blank form on the bench. No measurements are invented: every row starts
 pending and you fill it in. This is a real customer part, so no fake inspection history is seeded.

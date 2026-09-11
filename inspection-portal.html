@@ -922,6 +922,135 @@ function springExtraction() {
   };
 }
 
+/* ---------------------------------------------------------------------------
+   SIDE STAND WELD ASSEMBLY — drawing 2A0105A018 rev L4, BITS (product group
+   BITS.30.001). A seven-item weld assembly: side stand pipe, clamp, deployment
+   lever, bottom plate, snap head rivet, sensor magnet mounting bracket and an
+   M4 weld nut.
+
+   Thirteen balloons, all highlighted on the sheet. CTQ legend as BITS draw it:
+   ● solid = Critical, ◐ half = Major, no symbol = Minor.
+
+   Unballooned dimensions are context and stay out: 192.5±2, (247.5), (44),
+   72.5±1.5, 40±1, 22.5±1, 80°, (9.5), 8/8, Ø14, 11, R12.5 and the
+   "Parallelism 0.2mm max" callout.
+
+   Three balloons carry no tolerance on the sheet — ② Ø19, ⑤ ●6 and ⑨ Ø11.
+   The sheet's own table is headed "Permissible Deviations as per ISO 2768-1",
+   but on this scan the band values under the header are not legible, so the
+   tolerance is left null and the row flagged rather than filled in from
+   memory. The reason names the band an engineer needs to confirm.
+   label, balloon, type, nominal, +tol, -tol, callout, class, instrument,
+   method, note, flags, attr
+   --------------------------------------------------------------------------- */
+const SIDESTAND_CHARACTERISTICS = [
+  ["Magnet bracket face to pipe centre", "1", "length", 14, 0.5, -0.5, "●14±0.5", "critical",
+   "DVC-150", "Variable measurement",
+   "Side view, balloon 1. Solid CTQ dot on the callout — Critical.", [], false],
+  ["Clamp boss outside diameter", "2", "diameter", 19, null, null, "Ø19", "minor",
+   "DVC-150", "Variable measurement",
+   "Section A-A, balloon 2. Nominal is legible; no tolerance is printed against it. " +
+   "The space left of the callout, where a CTQ dot would sit, is obscured by the balloon " +
+   "leader and highlighter — classified Minor because no symbol is legible, not because " +
+   "one was ruled out.",
+   ["No tolerance on the drawing. The sheet's general table is ISO 2768-1 but its band " +
+    "values are illegible on this scan — confirm the 6-30 mm band and enter it here. " +
+    "Confirm the CTQ class too: the symbol position is obscured on this scan."], false],
+  ["Pipe end to clamp centre", "3", "length", 118.5, 0.5, -0.5, "◐118.5±0.5", "major",
+   "DVC-150", "Variable measurement",
+   "Front view, balloon 3. Half-filled CTQ dot on the callout — Major.", [], false],
+  ["Clamp centre to bottom plate", "4", "length", 31.5, 0.5, -0.5, "31.5±0.5", "minor",
+   "DVC-150", "Variable measurement",
+   "Front view, balloon 4. No CTQ symbol — Minor.", [], false],
+  ["Bottom plate thickness", "5", "length", 6, null, null, "●6", "critical",
+   "DVC-150", "Variable measurement",
+   "Front view, balloon 5. Solid CTQ dot — Critical. Nominal is legible; no tolerance " +
+   "is printed against it.",
+   ["No tolerance on the drawing for a Critical characteristic. Do not take it from the " +
+    "general table without an engineer's decision — enter the intended limits here."], false],
+  ["Deployment lever pin height", "6", "length", 13, 0.5, -0.5, "13±0.5", "minor",
+   "DVC-150", "Variable measurement",
+   "Front view, balloon 6.", [], false],
+  ["Overall assembly length", "7", "length", 260.4, 1.5, -1.5, "●260.4±1.5", "critical",
+   "DVC-300", "Variable measurement",
+   "Front view, balloon 7. Solid CTQ dot — Critical. Beyond a 150 mm caliper.", [], false],
+  ["Pipe flange to first rivet", "8", "length", 37.2, 1, -1, "37.2±1", "minor",
+   "DVC-150", "Variable measurement",
+   "Front view, balloon 8.", [], false],
+  ["Weld nut clearance hole diameter", "9", "diameter", 11, null, null, "Ø11", "minor",
+   "DVC-150", "Variable measurement",
+   "Section B-B, balloon 9. Nominal is legible; no tolerance is printed against it.",
+   ["No tolerance on the drawing. The sheet's general table is ISO 2768-1 but its band " +
+    "values are illegible on this scan — confirm the 6-30 mm band and enter it here."], false],
+  ["Weld nut thread", "10", "thread", null, null, null, "M10 X 1.25P", "minor",
+   "TPG-M10", "Attribute gauging",
+   "Section B-B, balloon 10. M4 WELD NUT in the item list is a separate item; this thread " +
+   "is the M10x1.25 tapped feature. Note 1 requires the threaded holes to be re-tapped " +
+   "after powder coating, so gauge it after coating.",
+   [], true],
+  ["Concentricity of weld nut to clearance hole", "11", "geometric", 0, 0.2, 0,
+   "Concentricity should maintain in 0.2mm max", "minor",
+   "DG-VB", "Runout / concentricity check",
+   "Section B-B, balloon 11. Recorded as a one-sided characteristic: 0 to 0.2 mm.",
+   [], false],
+  ["Powder coating thickness", "12", "other", 80, 20, -20, "60 ~ 100 micron", "minor",
+   "CTG-DFT", "Coating thickness measurement",
+   "Balloon 12 on drawing note 6 — \"Powder coating Thickness 60 ~ 100 micron\". " +
+   "Recorded as the range printed, 60 to 100.",
+   [], false],
+  ["Deployment lever angle", "13", "angle", 90, 1, -1, "90°±1°", "minor",
+   "BP-UNI", "Angular measurement",
+   "Section A-A, balloon 13.", [], false],
+];
+
+function sideStandExtraction() {
+  return {
+    part_name: "SIDE STAND WELD ASSEMBLY",
+    part_number: "2A0105A018",
+    drawing_number: "2A0105A018",
+    drawing_revision: "L4",
+    material: "WELD ASSEMBLY",
+    units: "mm",
+    scale: "4:3",
+    general_tolerance_note:
+      "Permissible Deviations as per ISO 2768-1 (header legible on the sheet; the band " +
+      "values under it are not legible on this scan and have not been assumed).",
+    title_block_confidence: 0.92,
+    header_requires_verification: {},
+    dimensions: SIDESTAND_CHARACTERISTICS.map(
+      ([label, ref, type, nom, up, lo, spec, cls, inst, method, note, flags, attr]) => ({
+        label, reference: ref, dimension_type: type,
+        nominal_value: nom, upper_tolerance: up, lower_tolerance: lo,
+        unit: attr ? null : type === "angle" ? "°" : ref === "12" ? "micron" : "mm",
+        specification_text: spec, gdt_symbol: type === "geometric" ? "Concentricity" : null,
+        datums: null, classification: cls, instrument_code: inst, inspection_method: method,
+        is_attribute: !!attr, confidence: flags.length ? 0.6 : 0.93, source_note: note,
+        requires_manual_verification: flags.length > 0, verification_reasons: flags,
+      })),
+    notes: [
+      { text: "Retap threaded holes after powder coating.", is_inspection_requirement: false, confidence: 0.95 },
+      { text: "Weld firmly. No undercut at the welding zone.", is_inspection_requirement: false, confidence: 0.95 },
+      { text: "Part must be free from welding spatters.", is_inspection_requirement: false, confidence: 0.95 },
+      { text: "Part must be free from wrinkles.", is_inspection_requirement: false, confidence: 0.95 },
+      { text: "Powder coating semi-glossy.", is_inspection_requirement: false, confidence: 0.95 },
+      { text: "Corrosion test as per ASTM B117 — no red rust within 500 hrs. Stated on the sheet but not ballooned, so it is not an inspection row here.", is_inspection_requirement: false, confidence: 0.93 },
+      { text: "Surface area of part 36430 square mm approx.", is_inspection_requirement: false, confidence: 0.9 },
+      { text: "Parallelism 0.2 mm max is called out on the front view but carries no balloon, so it is not in this standard — add it if it is to be inspected.", is_inspection_requirement: false, confidence: 0.95 },
+      { text: "Items: 2A010511B039 side stand pipe (rev B) · 2A010511B040 side stand clamp · 2A010511B041 side stand deployment lever · 2A010511B042 side stand bottom plate · 2A010511B043 snap head rivet · 2A060511B009 sensor magnet mtg bracket · 1BAWN04002 M4 weld nut — 1 off each.", is_inspection_requirement: false, confidence: 0.92 },
+      { text: "Next assembly 2A010502 · product group BITS.30.001 · drawn SELVA 12/11, checked VIJAY 14/11, approved VINOTH 14/11 (2020) · released 14/10/2024 · L4 approved for mass production · sheet 1 of 1 (A3).", is_inspection_requirement: false, confidence: 0.88 },
+    ],
+    unreadable_areas: [
+      "Permissible-deviation band values in the title-block table — the ISO 2768-1 header " +
+      "is legible but the columns under it are not, on this scan",
+    ],
+    pages_analysed: 1,
+    ballooned: true,
+    engine: "vision:verified-2A0105A018-L4",
+    confidence_threshold: 0.75,
+    overall_confidence: 0.86,
+  };
+}
+
 function demoExtraction() {
   const dims = SLEEVE_CHARACTERISTICS.map(
     ([label, ref, type, nom, up, lo, spec, cls, inst, method, note, flags, attr]) => ({
@@ -1136,6 +1265,7 @@ function seed() {
   seedBlankReport(1);
   addWasherPart();
   addSpringPart();
+  addSideStandPart();
   audit("system.seed", "standard", 1, { characteristics: db.parameters.length });
   save();
 }
@@ -1243,6 +1373,7 @@ function loadDb() {
       // existing drawings, standards and reports are left untouched.
       let added = addWasherPart();
       added = addSpringPart() || added;
+      added = addSideStandPart() || added;
       if (added) save();
       return;
     } catch (e) { /* unreadable — fall through and reseed */ }
@@ -2868,7 +2999,7 @@ function standardDocView(id) {
           <td style="width:150px">DRG.REV.NO/DATE</td>
           <td style="width:190px">: ${esc(rev?.revision || "-")} / 22.06.2024</td></tr>
       <tr><td>PART NAME</td><td>: ${esc(part?.part_name || "-")}</td>
-          <td>MODEL</td><td>: CHALLENGER</td></tr>
+          <td>MODEL</td><td>: ${esc((part?.customer_name || "CHALLENGER").toUpperCase())}</td></tr>
       <tr><td>MATERIAL</td><td>: ${esc(part?.material || "-")}</td>
           <td>DRAWING NO</td><td>: ${esc(drawing?.drawing_number || "-")}</td></tr>
     </table>
@@ -3236,6 +3367,64 @@ function addSpringPart() {
 
   audit("standard.generate", "standard", standard.id,
     { code: standard.code, characteristics: 5, source: "ballooned dimensions only" });
+  return true;
+}
+
+/**
+ * Side Stand Weld Assembly, from its thirteen balloons. Left as a draft:
+ * three of the thirteen have no tolerance on the sheet, so approval — and with
+ * it the first report — waits on a Quality Engineer supplying them.
+ */
+function addSideStandPart() {
+  if (db.drawings.some(d => d.drawing_number === "2A0105A018")) return false;
+
+  ensureInstrument("DVC-300", "Digital Vernier Caliper 0-300 mm", "Variable", "0.01 mm", "0-300 mm");
+  ensureInstrument("TPG-M10", "Thread Plug Gauge M10x1.25 6H (Go/No-Go)", "Attribute", "—", "M10x1.25");
+  ensureInstrument("DG-VB", "Dial Gauge 0-10 mm on V-block", "Variable", "0.01 mm", "0-10 mm");
+  ensureInstrument("CTG-DFT", "Coating Thickness Gauge (DFT)", "Variable", "1 micron", "0-1000 micron");
+
+  const part = {
+    id: nextId("parts"), part_number: "2A0105A018", part_name: "SIDE STAND WELD ASSEMBLY",
+    material: "WELD ASSEMBLY", customer_name: "BITS.30.001", supplier_id: null,
+  };
+  db.parts.push(part);
+
+  const drawing = {
+    id: nextId("drawings"), drawing_number: "2A0105A018", title: "Side Stand Weld Assembly",
+    part_id: part.id, file_name: "side stand weld assembly.pdf", mime_type: "application/pdf",
+    file_size: 381397, status: "analyzed", uploaded_by_id: 3,
+    created_at: new Date().toISOString(),
+  };
+  db.drawings.push(drawing);
+
+  const extraction = sideStandExtraction();
+  const revision = {
+    id: nextId("revisions"), drawing_id: drawing.id, revision: "L4", is_current: true,
+    status: "analyzed", extraction, extraction_confidence: extraction.overall_confidence,
+    extraction_engine: extraction.engine, extraction_error: null,
+    analyzed_at: new Date().toISOString(),
+    verified_by_id: 2, verified_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  };
+  db.revisions.push(revision);
+
+  const standard = {
+    id: nextId("standards"), code: "BNC-IQC-DIM05",
+    title: "Inspection Standard — Side Stand Weld Assembly (Drg. Rev L4)",
+    drawing_revision_id: revision.id, part_id: part.id, version: 1, status: "draft",
+    notes: "Ballooned characteristics only (13). Ø19 (balloon 2), the 6 mm bottom plate " +
+      "(balloon 5) and Ø11 (balloon 9) carry no tolerance on the drawing and must be " +
+      "supplied before approval. Sampling per " + IS2500_FULL,
+    created_by_id: 2, approved_by_id: null, approved_at: null,
+    created_at: new Date().toISOString(),
+  };
+  db.standards.push(standard);
+
+  buildParameters(extraction).forEach(p =>
+    db.parameters.push({ id: nextId("parameters"), standard_id: standard.id, ...p }));
+
+  audit("standard.generate", "standard", standard.id,
+    { code: standard.code, characteristics: 13, source: "ballooned dimensions only" });
   return true;
 }
 
