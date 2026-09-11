@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+backend/storage/
+backend/.env
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+out/
+frontend/.env.local
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Controlled customer documents — released drawings, filled inspection records
+# and anything else carrying supplier names or signatures. This repository is
+# public; keep proprietary source documents out of it.
+documents/
+*.dwg
+*.dxf
+
+# Vercel: build output and CLI project link.
+#
+# site/index.html is NOT ignored. It is a copy of inspection-portal.html and
+# the only file Vercel serves, so it has to be in the repository for the Git
+# integration to deploy anything — deploying from the CLI instead needs
+# credentials this machine does not carry. Regenerate it with ./deploy.sh
+# (or copy the file by hand) and commit it alongside the source.
+public/
+.vercel/
