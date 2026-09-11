@@ -80,6 +80,43 @@ demo extraction instead of reading your file — it never pretends to have read 
 
 ---
 
+## Deploying the single-file build
+
+```bash
+./deploy.sh
+```
+
+That copies `inspection-portal.html` to `site/index.html`, commits it and pushes to the `portal`
+remote. Vercel builds from there — no Vercel credentials needed on the machine that runs it.
+`./deploy.sh --cli` uploads `site/` straight from the Vercel CLI instead, for anyone who has run
+`vercel login`.
+
+**The Vercel project must be wired up like this, once:**
+
+| Setting | Value |
+|---|---|
+| Settings → Git → Connected repository | `Bncproduction/AI-Drawing-Inspection-Standard-Generator` |
+| Settings → Git → Production branch | `main` |
+| Settings → General → Root Directory | `site` |
+
+Three things about that table are easy to get wrong, and each has bitten this project:
+
+- **Root Directory must be `site`, not the repository root.** At the root, Vercel detects
+  `frontend/` as Next.js and `backend/` as FastAPI, treats them as services, and refuses to combine
+  that with a top-level build config. `site/` holds only the page and its `vercel.json`.
+- **`site/index.html` is committed on purpose.** It is generated, but the Git integration can only
+  deploy what is in the repository — gitignoring it leaves Vercel with nothing to serve. The CLI
+  route hid this for a while because the CLI uploads gitignored files too.
+- **Check which repository the project is actually connected to.** If the project was imported from
+  `AXON-AI-portfolio`, its deployments list shows that repository's builds and pushes to
+  `AI-Drawing-Inspection-Standard-Generator` do nothing. Disconnect and reconnect it to the
+  dedicated repository.
+
+Deployment Protection is on, so the production URL asks for a Vercel login even though it is a
+public address. Turn it off under Settings → Deployment Protection if the link is to be shared.
+
+---
+
 ## Multi-user build
 
 ### 1. Backend
