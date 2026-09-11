@@ -27,7 +27,12 @@ documents/
 *.dwg
 *.dxf
 
-# Vercel: build output and the generated deploy artifact
+# Vercel: build output and CLI project link.
+#
+# site/index.html is NOT ignored. It is a copy of inspection-portal.html and
+# the only file Vercel serves, so it has to be in the repository for the Git
+# integration to deploy anything — deploying from the CLI instead needs
+# credentials this machine does not carry. Regenerate it with ./deploy.sh
+# (or copy the file by hand) and commit it alongside the source.
 public/
-site/index.html
 .vercel/
