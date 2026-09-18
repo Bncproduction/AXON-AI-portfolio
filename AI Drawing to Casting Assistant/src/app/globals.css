@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-industrial-50: #f5f7fa;
+  --color-industrial-100: #e9eef5;
+  --color-industrial-200: #d3dce8;
+  --color-industrial-300: #adbfd4;
+  --color-industrial-400: #7f9bba;
+  --color-industrial-500: #5c7ba2;
+  --color-industrial-600: #476288;
+  --color-industrial-700: #3a4f6e;
+  --color-industrial-800: #33445c;
+  --color-industrial-900: #1f2a3a;
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: #f1f4f8;
+  color: #1f2a3a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin industrial scrollbars for the wide data tables. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #adbfd4 transparent;
+}
+*::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c3cfdf;
+  border-radius: 6px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #9fb2c9;
+}
+
+/* CAD grid used behind the technical views. */
+.cad-grid {
+  background-color: #fbfcfe;
+  background-image:
+    linear-gradient(to right, rgba(71, 98, 136, 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(71, 98, 136, 0.09) 1px, transparent 1px),
+    linear-gradient(to right, rgba(71, 98, 136, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(71, 98, 136, 0.045) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+}
+
+@keyframes dca-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.animate-scan {
+  animation: dca-pulse 1.4s ease-in-out infinite;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-block {
+    break-inside: avoid;
+  }
+  body {
+    background: #fff;
+  }
+}
