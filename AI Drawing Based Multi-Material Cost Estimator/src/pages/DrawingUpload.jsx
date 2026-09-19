@@ -4,6 +4,7 @@ import Stepper from '../components/Stepper.jsx'
 import { Card, Banner, Field } from '../components/ui.jsx'
 import { parseFileName } from '../lib/aiEngine.js'
 import { readDrawingText } from '../lib/fileText.js'
+import { makeThumbnail } from '../lib/thumbnail.js'
 import { parseTitleBlock, scanAnnotations } from '../lib/titleBlock.js'
 import { uid, dateTime } from '../lib/format.js'
 
@@ -57,7 +58,9 @@ export default function DrawingUpload({ go }) {
       fileName: file.name,
       fileType: file.type || ext,
       fileSize: file.size,
-      previewUrl: canView ? URL.createObjectURL(file) : null,
+      // A rendered thumbnail, not an object URL: it survives a page reload and
+      // needs no PDF plugin to display.
+      previewUrl: await makeThumbnail(file),
       ext,
       titleBlock: text.hasText ? tb : null,
       annotations,
@@ -193,16 +196,15 @@ export default function DrawingUpload({ go }) {
         <div>
           <Card title="Drawing Preview">
             <div className="preview">
-              {drawing?.previewUrl ? (
-                /pdf/i.test(drawing.fileType) || /\.pdf$/i.test(drawing.fileName)
-                  ? <iframe title="drawing" src={drawing.previewUrl} />
-                  : <img alt="drawing preview" src={drawing.previewUrl} />
+              {/* Legacy records hold a blob: URL that no longer resolves */}
+              {drawing?.previewUrl && !drawing.previewUrl.startsWith('blob:') ? (
+                <img alt={`Preview of ${drawing.fileName}`} src={drawing.previewUrl} />
               ) : (
                 <div className="cad-note">
                   <h3>{drawing ? drawing.fileName : 'No drawing selected'}</h3>
                   <p className="muted small" style={{ maxWidth: 420, margin: '8px auto 0' }}>
                     {drawing
-                      ? EXT_SUPPORT[extOf(drawing.fileName)]?.note || 'No inline preview available for this file type.'
+                      ? (drawing.previewUrl ? 'This drawing was uploaded before previews were stored; re-upload it to see the sheet here.' : EXT_SUPPORT[extOf(drawing.fileName)]?.note || 'No inline preview available for this file type.')
                       : 'Upload a drawing to see the preview here.'}
                   </p>
                 </div>
