@@ -1,0 +1,11 @@
+const inr = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const inr0 = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
+
+export const money = (v) => (v == null || Number.isNaN(v) ? '—' : `₹${inr.format(v)}`)
+export const money0 = (v) => (v == null || Number.isNaN(v) ? '—' : `₹${inr0.format(v)}`)
+export const num = (v, d = 2) => (v == null || Number.isNaN(v) ? '—' : Number(v).toFixed(d))
+export const qty = (v) => (v == null ? '—' : inr0.format(v))
+export const pct = (v) => (v == null ? '—' : `${Number(v).toFixed(1)} %`)
+export const dateStr = (d = new Date()) => new Date(d).toISOString().slice(0, 10)
+export const dateTime = (d) => (d ? new Date(d).toLocaleString('en-IN') : '—')
+export const uid = () => Math.random().toString(36).slice(2, 10)

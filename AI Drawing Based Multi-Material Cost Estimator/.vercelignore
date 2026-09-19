@@ -1,0 +1,7 @@
+node_modules
+dist
+.claude
+*.mp4
+*.mkv
+*.webm
+*.mov
