@@ -155,6 +155,9 @@ function coerce(field, raw) {
 function valid(field, raw) {
   const s = stripEdges(raw)
   if (!s || isStopword(s)) return false
+  // A single character is a stray mark or an OCR fragment — except a
+  // revision, which is legitimately one letter or digit.
+  if (s.length < 2 && field !== 'revision') return false
   switch (field) {
     case 'partName':
       // a name has letters, is not a lone code, and is not a column heading
@@ -175,6 +178,13 @@ function valid(field, raw) {
     case 'approvedDate':
     case 'drawingDate':
       return !!normalizeDate(s)
+    case 'scale':
+      // a scale is a ratio, not whatever word happens to sit nearby
+      return /^\d+(\.\d+)?\s*[:/]\s*\d+(\.\d+)?$/.test(s)
+    case 'nextAssembly':
+    case 'productGroup':
+      // an assembly or group code is a single token carrying a digit
+      return /\d/.test(s) && /^[A-Za-z0-9][A-Za-z0-9._\-/]{2,29}$/.test(s) && !normalizeDate(s)
     case 'weight':
       return /\d/.test(s)
     case 'material':

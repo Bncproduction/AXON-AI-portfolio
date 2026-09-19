@@ -44,9 +44,23 @@ export function parseFileName(fileName = '') {
   const dwg = stem.match(dwgRe)
   if (dwg && !GENERIC.test(dwg[2])) out.drawingNumber = dwg[1].replace(/[_ ]/g, '-').toUpperCase()
 
+  // Many part codes start with a digit and interleave letters — 2A010511B027.
+  // The prefix pattern above cannot see those, and drawings are very often
+  // filed under exactly this code.
+  if (!out.drawingNumber) {
+    const code = stem.match(new RegExp(`${NOT_BEFORE}(\\d[A-Z0-9]{5,19})${NOT_AFTER}`, 'i'))
+    if (code && /[A-Z]/i.test(code[1]) && /\d{3}/.test(code[1])) {
+      out.drawingNumber = code[1].toUpperCase()
+    }
+  }
+
   // Part name: whatever is left once the code and revision are removed
   let rest = stem
-  if (out.drawingNumber) rest = rest.replace(dwg[1], ' ')
+  // strip whichever form of the code was found, so it is not repeated in the name
+  if (out.drawingNumber) {
+    const matched = dwg ? dwg[1] : out.drawingNumber
+    rest = rest.replace(new RegExp(matched.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'), ' ')
+  }
   if (rev) rest = rest.replace(rev[0], ' ')
   rest = rest.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim()
   if (rest.length > 2) {
