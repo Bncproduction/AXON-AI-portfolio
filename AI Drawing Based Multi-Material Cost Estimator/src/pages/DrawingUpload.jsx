@@ -216,7 +216,7 @@ export default function DrawingUpload({ go }) {
                   ...(drawing.partNumber && drawing.partNumber !== drawing.drawingNumber
                     ? [['Part Number', drawing.partNumber, 'partNumber']] : []),
                   ['Part Name', drawing.partName, 'partName'],
-                  ['Revision', drawing.revision, 'revision'], ['Drawing Date', drawing.drawingDate, 'drawingDate'],
+                  ['Revision', drawing.revision, 'revision'],
                   ['Uploaded By', drawing.uploadedBy], ['Upload Date', dateTime(drawing.uploadDate)]].map(([k, v, key]) => (
                   <div key={k} className="small">
                     <span className="muted">{k}</span>
