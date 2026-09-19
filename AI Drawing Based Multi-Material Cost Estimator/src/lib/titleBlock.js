@@ -59,11 +59,23 @@ const STOPWORDS = new Set([
   'dwg', 'part', 'no', 'nos', 'number', 'projection', 'angle', 'third angle', 'first angle',
   'page', 'of', 'all dimensions in mm', 'do not scale', 'confidential', 'sl', 'sr',
   'sht', 'shts', 'sheets', 'issue', 'iss', 'checked by', 'approved by', 'drawn by',
+  'spec', 'specs', 'specification', 'std', 'standard', 'grade', 'type', 'ref',
   'a0', 'a1', 'a2', 'a3', 'a4', 'description', 'designation', 'item', 'code', 'remarks',
 ])
 
 const isNoise = (s) => !s || /^[-–—_:.,/|\s]+$/.test(s) || s.length > 90
 const isStopword = (s) => STOPWORDS.has(s.toLowerCase().replace(/[.,:;]+$/, '').trim())
+
+/**
+ * Text made only of heading words, e.g. the second line of
+ * "Material description, Size," / "Spec, Std No.".
+ * Such text continues a heading — it is never the value.
+ */
+function isLabelish(text = '') {
+  const words = String(text).split(/[^A-Za-z]+/).filter(Boolean)
+  if (!words.length || /\d/.test(text)) return false
+  return words.every((w) => isStopword(w) || looksLikeLabel(w))
+}
 
 /** Pull a date out of a longer string, e.g. "VINOTH  19/06/26". */
 export function extractDate(text = '') {
@@ -194,10 +206,16 @@ export function mergeWrappedLabels(phrases) {
     for (const b of phrases) {
       if (a === b || dropped.has(b) || b.page !== a.page) continue
       const dy = b.y - a.y
-      if (dy <= 1 || dy > 13 || Math.abs(b.x - a.x) > 14) continue
-      if (b.str.length > 6) continue
+      if (dy <= 1 || dy > 13) continue
+      // Heading lines are centred in their cell, so compare centres.
+      const centreGap = Math.abs((b.x + b.w / 2) - (a.x + a.w / 2))
+      if (centreGap > Math.max(24, a.w * 0.5)) continue
+      // Continuation is either a line of pure heading words ("Spec, Std No.")
+      // or a tiny wrapped fragment ("O."). A line with digits is the value.
+      const fragment = /^[A-Za-z]{1,3}\.?$/.test(b.str)
+      if (!isLabelish(b.str) && !fragment) continue
       const joined = `${a.str} ${b.str}`.trim()
-      if (joined.length <= 24 && looksLikeLabel(joined)) {
+      if (joined.length <= 60 && looksLikeLabel(joined)) {
         a.str = joined
         a.w = Math.max(a.w, b.w)
         dropped.add(b)
@@ -241,7 +259,9 @@ function valueFor(field, label, phrases, labelIndex, labelRe) {
     const after = m ? label.str.slice(m[0].length) : ''
     // Only when the label ends at a separator — otherwise "Drg./Part Designation"
     // would be split into the label "…Desig" and a value of "nation".
-    if (after && /^[\s:.\-–—|]/.test(after)) {
+    // "Material description, Size," — the rest of the cell is more heading,
+    // not a value.
+    if (after && /^[\s:.\-–—|]/.test(after) && !isLabelish(after)) {
       const v = coerce(field, after)
       if (v) {
         const signedBy = field === 'approvedDate' ? extractName(after) : null
@@ -299,6 +319,7 @@ function valueFor(field, label, phrases, labelIndex, labelRe) {
     value: best.value,
     confidence: best.placement === 'right' || best.placement === 'inline' ? 'High' : 'Medium',
     placement: best.placement,
+    item: best.item,
     signedBy,
   }
 }
@@ -328,6 +349,21 @@ export function parseTitleBlock(items = []) {
       if (found[field]?.confidence === 'High') break
     }
   }
+
+  // The material cell is headed "Material description, Size, Spec, Std No.",
+  // so its value can run onto a second line (spec above, size below). Pull in
+  // that continuation rather than reporting half the callout.
+  if (found.material?.item) {
+    const v = found.material.item
+    const extra = phrases.find((p) =>
+      p !== v && p.page === v.page &&
+      p.y - v.y > 1 && p.y - v.y <= 22 &&
+      Math.abs((p.x + p.w / 2) - (v.x + v.w / 2)) <= Math.max(30, v.w * 0.7) &&
+      !looksLikeLabel(stripEdges(p.str)) && !isLabelish(p.str) &&
+      stripEdges(p.str).length <= 30)
+    if (extra) found.material.value = `${found.material.value}, ${stripEdges(extra.str)}`
+  }
+  Object.values(found).forEach((v) => delete v.item)
 
   // ---- shape the values that have a known form -----------------------------
   if (found.weight) {
