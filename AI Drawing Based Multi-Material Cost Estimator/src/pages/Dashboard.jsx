@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { useStore, makeSampleDrawing } from '../state/store.jsx'
+import { useStore, makeSampleDrawing, useDeleteDrawing } from '../state/store.jsx'
 import { Card, Kpi, PALETTE, Banner } from '../components/ui.jsx'
 import { WORKFLOW } from '../components/Stepper.jsx'
 import { money, money0, num, dateTime } from '../lib/format.js'
@@ -10,6 +10,7 @@ const F = { part: '', drawing: '', material: 'All', process: 'All', supplier: 'A
 
 export default function Dashboard({ go }) {
   const { state, dispatch, estimates, drawing, project } = useStore()
+  const removeDrawing = useDeleteDrawing()
   const [f, setF] = useState(F)
 
   const analyzed = state.drawings.filter((d) => d.analyzed).length
@@ -171,7 +172,10 @@ export default function Dashboard({ go }) {
                   <td>{d.revision || '—'}</td>
                   <td className="nowrap small muted">{dateTime(d.uploadDate)}</td>
                   <td><span className={`tag ${d.analyzed ? 'user' : 'assumption'}`}>{d.analyzed ? 'Analyzed' : 'Pending'}</span></td>
-                  <td className="right"><button className="btn sm" onClick={() => { dispatch({ type: 'SET_ACTIVE', id: d.id }); go('analysis') }}>Open</button></td>
+                  <td className="right nowrap">
+                    <button className="btn sm" onClick={() => { dispatch({ type: 'SET_ACTIVE', id: d.id }); go('analysis') }}>Open</button>{' '}
+                    <button className="btn sm danger" onClick={() => removeDrawing(d.id)}>Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

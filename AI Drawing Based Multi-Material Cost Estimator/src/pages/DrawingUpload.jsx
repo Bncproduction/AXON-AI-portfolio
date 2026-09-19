@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { useStore, makeSampleDrawing } from '../state/store.jsx'
+import { useStore, makeSampleDrawing, useDeleteDrawing } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { Card, Banner, Field } from '../components/ui.jsx'
 import { SAMPLE_DRAWINGS } from '../data/sampleDrawings.js'
@@ -23,6 +23,7 @@ const extOf = (name = '') => name.split('.').pop().toLowerCase()
 
 export default function DrawingUpload({ go }) {
   const { state, dispatch, drawing } = useStore()
+  const removeDrawing = useDeleteDrawing()
   const [over, setOver] = useState(false)
   const [pending, setPending] = useState(null)
   const inputRef = useRef(null)
@@ -203,7 +204,7 @@ export default function DrawingUpload({ go }) {
                     <td className="nowrap right">
                       <button className="btn sm" onClick={() => dispatch({ type: 'SET_ACTIVE', id: d.id })}>Open</button>{' '}
                       <button className="btn sm primary" onClick={() => analyze(d.id)}>Analyze</button>{' '}
-                      <button className="btn sm danger" onClick={() => dispatch({ type: 'DELETE_DRAWING', id: d.id })}>Delete</button>
+                      <button className="btn sm danger" onClick={() => removeDrawing(d.id)}>Delete</button>
                     </td>
                   </tr>
                 ))}

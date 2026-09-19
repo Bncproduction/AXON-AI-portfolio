@@ -348,6 +348,32 @@ function deriveAll(state, drawing, project) {
   return { geometry, volume, areaDm2, estimates, drawingMaterialId, params }
 }
 
+/**
+ * Delete a drawing from anywhere in the app.
+ * Deleting also discards that drawing's analysis, material selection and
+ * routes, so the user is told what goes with it before it happens.
+ * Estimates already saved to History are independent records and are kept.
+ */
+export function useDeleteDrawing() {
+  const { state, dispatch } = useStore()
+  return (id, { confirm = true } = {}) => {
+    const d = state.drawings.find((x) => x.id === id)
+    if (!d) return false
+    const p = state.projects[id]
+    const loses = []
+    if (p?.analysis) loses.push('its AI drawing analysis')
+    if (p?.selectedMaterials?.length) loses.push(`${p.selectedMaterials.length} costed material option${p.selectedMaterials.length > 1 ? 's' : ''}`)
+    const message =
+      `Delete "${d.drawingNumber || d.fileName}"?` +
+      (loses.length ? `\n\nThis also discards ${loses.join(' and ')}. Estimates already saved to History are kept.` : '') +
+      '\n\nThis cannot be undone.'
+    if (confirm && !window.confirm(message)) return false
+    if (d.previewUrl) { try { URL.revokeObjectURL(d.previewUrl) } catch { /* already revoked */ } }
+    dispatch({ type: 'DELETE_DRAWING', id })
+    return true
+  }
+}
+
 // Helper used by the upload page to create a drawing record from a sample.
 export function makeSampleDrawing(key, uploadedBy) {
   const s = SAMPLE_DRAWINGS.find((x) => x.key === key)
