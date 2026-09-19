@@ -322,6 +322,27 @@ function deriveAll(state, drawing, project) {
   let volume = { ...calc, priority: 3, basis: 'Calculated from drawing dimensions' }
 
   const drawingWeight = isAvailable(analysis.weight) ? Number(analysis.weight.value) : null
+
+  // The sheet gives a mass but its grade is not in the master (a tube or sheet
+  // spec, say). The mass is still the best volume source there is, so use it
+  // with the density of the first material being costed, and say so.
+  if (drawingWeight && !drawingMaterialId && (project.selectedMaterials || []).length) {
+    const proxy = state.materialMaster.find((m) => m.id === project.selectedMaterials[0])
+    if (proxy) {
+      volume = {
+        ...volume,
+        volumeCm3: Number(((drawingWeight * 1000) / proxy.density).toFixed(2)),
+        priority: 1,
+        basis: `Back-calculated from the drawing mass (${drawingWeight} kg) using ${proxy.name} density ${proxy.density} g/cm³ — the drawing's own grade is not in the material master, so this density is an assumption`,
+        method: 'Drawing mass ÷ assumed density',
+        source: SRC.AI,
+        confidence: 'Medium',
+        calculatedCm3: calc.volumeCm3,
+        densityAssumed: true,
+      }
+    }
+  }
+
   if (drawingWeight && drawingMaterialId) {
     const dm = state.materialMaster.find((m) => m.id === drawingMaterialId)
     if (dm) {

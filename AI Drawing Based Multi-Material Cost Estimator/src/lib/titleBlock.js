@@ -26,14 +26,22 @@ export const FIELD_LABELS = {
   modification: /^(modification|description\s*of\s*change|change\s*(description|note)|nature\s*of\s*change|amendment|remarks?)$/i,
   ecnNo: /^(ecn\.?\s*no\.?|eco\.?\s*no\.?|change\s*no\.?)$/i,
   zone: /^zone$/i,
+  // Not anchored: adjacent signature headings often arrive merged
+  // ("Modified By Chkd Appd").
+  modifiedBy: /^(modified\s*by|mod\.?\s*by)\b/i,
   // "MODEL, USED ON" lists the vehicles a part is fitted to. Claiming it stops
   // that column being read as the material of the cell beside it.
   usedOn: /^(model,?\s*used\s*on|used\s*on|model\s*used|used\s*in|application|assembly\s*(no|name)?)/i,
   // REV, REVN, "REVN O." (REV NO. wrapped mid-word by the CAD system),
   // REV NO., ISS, ISSUE — the forms that actually appear on sheets
-  revision: /^(rev(is(ion)?)?\s*\.?\s*n?o?\.?|revn\s*o?\.?|iss(ue)?\.?\s*(no)?\.?|änderung|alt(eration)?)$/i,
+  // REV / REVN / "REVN O." / REV NO. / ISSUE, and Sl.No, which on this family
+  // of title blocks carries the revision code (e.g. NR = new release).
+  revision: /^(rev(is(ion)?)?\s*\.?\s*n?o?\.?|revn\s*o?\.?|iss(ue)?\.?\s*(no)?\.?|sl\.?\s*no\.?|änderung|alt(eration)?)$/i,
   material: /^(material|werkstoff|mat(l|erial)?\.?\s*(spec|grade)?|stock|raw\s*material)/i,
-  weight: /^(weight|mass|gewicht|wt\.?)/i,
+  // "Fin.mass in kg" is the finished-mass cell on this family of title blocks
+  weight: /^(fin\.?\s*mass|finished\s*mass|weight|mass|gewicht|wt\.?)/i,
+  nextAssembly: /^(next\s*assembly|next\s*assy|parent\s*(part|assembly))/i,
+  productGroup: /^(product\s*\/?\s*group\s*no|group\s*no|product\s*no)/i,
   scale: /^(scale|maßstab|masstab)/i,
   // An approval / release date is the controlled date on most title blocks,
   // so it is preferred over a plain "Date" cell.
@@ -64,10 +72,29 @@ const STOPWORDS = new Set([
   'sht', 'shts', 'sheets', 'issue', 'iss', 'checked by', 'approved by', 'drawn by',
   'spec', 'specs', 'specification', 'std', 'standard', 'grade', 'type', 'ref',
   'model', 'used', 'used on', 'application', 'assembly', 'variant', 'model used on',
+  'in', 'per', 'as', 'by', 'to', 'and', 'mod', 'sign', 'chkd', 'appd', 'drn',
   'a0', 'a1', 'a2', 'a3', 'a4', 'description', 'designation', 'item', 'code', 'remarks',
 ])
 
 const isNoise = (s) => !s || /^[-–—_:.,/|\s]+$/.test(s) || s.length > 90
+
+/**
+ * Geometry scale of the current sheet.
+ * All the distances below were tuned in PDF points, where body text is ~10pt.
+ * OCR on a scan reports image pixels instead, so the same title block arrives
+ * three or four times larger and every "is it on the next line" test fails.
+ * K rescales those distances from the sheet's own text size.
+ */
+let K = 1
+function scaleFrom(items) {
+  const widths = items
+    .filter((i) => i.w > 0 && String(i.str).length >= 2)
+    .map((i) => i.w / String(i.str).length)
+    .sort((a, b) => a - b)
+  if (!widths.length) return 1
+  const median = widths[Math.floor(widths.length / 2)]
+  return Math.min(8, Math.max(0.5, median / 5)) // 5 ≈ char width of 10pt text
+}
 const isStopword = (s) => STOPWORDS.has(s.toLowerCase().replace(/[.,:;]+$/, '').trim())
 
 /**
@@ -87,6 +114,18 @@ export function extractDate(text = '') {
   return m ? normalizeDate(m[1]) : null
 }
 
+/**
+ * A day/month with no year, as sign-off cells often carry ("14/11").
+ * The year lives elsewhere on the sheet and is attached later.
+ */
+export function extractDayMonth(text = '') {
+  const m = String(text).match(/(?:^|\s)(\d{1,2})[-./](\d{1,2})(?:$|\s)/)
+  if (!m) return null
+  const d = Number(m[1]); const mo = Number(m[2])
+  if (d < 1 || d > 31 || mo < 1 || mo > 12) return null
+  return { day: String(d).padStart(2, '0'), month: String(mo).padStart(2, '0') }
+}
+
 /** Pull the signatory out of a signature row, e.g. "APPROVED VINOTH 19/06/26". */
 export function extractName(text = '') {
   const cleaned = String(text).replace(/\b\d[\d-./]*\b/g, ' ').replace(/\s+/g, ' ').trim()
@@ -102,7 +141,13 @@ export function extractName(text = '') {
 function coerce(field, raw) {
   const s = stripEdges(raw)
   if (!s || isStopword(s)) return null
-  if (field === 'approvedDate' || field === 'drawingDate') return extractDate(s)
+  if (field === 'approvedDate' || field === 'drawingDate') {
+    const full = extractDate(s)
+    if (full) return full
+    // "14/11" — keep it, the sheet's year is attached in parseTitleBlock
+    const dm = extractDayMonth(s)
+    return dm ? `--${dm.month}-${dm.day}` : null
+  }
   return valid(field, s) ? s : null
 }
 
@@ -133,7 +178,8 @@ function valid(field, raw) {
     case 'weight':
       return /\d/.test(s)
     case 'material':
-      return /[A-Za-z]{2}/.test(s) && s.length <= 60
+      // E34, C45, S355 — one letter and digits is a legitimate grade
+      return /[A-Za-z]/.test(s) && s.length >= 2 && s.length <= 60
     default:
       return s.length <= 80
   }
@@ -183,7 +229,7 @@ export function toPhrases(items = []) {
       const charW = it.w && it.str.length ? it.w / it.str.length : 4
       // A word gap inside one cell is a few characters wide; a label-to-value
       // gap in a title block is far larger, so cap the join distance.
-      if (cur && it.x - (cur.x + cur.w) <= Math.min(12, Math.max(4, charW * 3))) {
+      if (cur && it.x - (cur.x + cur.w) <= Math.max(4, charW * 3)) {
         cur.str = `${cur.str}${it.x - (cur.x + cur.w) > charW * 0.4 ? ' ' : ''}${it.str}`
         cur.w = it.x + it.w - cur.x
       } else {
@@ -210,10 +256,10 @@ export function mergeWrappedLabels(phrases) {
     for (const b of phrases) {
       if (a === b || dropped.has(b) || b.page !== a.page) continue
       const dy = b.y - a.y
-      if (dy <= 1 || dy > 13) continue
+      if (dy <= 1 || dy > 13 * K) continue
       // Heading lines are centred in their cell, so compare centres.
       const centreGap = Math.abs((b.x + b.w / 2) - (a.x + a.w / 2))
-      if (centreGap > Math.max(24, a.w * 0.5)) continue
+      if (centreGap > Math.max(24 * K, a.w * 0.5)) continue
       // Continuation is either a line of pure heading words ("Spec, Std No.")
       // or a tiny wrapped fragment ("O."). A line with digits is the value.
       const fragment = /^[A-Za-z]{1,3}\.?$/.test(b.str)
@@ -249,10 +295,19 @@ function pairScore(label, item, allowAbove = false) {
   const labelRight = label.x + (label.w || label.str.length * 4)
   const dy = item.y - label.y
   const dx = item.x - label.x
-  if (Math.abs(dy) <= 4.5 && item.x >= labelRight - 2 && dx < 320) return { score: dx, placement: 'right' }
-  if (dy > 1 && dy <= 42 && dx > -60 && dx < 420) return { score: 1000 + dy * 6 + Math.abs(dx) * 0.2, placement: 'below' }
-  if (allowAbove && dy < -2 && dy >= -46 && Math.abs(dx) <= 40) {
-    return { score: 2000 + Math.abs(dy) * 6 + Math.abs(dx) * 2, placement: 'above' }
+  if (Math.abs(dy) <= 4.5 * K && item.x >= labelRight - 2 * K && dx < 320 * K) return { score: dx / K, placement: 'right' }
+  // Below: the value must sit in the label's own column. Comparing centres
+  // (not left edges) keeps a centred value while excluding the next cell
+  // along, which is how a neighbouring column used to steal a value.
+  const centreGap = Math.abs((item.x + (item.w || 0) / 2) - (label.x + (label.w || 0) / 2))
+  // dy > 6: a genuine next line clears the label by more than a rounding
+  // wobble. Without it, a cell two pixels lower in the next column reads as
+  // "beneath" this label.
+  if (dy > 6 * K && dy <= 42 * K && centreGap <= Math.max(90 * K, (label.w || 0) * 0.8)) {
+    return { score: 1000 + (dy / K) * 6 + (centreGap / K) * 0.6, placement: 'below' }
+  }
+  if (allowAbove && dy < -2 * K && dy >= -46 * K && Math.abs(dx) <= 40 * K) {
+    return { score: 2000 + Math.abs(dy / K) * 6 + Math.abs(dx / K) * 2, placement: 'above' }
   }
   return null
 }
@@ -345,6 +400,7 @@ function valueFor(field, label, phrases, labelIndex, labelRe) {
 export function parseTitleBlock(items = []) {
   const found = {}
   if (!items.length) return found
+  K = scaleFrom(items)
   const phrases = mergeWrappedLabels(toPhrases(items))
 
   // Every label on the sheet, used for the ownership test
@@ -371,8 +427,8 @@ export function parseTitleBlock(items = []) {
     const v = found.material.item
     const extra = phrases.find((p) =>
       p !== v && p.page === v.page &&
-      p.y - v.y > 1 && p.y - v.y <= 22 &&
-      Math.abs((p.x + p.w / 2) - (v.x + v.w / 2)) <= Math.max(30, v.w * 0.7) &&
+      p.y - v.y > 1 && p.y - v.y <= 22 * K &&
+      Math.abs((p.x + p.w / 2) - (v.x + v.w / 2)) <= Math.max(30 * K, v.w * 0.7) &&
       !looksLikeLabel(stripEdges(p.str)) && !isLabelish(p.str) &&
       stripEdges(p.str).length <= 30)
     if (extra) found.material.value = `${found.material.value}, ${stripEdges(extra.str)}`
@@ -396,14 +452,28 @@ export function parseTitleBlock(items = []) {
   delete found.ecnNo
   delete found.zone
   delete found.usedOn
+  delete found.modifiedBy
 
   // An approval date is the controlled date; fall back to a plain date cell.
   const dateHit = found.approvedDate || found.drawingDate
   if (dateHit) {
-    const iso = normalizeDate(dateHit.value)
-    if (iso) {
-      found.drawingDate = { ...dateHit, value: iso, raw: dateHit.value }
-    } else delete found.drawingDate
+    let iso = normalizeDate(dateHit.value)
+    // A day/month with no year: take the year from elsewhere on the sheet,
+    // which is where these title blocks put it.
+    if (!iso && /^--\d{2}-\d{2}$/.test(String(dateHit.value))) {
+      const years = phrases
+        .map((p) => stripEdges(p.str).match(/(?:^|\D)((?:19|20)\d{2})(?:\D|$)/))
+        .filter(Boolean)
+        .map((m) => Number(m[1]))
+        .filter((y) => y >= 1990 && y <= new Date().getFullYear() + 1)
+      if (years.length) {
+        const year = Math.max(...years)
+        iso = `${year}${dateHit.value.slice(1)}`
+        dateHit.yearFrom = `Year ${year} taken from elsewhere on the sheet; the date cell shows only day/month.`
+      }
+    }
+    if (iso) found.drawingDate = { ...dateHit, value: iso, raw: dateHit.value }
+    else delete found.drawingDate
   }
   delete found.approvedDate
 

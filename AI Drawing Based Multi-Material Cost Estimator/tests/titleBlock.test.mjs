@@ -92,6 +92,63 @@ show('plain word material', [
 ], { material: 'Mild Steel' })
 
 
+show('BITS title block: full sheet', [
+  { str: 'Material Description,Size,Spec.Std.No', x: 10, y: 10, w: 200, page: 1 },
+  { str: 'E34', x: 90, y: 28, w: 20, page: 1 },
+  { str: 'THK:5mm', x: 78, y: 46, w: 48, page: 1 },
+
+  // revision table: entries above, headings below
+  { str: '14/11', x: 312, y: 100, w: 26, page: 1 },
+  { str: 'NR', x: 420, y: 100, w: 14, page: 1 },
+  { str: 'NEW RELEASE', x: 560, y: 100, w: 78, page: 1 },
+  { str: 'SELVA', x: 770, y: 96, w: 32, page: 1 },
+  { str: 'VIJAY', x: 830, y: 100, w: 30, page: 1 },
+  { str: 'VINOTH', x: 880, y: 100, w: 34, page: 1 },
+  { str: 'Date', x: 310, y: 120, w: 22, page: 1 },
+  { str: 'Mod. No.', x: 350, y: 120, w: 40, page: 1 },
+  { str: 'Sl.No', x: 415, y: 120, w: 26, page: 1 },
+  { str: 'Zone', x: 470, y: 120, w: 24, page: 1 },
+  { str: 'Modification', x: 570, y: 120, w: 60, page: 1 },
+  { str: 'Modified By', x: 760, y: 120, w: 52, page: 1 },
+  { str: 'Chkd', x: 830, y: 120, w: 24, page: 1 },
+  { str: 'Appd', x: 880, y: 120, w: 24, page: 1 },
+
+  // sign-off block: the year sits in its own cell
+  { str: '2020', x: 215, y: 160, w: 24, page: 1 },
+  { str: 'SIGN', x: 265, y: 160, w: 26, page: 1 },
+  { str: 'DATE', x: 315, y: 160, w: 26, page: 1 },
+  { str: 'DRN', x: 213, y: 180, w: 22, page: 1 },
+  { str: 'SELVA', x: 262, y: 180, w: 32, page: 1 },
+  { str: '12/11', x: 313, y: 180, w: 26, page: 1 },
+  { str: 'CHKD', x: 213, y: 200, w: 26, page: 1 },
+  { str: 'VIJAY', x: 262, y: 200, w: 30, page: 1 },
+  { str: '14/11', x: 313, y: 200, w: 26, page: 1 },
+  { str: 'APPD', x: 213, y: 220, w: 26, page: 1 },
+  { str: 'VINOTH', x: 262, y: 220, w: 34, page: 1 },
+  { str: '14/11', x: 313, y: 220, w: 26, page: 1 },
+
+  { str: 'NEXT ASSEMBLY:', x: 372, y: 178, w: 82, page: 1 },
+  { str: '2A0105A007', x: 380, y: 196, w: 62, page: 1 },
+  { str: 'Scale: 1:1', x: 213, y: 245, w: 50, page: 1 },
+  { str: 'Product/Group No.', x: 372, y: 228, w: 92, page: 1 },
+  { str: 'BITS.20.001', x: 390, y: 258, w: 62, page: 1 },
+
+  { str: 'Fin.mass', x: 530, y: 170, w: 40, page: 1 },
+  { str: 'in kg', x: 530, y: 182, w: 24, page: 1 },
+  { str: '0.122', x: 530, y: 198, w: 28, page: 1 },
+
+  { str: 'Drg./Part Designation', x: 213, y: 300, w: 104, page: 1 },
+  { str: 'SIDE STAND MTG BKT', x: 245, y: 330, w: 118, page: 1 },
+  { str: 'Drg./Part No.', x: 600, y: 300, w: 62, page: 1 },
+  { str: '2A010511B027', x: 620, y: 330, w: 92, page: 1 },
+  { str: 'Sheet No.  1  of  1  Sheets', x: 600, y: 360, w: 120, page: 1 },
+  { str: 'Tol. as per Std.', x: 600, y: 212, w: 70, page: 1 },
+], {
+  partName: 'SIDE STAND MTG BKT', partNumber: '2A010511B027', drawingNumber: '2A010511B027',
+  revision: 'NR', material: 'E34, THK:5mm', weight: '0.122', drawingDate: '2020-11-14',
+  nextAssembly: '2A0105A007', productGroup: 'BITS.20.001', scale: '1:1',
+})
+
 console.log(failed ? `
 ${failed} FAILING` : `
 all ${total} layouts pass`)

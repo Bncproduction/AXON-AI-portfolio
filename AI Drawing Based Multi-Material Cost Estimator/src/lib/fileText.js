@@ -1,5 +1,6 @@
 import * as pdfjs from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import { ocrDrawing } from './ocr.js'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 
@@ -64,14 +65,15 @@ const EXT = (name = '') => name.split('.').pop().toLowerCase()
  * Read whatever text the file exposes.
  * Returns hasText:false (with a reason) rather than inventing content.
  */
-export async function readDrawingText(file) {
+export async function readDrawingText(file, { onProgress } = {}) {
   const ext = EXT(file.name)
   try {
     let result
     if (ext === 'pdf') result = await extractPdfText(file)
     else if (ext === 'dxf') result = await extractDxfText(file)
-    else if (['png', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp'].includes(ext)) {
-      return { items: [], hasText: false, reason: 'Raster image — no text layer. Optical character recognition is not available in this build, so title-block values must be entered manually.' }
+    else if (['png', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp', 'webp'].includes(ext)) {
+      // A raster drawing has no text layer at all: read it optically.
+      return await ocrDrawing(file, { onProgress })
     } else if (['dwg', 'step', 'stp', 'iges', 'igs'].includes(ext)) {
       return { items: [], hasText: false, reason: `${ext.toUpperCase()} is a binary CAD format that needs a server-side converter. Export a PDF or DXF to have the title block read automatically.` }
     } else {
@@ -79,13 +81,10 @@ export async function readDrawingText(file) {
     }
 
     if (!result.items.length) {
-      return {
-        ...result,
-        hasText: false,
-        reason: ext === 'pdf'
-          ? 'This PDF has no text layer — it is most likely a scan or a plot saved as an image. Title-block values must be entered manually.'
-          : 'No TEXT or MTEXT entities were found in this DXF.',
-      }
+      // A PDF with no text layer is a scan. Fall back to reading it optically
+      // rather than asking the user to retype a title block that is right there.
+      if (ext === 'pdf') return await ocrDrawing(file, { onProgress })
+      return { ...result, hasText: false, reason: 'No TEXT or MTEXT entities were found in this DXF.' }
     }
     return { ...result, hasText: true, reason: '' }
   } catch (err) {

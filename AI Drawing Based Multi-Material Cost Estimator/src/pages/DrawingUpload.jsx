@@ -27,7 +27,7 @@ export default function DrawingUpload({ go }) {
   const { state, dispatch, drawing } = useStore()
   const removeDrawing = useDeleteDrawing()
   const [over, setOver] = useState(false)
-  const [reading, setReading] = useState(false)
+  const [reading, setReading] = useState(null)
   const [pending, setPending] = useState(null)
   const inputRef = useRef(null)
 
@@ -36,14 +36,16 @@ export default function DrawingUpload({ go }) {
     const ext = extOf(file.name)
     const canView = EXT_SUPPORT[ext]?.view
     const guess = parseFileName(file.name)
-    setReading(true)
+    setReading({ stage: 'Opening the file', pct: 0 })
 
     // Read the sheet's own text before showing the form, so the title block —
     // not the file name — is what populates it wherever possible.
-    const text = await readDrawingText(file)
+    const text = await readDrawingText(file, {
+      onProgress: (p) => setReading({ stage: p.stage, pct: p.pct }),
+    })
     const tb = text.hasText ? parseTitleBlock(text.items) : {}
     const annotations = text.hasText ? scanAnnotations(text.items) : {}
-    setReading(false)
+    setReading(null)
 
     const pick = (field, fallback) => (tb[field]?.value ? tb[field].value : fallback)
     // 'sheet' is only parsed to stop a sheet counter being mistaken for a
@@ -121,7 +123,9 @@ export default function DrawingUpload({ go }) {
             >
               <h3>{reading ? 'Reading the drawing…' : 'Drag & drop an engineering drawing here'}</h3>
               <p>{reading
-                ? 'Extracting the text layer and locating the title block.'
+                ? (reading.stage
+                  ? `${reading.stage}${reading.pct ? ` — ${reading.pct}%` : ''}. A scanned sheet is read optically, which takes a few moments.`
+                  : 'Extracting the text layer and locating the title block.')
                 : 'or click to browse — PDF, JPG, PNG, DWG, DXF, STEP/STP, IGES'}</p>
               <input ref={inputRef} type="file" accept={ACCEPT} hidden
                 onChange={(e) => takeFile(e.target.files?.[0])} />
