@@ -6,6 +6,7 @@ import { estimateVolume, estimateSurfaceAreaDm2, weightFromVolume } from '../lib
 import { computeEstimate, DEFAULT_PARAMS } from '../lib/costing.js'
 import { SRC, f, isAvailable } from '../lib/sources.js'
 import { uid, dateStr } from '../lib/format.js'
+import { useConfirm } from '../components/Confirm.jsx'
 
 const KEY = 'ai-cost-estimator-v1'
 
@@ -356,18 +357,27 @@ function deriveAll(state, drawing, project) {
  */
 export function useDeleteDrawing() {
   const { state, dispatch } = useStore()
-  return (id, { confirm = true } = {}) => {
+  const confirm = useConfirm()
+  return async (id, { ask = true } = {}) => {
     const d = state.drawings.find((x) => x.id === id)
     if (!d) return false
     const p = state.projects[id]
     const loses = []
     if (p?.analysis) loses.push('its AI drawing analysis')
     if (p?.selectedMaterials?.length) loses.push(`${p.selectedMaterials.length} costed material option${p.selectedMaterials.length > 1 ? 's' : ''}`)
-    const message =
-      `Delete "${d.drawingNumber || d.fileName}"?` +
-      (loses.length ? `\n\nThis also discards ${loses.join(' and ')}. Estimates already saved to History are kept.` : '') +
-      '\n\nThis cannot be undone.'
-    if (confirm && !window.confirm(message)) return false
+
+    if (ask) {
+      const ok = await confirm({
+        title: `Delete "${d.drawingNumber || d.fileName}"?`,
+        message: loses.length
+          ? `This also discards ${loses.join(' and ')}. Estimates already saved to History are kept.`
+          : 'This drawing will be removed from the workspace.',
+        detail: 'This cannot be undone.',
+        confirmLabel: 'Delete drawing',
+        tone: 'danger',
+      })
+      if (!ok) return false
+    }
     if (d.previewUrl) { try { URL.revokeObjectURL(d.previewUrl) } catch { /* already revoked */ } }
     dispatch({ type: 'DELETE_DRAWING', id })
     return true

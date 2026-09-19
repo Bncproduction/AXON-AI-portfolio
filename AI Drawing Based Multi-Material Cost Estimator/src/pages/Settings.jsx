@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { Card, Field, Banner, SourceTag } from '../components/ui.jsx'
+import { useConfirm } from '../components/Confirm.jsx'
 import { MATERIAL_CATEGORIES } from '../data/materials.js'
 import { PROCESS_MASTER } from '../data/processes.js'
 import { DEFAULT_PARAMS } from '../lib/costing.js'
@@ -10,6 +11,7 @@ import { ENGINE_MODE } from '../lib/aiEngine.js'
 
 export default function Settings() {
   const { state, dispatch, project } = useStore()
+  const confirm = useConfirm()
   const [tab, setTab] = useState('org')
   const st = state.settings
   const setS = (patch) => dispatch({ type: 'UPDATE_SETTINGS', patch })
@@ -139,10 +141,15 @@ export default function Settings() {
               Drawings, estimates and master-data edits are stored in this browser only (local storage). Clearing it
               removes everything, including saved estimates.
             </p>
-            <button className="btn danger" onClick={() => {
-              if (confirm('Clear all drawings, estimates and master-data edits from this browser? This cannot be undone.')) {
-                dispatch({ type: 'RESET_ALL' })
-              }
+            <button className="btn danger" onClick={async () => {
+              const ok = await confirm({
+                title: 'Reset the entire workspace?',
+                message: 'Every drawing, analysis, saved estimate and master-data edit in this browser will be cleared, and material and process rates return to their seeded values.',
+                detail: 'This cannot be undone.',
+                confirmLabel: 'Reset workspace',
+                tone: 'danger',
+              })
+              if (ok) dispatch({ type: 'RESET_ALL' })
             }}>Reset workspace</button>
           </Card>
         </>
