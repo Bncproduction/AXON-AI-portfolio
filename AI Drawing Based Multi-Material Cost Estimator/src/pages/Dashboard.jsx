@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { useStore, makeSampleDrawing, useDeleteDrawing } from '../state/store.jsx'
+import { useStore, useDeleteDrawing } from '../state/store.jsx'
 import { Card, Kpi, PALETTE, Banner } from '../components/ui.jsx'
 import { WORKFLOW } from '../components/Stepper.jsx'
 import { money, money0, num, dateTime } from '../lib/format.js'
-import { SAMPLE_DRAWINGS } from '../data/sampleDrawings.js'
 
 const F = { part: '', drawing: '', material: 'All', process: 'All', supplier: 'All', date: '', revision: 'All' }
 
@@ -36,25 +35,9 @@ export default function Dashboard({ go }) {
       <div className="page-head">
         <h1>Costing Dashboard</h1>
         <p className="lead">
-          Drawing-to-cost pipeline status. Start by uploading an engineering drawing — or load a sample part to walk
-          through the complete thirteen-step workflow.
+          Drawing-to-cost pipeline status. Upload an engineering drawing to begin; every value in the costing is traced back to that sheet.
         </p>
       </div>
-
-      {state.drawings.length === 0 && (
-        <Banner kind="info">
-          <span>ⓘ</span>
-          <span>
-            No drawings yet. Load a sample to see the full workflow:&nbsp;
-            {SAMPLE_DRAWINGS.map((s) => (
-              <button key={s.key} className="btn sm" style={{ marginRight: 6 }}
-                onClick={() => { dispatch({ type: 'ADD_DRAWING', payload: makeSampleDrawing(s.key, state.settings.preparedBy) }); go('upload') }}>
-                {s.header.partName}
-              </button>
-            ))}
-          </span>
-        </Banner>
-      )}
 
       <div className="grid g4">
         <Kpi label="Drawings Uploaded" value={state.drawings.length} foot="In this workspace" tone="accent" />

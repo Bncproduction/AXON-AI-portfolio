@@ -17,8 +17,7 @@ material cost → process analysis → process cost → manufacturing cost → t
 comparison → what-if simulation → report.
 
 Every step has its own page; the stepper at the top of each workflow page moves between them.
-Start from **Dashboard → load a sample drawing** (Pump Housing, Drive Shaft or Mounting Bracket)
-to see the complete chain without uploading a file.
+Upload a vector PDF or DXF: the title block is read from the file itself and every value is traced back to it.
 
 ## Data provenance rules
 
@@ -43,7 +42,11 @@ The full register is on the **AI Assumptions** page and in section 13 of the rep
 - **Weight** — volume × density, computed for every candidate material from the same geometry.
 - **Route** — rule-based selection from the drawing's manufacturing callouts, geometry,
   tolerance/finish class and annual volume (sand vs gravity vs pressure die casting, forging,
-  sheet metal, moulding, machining-from-stock). `src/lib/aiEngine.js`
+  sheet metal, moulding, machining-from-stock). When the drawing states no route, you pick the
+  process yourself and everything rebuilds around it. `src/lib/aiEngine.js`
+- **Title block** — positioned text from the PDF/DXF mapped onto costing fields, accepting a
+  value only where a title block puts one and only when a nearer label does not own it.
+  `src/lib/titleBlock.js`, with the real-drawing layouts covered by `npm test`.
 - **Cycle time** — modelled from material removed ÷ an assumed removal rate scaled by a
   machinability index, plus a finishing term over the machined area only.
 - **Cost** — per-operation machine time, amortised setup, tooling, and process-specific
@@ -53,15 +56,15 @@ The full register is on the **AI Assumptions** page and in section 13 of the rep
 
 ## Scope of this build
 
-Self-contained prototype: no ERP, CAD kernel, PLM or live commodity price feed is connected.
-The analysis engine is deterministic and rule-based, seeded with sample drawing data;
+Self-contained prototype: no ERP, CAD kernel, PLM or live commodity price feed is connected. Extraction reads the text layer of the uploaded PDF or DXF and reports only what that sheet contains — a file with no readable text yields an empty extraction, never another part's data;
 material and process master data are seeded indicative Indian job-shop values, each with a
 *last updated* date, and all of them are editable in the UI. Drawings, estimates and master-data
 edits are stored in the browser's local storage only.
 
-DWG, DXF, STEP/STP and IGES uploads are accepted and recorded, but are not parsed in the
-browser in this build — the file-type support note on the upload page states what each
-format would contribute.
+**Vector PDF and DXF are read** — the text layer is parsed and the title block located.
+DWG, STEP/STP and IGES uploads are accepted and recorded but need a server-side converter,
+and scanned/raster drawings carry no text at all (no OCR in this build). In those cases the
+upload page says so and the title-block values are entered by hand; nothing is substituted.
 
 ## Layout
 

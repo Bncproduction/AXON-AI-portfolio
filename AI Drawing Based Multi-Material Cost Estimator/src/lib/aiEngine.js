@@ -1,4 +1,3 @@
-import { SAMPLE_DRAWINGS } from '../data/sampleDrawings.js'
 import { MATERIAL_MASTER, MATERIAL_CALLOUT_MAP, materialById } from '../data/materials.js'
 import { processById } from '../data/processes.js'
 import { SRC, f, na, isAvailable } from './sources.js'
@@ -12,18 +11,8 @@ import { boundingVolumeCm3 } from './geometry.js'
 // "Not Available in Drawing" and must be supplied by the user.
 // ---------------------------------------------------------------------------
 
-export const ENGINE_MODE = 'Prototype rule-based engine (offline). No external OCR/CAD/ERP/price feed connected.'
-
-/** Pick the sample extraction that best matches the uploaded file name. */
-export function matchSample(fileName = '') {
-  const n = fileName.toLowerCase()
-  if (/shaft|spindle|axle|turn/.test(n)) return SAMPLE_DRAWINGS[1]
-  if (/bracket|sheet|plate|dxf|panel|cover/.test(n)) return SAMPLE_DRAWINGS[2]
-  if (/hous|body|casting|pump|valve|manifold/.test(n)) return SAMPLE_DRAWINGS[0]
-  // deterministic fallback so repeated analysis of the same file is stable
-  const sum = [...n].reduce((a, c) => a + c.charCodeAt(0), 0)
-  return SAMPLE_DRAWINGS[sum % SAMPLE_DRAWINGS.length]
-}
+export const ENGINE_MODE =
+  'Reads the text layer of the uploaded drawing (PDF / DXF). No OCR, CAD kernel, ERP or price feed is connected, and no values are ever taken from another part.'
 
 /**
  * Read what the file name itself discloses, so the upload form is not empty
@@ -149,53 +138,25 @@ export function buildExtractionFromDrawing(drawing) {
   return extraction
 }
 
+/**
+ * Analyse an uploaded drawing.
+ * Only ever reports what was read from that file. When a file yields no text
+ * the extraction comes back empty — every field "Not Available in Drawing" —
+ * rather than borrowing values from some other part.
+ */
 export function analyzeDrawing(drawing) {
-  // Real upload whose text we could read: report only what the sheet says.
-  if (!drawing.isSample && drawing.titleBlock) {
-    const extraction = buildExtractionFromDrawing(drawing)
-    const counts = countFields(extraction)
-    return {
-      ...extraction,
-      sampleKey: null,
-      analyzedAt: new Date().toISOString(),
-      engineMode: `Title block read directly from the uploaded ${String(drawing.fileName).split('.').pop().toUpperCase()} (${drawing.textItemCount || 0} text elements).`,
-      readFromFile: true,
-      fieldsFound: counts.found,
-      fieldsMissing: counts.missing,
-    }
-  }
-
-  const sample = drawing.sampleKey
-    ? SAMPLE_DRAWINGS.find((s) => s.key === drawing.sampleKey) || matchSample(drawing.fileName)
-    : matchSample(drawing.fileName)
-
-  const extraction = JSON.parse(JSON.stringify(sample.extraction))
-
-  // Header values the user typed at upload time override the sample and are
-  // re-tagged as user input, not as drawing data.
-  const mapUser = (key, field) => {
-    const v = drawing[key]
-    if (v && v !== sample.header[key] && field) {
-      return { value: v, source: SRC.USER, confidence: 'High', note: 'Entered during upload.' }
-    }
-    return field
-  }
-  extraction.part.partName = mapUser('partName', extraction.part.partName)
-  extraction.part.partNumber = mapUser('partNumber', extraction.part.partNumber)
-  extraction.part.drawingNumber = mapUser('drawingNumber', extraction.part.drawingNumber)
-  extraction.part.revision = mapUser('revision', extraction.part.revision)
-
+  const extraction = buildExtractionFromDrawing(drawing)
+  const counts = countFields(extraction)
+  const ext = String(drawing.fileName || '').split('.').pop().toUpperCase()
   return {
     ...extraction,
-    sampleKey: sample.key,
     analyzedAt: new Date().toISOString(),
-    readFromFile: false,
-    isSampleData: !drawing.isSample,
-    engineMode: drawing.isSample
-      ? ENGINE_MODE
-      : `No readable text in this file, so the values below are SAMPLE DATA from the reference part "${sample.header.partName}" — they do not describe your drawing. ${drawing.textReason || ''}`,
-    fieldsFound: countFields(extraction).found,
-    fieldsMissing: countFields(extraction).missing,
+    readFromFile: !!drawing.titleBlock,
+    engineMode: drawing.titleBlock
+      ? `Title block read directly from the uploaded ${ext} (${drawing.textItemCount || 0} text elements).`
+      : `Nothing could be read from this ${ext}. ${drawing.textReason || ''} Every field below is blank until you enter it — no values have been assumed.`,
+    fieldsFound: counts.found,
+    fieldsMissing: counts.missing,
   }
 }
 

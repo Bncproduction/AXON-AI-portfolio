@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react'
-import { useStore, makeSampleDrawing, useDeleteDrawing } from '../state/store.jsx'
+import { useStore, useDeleteDrawing } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { Card, Banner, Field } from '../components/ui.jsx'
-import { SAMPLE_DRAWINGS } from '../data/sampleDrawings.js'
 import { parseFileName } from '../lib/aiEngine.js'
 import { readDrawingText } from '../lib/fileText.js'
 import { parseTitleBlock, scanAnnotations } from '../lib/titleBlock.js'
@@ -91,11 +90,7 @@ export default function DrawingUpload({ go }) {
     setPending(null)
   }
 
-  const loadSample = (key) => {
-    const d = makeSampleDrawing(key, state.settings.preparedBy)
-    dispatch({ type: 'ADD_DRAWING', payload: d })
-  }
-
+  
   const analyze = (id) => {
     dispatch({ type: 'ANALYZE', id })
     go('analysis')
@@ -189,17 +184,7 @@ export default function DrawingUpload({ go }) {
             )}
           </Card>
 
-          <Card title="Or start from a sample drawing" hint="Demonstrates the full workflow without a file">
-            <div className="grid g3">
-              {SAMPLE_DRAWINGS.map((s) => (
-                <button key={s.key} className="btn" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4, padding: 12 }} onClick={() => loadSample(s.key)}>
-                  <b>{s.header.partName}</b>
-                  <span className="muted small">{s.header.drawingNumber} · {s.header.revision}</span>
-                  <span className="muted small">{s.fileName.split('.').pop().toUpperCase()} · {s.header.customer}</span>
-                </button>
-              ))}
-            </div>
-          </Card>
+          
         </div>
 
         <div>
@@ -214,10 +199,8 @@ export default function DrawingUpload({ go }) {
                   <h3>{drawing ? drawing.fileName : 'No drawing selected'}</h3>
                   <p className="muted small" style={{ maxWidth: 420, margin: '8px auto 0' }}>
                     {drawing
-                      ? (drawing.isSample
-                        ? 'Sample drawing record — no raster file is attached. All extraction data for this part is available in the analysis step.'
-                        : EXT_SUPPORT[extOf(drawing.fileName)]?.note || 'No inline preview available for this file type.')
-                      : 'Upload a file or load a sample to see the preview here.'}
+                      ? EXT_SUPPORT[extOf(drawing.fileName)]?.note || 'No inline preview available for this file type.'
+                      : 'Upload a drawing to see the preview here.'}
                   </p>
                 </div>
               )}

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
 import { MATERIAL_MASTER, MATERIAL_CALLOUT_MAP, materialById } from '../data/materials.js'
-import { SAMPLE_DRAWINGS } from '../data/sampleDrawings.js'
 import { analyzeDrawing, recommendRoute, suggestMaterials } from '../lib/aiEngine.js'
 import { estimateVolume, estimateSurfaceAreaDm2, weightFromVolume } from '../lib/geometry.js'
 import { computeEstimate, DEFAULT_PARAMS } from '../lib/costing.js'
@@ -427,23 +426,5 @@ export function useDeleteDrawing() {
     if (d.previewUrl) { try { URL.revokeObjectURL(d.previewUrl) } catch { /* already revoked */ } }
     dispatch({ type: 'DELETE_DRAWING', id })
     return true
-  }
-}
-
-// Helper used by the upload page to create a drawing record from a sample.
-export function makeSampleDrawing(key, uploadedBy) {
-  const s = SAMPLE_DRAWINGS.find((x) => x.key === key)
-  return {
-    id: uid(),
-    fileName: s.fileName,
-    fileType: s.fileType,
-    fileSize: 480000 + Math.round(Math.random() * 900000),
-    previewUrl: null,
-    isSample: true,
-    sampleKey: s.key,
-    ...s.header,
-    uploadedBy: uploadedBy || 'Cost Engineering',
-    uploadDate: new Date().toISOString(),
-    analyzed: false,
   }
 }

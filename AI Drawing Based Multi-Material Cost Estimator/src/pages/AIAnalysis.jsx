@@ -46,8 +46,8 @@ export default function AIAnalysis({ go }) {
         </p>
       </div>
 
-      <Banner kind={analysis?.isSampleData ? 'danger' : analysis?.readFromFile ? 'info' : 'warn'}>
-        <span>{analysis?.isSampleData ? '⚠' : analysis?.readFromFile ? '✓' : 'ⓘ'}</span>
+      <Banner kind={!analysis ? 'info' : analysis.readFromFile ? 'info' : 'danger'}>
+        <span>{!analysis ? 'ⓘ' : analysis.readFromFile ? '✓' : '⚠'}</span>
         <span><b>Engine mode:</b> {analysis?.engineMode || ENGINE_MODE}</span>
       </Banner>
 
