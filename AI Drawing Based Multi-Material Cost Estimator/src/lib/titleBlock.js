@@ -1,68 +1,193 @@
 // ---------------------------------------------------------------------------
 // TITLE BLOCK READER
 // Maps positioned text from a drawing onto the fields a costing needs.
-// A value is only accepted when it sits where a title block puts it —
-// immediately right of its label, or directly beneath it. Nothing is guessed:
-// a label with no value nearby returns nothing at all.
+//
+// Three rules keep it honest:
+//  1. A value is only accepted where a title block actually puts one —
+//     inline after the label, in the same row to its right, or directly beneath.
+//  2. A value must belong to that label: if another label is a closer owner of
+//     the same text, it is not taken.
+//  3. A value must look like the thing it claims to be. Column headings such as
+//     "Size," or "Sheet" are never a part name.
 // ---------------------------------------------------------------------------
 
 /** Label vocabulary, including the abbreviations CAD title blocks actually use. */
 export const FIELD_LABELS = {
-  partName: /^(drg\.?\s*\/?\s*part\s*desig|part\s*desig|part\s*name|description|designation|benennung|title|component\s*name|nomenclature)/i,
-  partNumber: /^(part\s*(no|nr|num|number)|p\/?n|item\s*(no|code)|component\s*(no|code)|teil\s*nr|artikel)/i,
-  drawingNumber: /^(dr(aw)?(g|ing)?\.?\s*(no|nr|num|number)|dwg\.?\s*(no)?|zeichnungs?\s*nr|sheet\s*no|doc(ument)?\s*(no|number))/i,
-  revision: /^(rev(ision)?\.?\s*(no|nr|level)?|issue|änderung|alt(eration)?)$/i,
+  partName: /^(drg\.?\s*\/?\s*part\s*desig|part\s*desig|part\s*name|part\s*descr|description|designation|benennung|title|component\s*name|nomenclature|item\s*name)/i,
+  partNumber: /^(part\s*(no|nr|num|number|code)|p\/?n\b|item\s*(no|code)|component\s*(no|code)|teil\s*nr|artikel|drg\.?\s*\/?\s*part\s*no)/i,
+  drawingNumber: /^(dr(aw)?(g|ing)?\.?\s*(no|nr|num|number)|dwg\.?\s*(no)?|zeichnungs?\s*nr|doc(ument)?\s*(no|number)|sheet\s*no)/i,
+  // REVN, REV NO, REV., ISS, ISSUE — the forms that actually appear on sheets
+  revision: /^(rev\s*n(o|r)?\.?|revn\.?|rev\.?|revision|iss(ue)?\.?\s*(no)?|änderung|alt(eration)?)$/i,
   material: /^(material|werkstoff|mat(l|erial)?\.?\s*(spec|grade)?|stock|raw\s*material)/i,
   weight: /^(weight|mass|gewicht|wt\.?)/i,
   scale: /^(scale|maßstab|masstab)/i,
-  drawingDate: /^(date|datum|drawn\s*on|issue\s*date)/i,
+  // An approval / release date is the controlled date on most title blocks,
+  // so it is preferred over a plain "Date" cell.
+  approvedDate: /^(app(r(o)?)?(o?v(e)?d|d)?\.?\s*(on|date|dt)?|approval\s*date|released?\s*(on|date)?|date\s*of\s*(approval|issue|release))$/i,
+  drawingDate: /^(date|datum|drawn\s*on|issue\s*date|dt\.?)$/i,
   generalTolerance: /^(gen(eral)?\.?\s*tol|tolerance[s]?|unspecified\s*tol|tol(erance)?\s*class|allgemeintoleranz)/i,
   surfaceFinish: /^(surface\s*(finish|roughness|texture)|roughness|finish|oberfl)/i,
   heatTreatment: /^(heat\s*treat|hardness|hrc|case\s*depth|wärmebehandlung)/i,
-  customer: /^(customer|client|kunde|for)/i,
+  customer: /^(customer|client|kunde)/i,
   drawnBy: /^(drawn(\s*by)?|prepared(\s*by)?|gezeichnet)/i,
   quantity: /^(qty|quantity|stück)/i,
 }
 
 const ALL_LABELS = Object.values(FIELD_LABELS)
-const looksLikeLabel = (s) => ALL_LABELS.some((re) => re.test(s.replace(/[:.\s]+$/, '')))
-const isNoise = (s) => !s || /^[-–—_:.,/|\s]+$/.test(s) || s.length > 90
+const stripEdges = (s) => s.replace(/^[\s:.\-–—|]+/, '').replace(/[\s:.\-–—|,]+$/, '').trim()
+const looksLikeLabel = (s) => ALL_LABELS.some((re) => re.test(stripEdges(s)))
 
-const clean = (s) => s.replace(/^[\s:.\-–—]+/, '').replace(/[\s:.\-–—]+$/, '').trim()
+/** Title-block furniture that is never a value. */
+const STOPWORDS = new Set([
+  'size', 'scale', 'sheet', 'sheets', 'date', 'name', 'sign', 'signature', 'sig',
+  'drawn', 'checked', 'chkd', 'approved', 'appd', 'apprd', 'dwn', 'des', 'designed',
+  'weight', 'material', 'rev', 'revn', 'revision', 'qty', 'quantity', 'unit', 'units',
+  'mm', 'cm', 'inch', 'kg', 'tolerance', 'tol', 'finish', 'title', 'drawing', 'drg',
+  'dwg', 'part', 'no', 'nos', 'number', 'projection', 'angle', 'third angle', 'first angle',
+  'page', 'of', 'all dimensions in mm', 'do not scale', 'confidential', 'sl', 'sr',
+  'a0', 'a1', 'a2', 'a3', 'a4', 'description', 'designation', 'item', 'code', 'remarks',
+])
+
+const isNoise = (s) => !s || /^[-–—_:.,/|\s]+$/.test(s) || s.length > 90
+const isStopword = (s) => STOPWORDS.has(s.toLowerCase().replace(/[.,:;]+$/, '').trim())
+
+/** Does this text plausibly belong in that field? */
+function valid(field, raw) {
+  const s = stripEdges(raw)
+  if (!s || isStopword(s)) return false
+  switch (field) {
+    case 'partName':
+      // a name has letters, is not a lone code, and is not a column heading
+      return /[A-Za-z]{3}/.test(s) && s.length >= 3 && s.length <= 60 && !/^\d+$/.test(s)
+    case 'partNumber':
+    case 'drawingNumber':
+      return /\d/.test(s) && /^[A-Za-z0-9][A-Za-z0-9 ._\-/]{2,39}$/.test(s)
+    case 'revision':
+      return /^(rev\.?\s*)?[A-Z]?\d{1,2}$|^[A-Z]$/i.test(s)
+    case 'approvedDate':
+    case 'drawingDate':
+      return !!normalizeDate(s)
+    case 'weight':
+      return /\d/.test(s)
+    case 'material':
+      return /[A-Za-z]{2}/.test(s) && s.length <= 60
+    default:
+      return s.length <= 80
+  }
+}
+
+/** dd.mm.yyyy, dd/mm/yy, yyyy-mm-dd, 12 Mar 2026 -> yyyy-mm-dd (or null). */
+export function normalizeDate(raw = '') {
+  const s = String(raw).trim()
+  let m = s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/)
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`
+  m = s.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2,4})$/)
+  if (m) {
+    const y = m[3].length === 2 ? `20${m[3]}` : m[3]
+    return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+  }
+  m = s.match(/^(\d{1,2})[-\s]([A-Za-z]{3,})[-\s](\d{2,4})$/)
+  if (m) {
+    const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    const mi = months.indexOf(m[2].slice(0, 3).toLowerCase())
+    if (mi >= 0) {
+      const y = m[3].length === 2 ? `20${m[3]}` : m[3]
+      return `${y}-${String(mi + 1).padStart(2, '0')}-${m[1].padStart(2, '0')}`
+    }
+  }
+  return null
+}
 
 /**
- * Find the value belonging to a label item.
- * Same row to the right wins; otherwise the row directly beneath.
+ * Merge text runs that belong to one phrase.
+ * PDF writers split a cell such as "Drg./Part Designation" into several runs;
+ * matched separately they never look like a label. Runs on the same baseline
+ * are joined only while the gap stays within a couple of characters, so a
+ * label never swallows the value sitting further along the row.
  */
-function valueFor(label, items) {
-  // "PART NO: PH-2291-03" — label and value share one text run
+export function toPhrases(items = []) {
+  const rows = new Map()
+  for (const it of items) {
+    const key = `${it.page}:${Math.round(it.y / 3)}`
+    if (!rows.has(key)) rows.set(key, [])
+    rows.get(key).push(it)
+  }
+  const phrases = []
+  for (const row of rows.values()) {
+    row.sort((a, b) => a.x - b.x)
+    let cur = null
+    for (const it of row) {
+      const charW = it.w && it.str.length ? it.w / it.str.length : 4
+      // A word gap inside one cell is a few characters wide; a label-to-value
+      // gap in a title block is far larger, so cap the join distance.
+      if (cur && it.x - (cur.x + cur.w) <= Math.min(12, Math.max(4, charW * 3))) {
+        cur.str = `${cur.str}${it.x - (cur.x + cur.w) > charW * 0.4 ? ' ' : ''}${it.str}`
+        cur.w = it.x + it.w - cur.x
+      } else {
+        if (cur) phrases.push(cur)
+        cur = { ...it }
+      }
+    }
+    if (cur) phrases.push(cur)
+  }
+  return phrases
+}
+
+/** Score of a label/value pairing, or null when the geometry rules it out. */
+function pairScore(label, item) {
+  if (item === label || item.page !== label.page) return null
+  const labelRight = label.x + (label.w || label.str.length * 4)
+  const dy = item.y - label.y
+  const dx = item.x - label.x
+  if (Math.abs(dy) <= 4.5 && item.x >= labelRight - 2 && dx < 320) return { score: dx, placement: 'right' }
+  if (dy > 1 && dy <= 42 && dx > -60 && dx < 420) return { score: 1000 + dy * 6 + Math.abs(dx) * 0.2, placement: 'below' }
+  return null
+}
+
+/** Find the value for a label, rejecting text that a nearer label owns. */
+function valueFor(field, label, phrases, labelIndex, labelRe) {
   const inline = label.str.split(/[:：]/)
-  if (inline.length > 1 && clean(inline.slice(1).join(':'))) {
-    return { value: clean(inline.slice(1).join(':')), confidence: 'High', placement: 'inline' }
+  if (inline.length > 1) {
+    const v = stripEdges(inline.slice(1).join(':'))
+    if (v && valid(field, v)) return { value: v, confidence: 'High', placement: 'inline' }
+  }
+  // "GENERAL TOL +/- 0.2" — the cell holds its own value with no colon.
+  // Take the remainder after the label text rather than reaching for the
+  // next row, which belongs to something else.
+  if (labelRe) {
+    const m = label.str.match(labelRe)
+    const after = m ? label.str.slice(m[0].length) : ''
+    // Only when the label ends at a separator — otherwise "Drg./Part Designation"
+    // would be split into the label "…Desig" and a value of "nation".
+    if (after && /^[\s:.\-–—|]/.test(after)) {
+      const remainder = stripEdges(after)
+      if (remainder && valid(field, remainder)) {
+        return { value: remainder, confidence: 'High', placement: 'inline' }
+      }
+    }
   }
 
-  const labelRight = label.x + (label.w || label.str.length * 4)
   let best = null
-  for (const it of items) {
-    if (it === label || it.page !== label.page) continue
-    const s = clean(it.str)
-    if (isNoise(s) || looksLikeLabel(s)) continue
-    const dy = it.y - label.y
-    const dx = it.x - label.x
+  for (const it of phrases) {
+    const s = stripEdges(it.str)
+    if (isNoise(s) || looksLikeLabel(s) || !valid(field, s)) continue
+    const pair = pairScore(label, it)
+    if (!pair) continue
 
-    let score = null
-    let placement = null
-    if (Math.abs(dy) <= 4.5 && it.x >= labelRight - 2 && dx < 320) {
-      score = dx                                     // same row, to the right
-      placement = 'right'
-    } else if (dy > 1 && dy <= 42 && dx > -50 && dx < 420) {
-      score = 1000 + dy * 6 + Math.abs(dx) * 0.2     // row beneath the label
-      placement = 'below'
+    // Ownership: whichever label pairs most tightly with this text owns it.
+    let owner = label
+    let ownerScore = pair.score
+    for (const other of labelIndex) {
+      if (other.item === label) continue
+      const p = pairScore(other.item, it)
+      if (p && p.score < ownerScore) { owner = other.item; ownerScore = p.score }
     }
-    if (score != null && (!best || score < best.score)) best = { value: s, score, placement }
+    if (owner !== label) continue
+
+    if (!best || pair.score < best.score) best = { value: s, score: pair.score, placement: pair.placement }
   }
   if (!best) return null
-  return { value: best.value, confidence: best.placement === 'right' ? 'High' : 'Medium', placement: best.placement }
+  return { value: best.value, confidence: best.placement === 'below' ? 'Medium' : 'High', placement: best.placement }
 }
 
 /**
@@ -72,34 +197,53 @@ function valueFor(label, items) {
 export function parseTitleBlock(items = []) {
   const found = {}
   if (!items.length) return found
+  const phrases = toPhrases(items)
+
+  // Every label on the sheet, used for the ownership test
+  const labelIndex = []
+  for (const [field, re] of Object.entries(FIELD_LABELS)) {
+    for (const it of phrases) if (re.test(stripEdges(it.str))) labelIndex.push({ field, item: it })
+  }
 
   for (const [field, re] of Object.entries(FIELD_LABELS)) {
-    const candidates = items.filter((it) => re.test(clean(it.str)))
-    for (const label of candidates) {
-      const hit = valueFor(label, items)
+    for (const label of phrases.filter((it) => re.test(stripEdges(it.str)))) {
+      const hit = valueFor(field, label, phrases, labelIndex, re)
       if (!hit) continue
-      // keep the most confident match for each field
-      const better = !found[field] ||
-        (found[field].confidence !== 'High' && hit.confidence === 'High')
-      if (better) found[field] = { ...hit, label: clean(label.str) }
+      if (!found[field] || (found[field].confidence !== 'High' && hit.confidence === 'High')) {
+        found[field] = { ...hit, label: stripEdges(label.str) }
+      }
       if (found[field]?.confidence === 'High') break
     }
   }
 
-  // Post-process the values that have a known shape
+  // ---- shape the values that have a known form -----------------------------
   if (found.weight) {
-    const m = String(found.weight.value).match(/(\d+(?:[.,]\d+)?)\s*(kg|g|gram|kgs)?/i)
+    const m = String(found.weight.value).match(/(\d+(?:[.,]\d+)?)\s*(kgs?|g|gram)?/i)
     if (m) {
       const n = parseFloat(m[1].replace(',', '.'))
       found.weight.kg = /^g/i.test(m[2] || '') ? n / 1000 : n
-    } else {
-      delete found.weight
-    }
+    } else delete found.weight
   }
-  if (found.revision) {
-    const m = String(found.revision.value).match(/^[A-Z]?\d{1,2}$|^[A-Z]$/i)
-    if (!m) delete found.revision
+  if (found.revision) found.revision.value = String(found.revision.value).replace(/^rev\.?\s*/i, '').toUpperCase()
+
+  // An approval date is the controlled date; fall back to a plain date cell.
+  const dateHit = found.approvedDate || found.drawingDate
+  if (dateHit) {
+    const iso = normalizeDate(dateHit.value)
+    if (iso) {
+      found.drawingDate = { ...dateHit, value: iso, raw: dateHit.value }
+    } else delete found.drawingDate
   }
+  delete found.approvedDate
+
+  // Many drawings carry one number for both fields. Mirror it rather than
+  // leaving a blank, and say so.
+  if (found.drawingNumber && !found.partNumber) {
+    found.partNumber = { ...found.drawingNumber, mirrored: 'drawingNumber', confidence: 'Medium' }
+  } else if (found.partNumber && !found.drawingNumber) {
+    found.drawingNumber = { ...found.partNumber, mirrored: 'partNumber', confidence: 'Medium' }
+  }
+
   return found
 }
 

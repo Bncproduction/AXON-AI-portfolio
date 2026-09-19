@@ -79,10 +79,14 @@ export function parseFileName(fileName = '') {
 export function buildExtractionFromDrawing(drawing) {
   const tb = drawing.titleBlock || {}
   const ann = drawing.annotations || {}
-  const fromTB = (key, note) =>
-    tb[key]
-      ? f(tb[key].value, SRC.DRAWING, tb[key].confidence, note || `Read from the title block field "${tb[key].label}".`)
-      : na()
+  const fromTB = (key, note) => {
+    if (!tb[key]) return na()
+    const mirrored = tb[key].mirrored
+      ? ` This sheet carries a single number for both the drawing and the part, so the same value is used for each.`
+      : ''
+    return f(tb[key].value, SRC.DRAWING, tb[key].confidence,
+      note || `Read from the title block field "${tb[key].label}".${mirrored}`)
+  }
 
   const dias = ann.diameters || []
   const extraction = {
