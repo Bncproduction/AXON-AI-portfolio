@@ -28,6 +28,7 @@ const emptyProject = (drawingId) => ({
   weightOverrideKg: null,
   selectedMaterials: [],
   materialNotes: {},
+  processOverride: null, // user-selected primary process, wins over inference
   routes: {},
   params: { ...DEFAULT_PARAMS },
   savedAt: null,
@@ -169,6 +170,10 @@ function reducer(state, a) {
           m.id === a.id ? { ...m, ...a.patch, lastUpdated: dateStr(), priceSource: SRC.USER } : m,
         ),
       }
+
+    case 'SET_PROCESS_OVERRIDE':
+      // Changing the primary process invalidates every generated route.
+      return withProject(state, state.activeId, (p) => ({ ...p, processOverride: a.processId || null, routes: {} }))
 
     case 'SET_ROUTE':
       return withProject(state, state.activeId, (p) => ({ ...p, routes: { ...p.routes, [a.materialId]: a.route } }))
@@ -380,6 +385,7 @@ function deriveAll(state, drawing, project) {
         areaDm2,
         annualQty: params.annualQty,
         lotQty: params.lotQty,
+        forcedProcessId: project.processOverride,
       })
 
     const est = computeEstimate({ material, route, netWeightKg, areaDm2, params })

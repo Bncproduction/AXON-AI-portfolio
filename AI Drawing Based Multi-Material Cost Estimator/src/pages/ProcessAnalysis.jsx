@@ -1,6 +1,7 @@
 import React from 'react'
 import { useStore } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
+import ProcessPicker from '../components/ProcessPicker.jsx'
 import { Card, Empty, Kpi, Validation, Banner, SourceTag, NoEstimates } from '../components/ui.jsx'
 import { recommendRoute, finestRa, tightestToleranceMm } from '../lib/aiEngine.js'
 import { money, num } from '../lib/format.js'
@@ -34,6 +35,7 @@ export default function ProcessAnalysis({ go }) {
         areaDm2,
         annualQty: params.annualQty,
         lotQty: params.lotQty,
+        forcedProcessId: project.processOverride,
       })
     })
     dispatch({ type: 'SET_ALL_ROUTES', routes })
@@ -61,6 +63,8 @@ export default function ProcessAnalysis({ go }) {
         <Kpi label="Tightest Tolerance" value={tol != null ? `±${tol} mm` : 'Not stated'} foot={tol != null && tol <= 0.1 ? 'Precision class' : 'General class'} />
         <Kpi label="Routes Generated" value={estimates.length} foot="One per selected material" tone="green" />
       </div>
+
+      <ProcessPicker />
 
       <Card
         title="Analysis Inputs"

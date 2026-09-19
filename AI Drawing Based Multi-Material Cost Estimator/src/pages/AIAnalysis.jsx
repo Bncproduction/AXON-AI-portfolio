@@ -3,7 +3,9 @@ import { useStore } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { Card, Banner, Kpi, Empty, Validation } from '../components/ui.jsx'
 import FieldTable, { PART_LABELS, DIM_LABELS, DIM_SUFFIX, QUALITY_LABELS, MATERIAL_LABELS, MFG_LABELS } from '../components/FieldTable.jsx'
+import ProcessPicker from '../components/ProcessPicker.jsx'
 import { ENGINE_MODE } from '../lib/aiEngine.js'
+import { processById } from '../data/processes.js'
 import { dateTime } from '../lib/format.js'
 
 const TABS = [
@@ -15,7 +17,7 @@ const TABS = [
 ]
 
 export default function AIAnalysis({ go }) {
-  const { drawing, analysis, dispatch } = useStore()
+  const { drawing, analysis, dispatch, project } = useStore()
   const [tab, setTab] = useState('part')
   const [busy, setBusy] = useState(false)
 
@@ -65,9 +67,21 @@ export default function AIAnalysis({ go }) {
           <div className="grid g4">
             <Kpi label="Parameters Found" value={analysis.fieldsFound} foot="Present on the drawing or derived" tone="green" />
             <Kpi label="Not Available" value={analysis.fieldsMissing} foot="Reported as missing, never invented" tone="warn" />
-            <Kpi label="Component Type" value={analysis.part.componentType?.value?.split('/')[0] || '—'} foot={analysis.part.componentType?.source} />
+            <Kpi
+              label="Component Type"
+              value={analysis.part.componentType?.value?.split('/')[0]
+                || (project?.processOverride ? processById(project.processOverride)?.name : '—')}
+              foot={analysis.part.componentType?.value
+                ? analysis.part.componentType.source
+                : project?.processOverride
+                  ? 'From the process you selected below'
+                  : 'Not stated — pick a process below'}
+              tone={project?.processOverride && !analysis.part.componentType?.value ? 'green' : ''}
+            />
             <Kpi label="Material Callout" value={analysis.material.grade?.value || '—'} foot={analysis.material.specification?.value || '—'} tone="accent" />
           </div>
+
+          <ProcessPicker />
 
           <Card
             title="Extracted Information"

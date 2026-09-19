@@ -337,8 +337,88 @@ export function recommendRoute(materialId, extraction, geom, ctx) {
   // routes leave most surfaces as-cast / as-forged.
   let machinedAreaFraction = 1.0
 
+  // ---- 0. User-selected primary process ---------------------------------
+  // When the drawing states no manufacturing route, the user picks one. That
+  // choice wins over inference, and is recorded as User Input.
+  const forced = ctx.forcedProcessId ? processById(ctx.forcedProcessId) : null
+  if (forced) {
+    primaryProcess = `${forced.name} (selected by user)`
+    reasons.push(`Primary process set to ${forced.name} by the user; the drawing does not state a manufacturing route.`)
+    const weightBased = { label: 'Melting / material conversion', amount: 38, basis: 'kg' }
+
+    if (forced.category === 'Casting') {
+      steps.push(step(forced.id, {
+        cycleMin: r1(4 + netWeightKg * 2.2),
+        reason: `${forced.name} selected by the user. Cycle modelled from a ${Number(netWeightKg || 0).toFixed(3)} kg pour.`,
+        extras: [
+          { label: 'Pattern / die cost', amount: forced.id === 'PDC' ? 1250000 : forced.id === 'GDC' ? 320000 : 145000, basis: 'lot' },
+          weightBased,
+          { label: 'Fettling / trimming', amount: 20, basis: 'part' },
+          { label: 'Shot blasting', amount: 8, basis: 'part' },
+        ],
+      }))
+      removalCm3 = (volumeCm3 || 0) * 0.14
+      machinedAreaFraction = 0.3
+      reasons.push('Near-net-shape route: machining stock reduced to a 14 % allowance on about 30 % of the surface.')
+    } else if (forced.category === 'Forging') {
+      steps.push(step(forced.id, {
+        cycleMin: r1(0.8 + netWeightKg * 0.35),
+        reason: `${forced.name} selected by the user.`,
+        extras: [
+          { label: 'Die cost', amount: 480000, basis: 'lot' },
+          { label: 'Billet heating', amount: 18, basis: 'kg' },
+          { label: 'Trimming', amount: 14, basis: 'part' },
+        ],
+      }))
+      removalCm3 = Math.max((volumeCm3 || 0) * 0.18, 0)
+      machinedAreaFraction = 0.6
+    } else if (forced.category === 'Moulding') {
+      steps.push(step(forced.id, {
+        cycleMin: r1(12 + (netWeightKg * 1000) / 45),
+        reason: `${forced.name} selected by the user.`,
+        extras: [{ label: 'Mould / tool cost', amount: 850000, basis: 'lot' }],
+      }))
+      removalCm3 = 0
+      machinedAreaFraction = 0
+    } else if (forced.category === 'Fabrication') {
+      const perimeterM = (2 * ((geom?.length || 0) + (geom?.width || 0))) / 1000
+      steps.push(step(forced.id, {
+        cycleMin: r1(Math.max(1, 0.4 + perimeterM * (geom?.thickness || 3) * 0.16)),
+        reason: `${forced.name} selected by the user.`,
+        extras: [{ label: 'Programming / setup tooling', amount: 2500, basis: 'lot' }],
+      }))
+      removalCm3 = 0
+      machinedAreaFraction = 0
+    } else if (forced.category === 'Machining') {
+      // The chosen machine becomes the primary metal-removal operation.
+      const mrrF = 12 * machinability
+      steps.push(step(forced.id, {
+        cycleMin: r1(Math.max(1, (removalCm3 / mrrF) * (tightTol ? 1.25 : 1))),
+        toolCostPerPart: r1(8 / machinability),
+        reason: `${forced.name} selected by the user. Removal ${removalCm3.toFixed(0)} cm³ at an assumed ${mrrF.toFixed(1)} cm³/min for ${mat.name}.`,
+        extras: [{ label: 'Fixture', amount: 60000, basis: 'lot' }],
+      }))
+      removalCm3 = 0            // consumed by the operation just added
+      machinedAreaFraction = 1  // finishing still applies
+    } else {
+      // Heat or surface treatment chosen as the headline process: the part is
+      // still machined from stock, with that treatment added below.
+      steps.push(step(forced.id, {
+        reason: `${forced.name} selected by the user.`,
+        extras: [
+          ...(forced.perKg ? [{ label: 'Weight-based charge', amount: forced.perKg, basis: 'kg' }] : []),
+          ...(forced.perDm2 ? [{ label: 'Area-based charge', amount: forced.perDm2, basis: 'dm2' }] : []),
+          ...(forced.batchCost ? [{ label: 'Batch charge', amount: forced.batchCost, basis: 'lot' }] : []),
+        ],
+      }))
+    }
+    alternatives.push({ name: 'Engine recommendation', reason: 'Clear the selection to see the route the engine would infer from the drawing.' })
+  }
+
   // ---- 1. Near-net-shape forming ----------------------------------------
-  if (mat.moulded) {
+  if (forced) {
+    // primary process already established above from the user's selection
+  } else if (mat.moulded) {
     primaryProcess = 'Injection Moulding'
     const shotG = netWeightKg * 1000
     const cycle = r1(12 + shotG / 45)
