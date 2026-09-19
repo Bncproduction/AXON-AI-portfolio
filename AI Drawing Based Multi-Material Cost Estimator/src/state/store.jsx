@@ -298,7 +298,7 @@ export const useStore = () => {
 // ---------------------------------------------------------------------------
 function deriveAll(state, drawing, project) {
   if (!drawing || !project || !project.analysis) {
-    return { geometry: null, volume: null, estimates: [], drawingMaterialId: null, areaDm2: 0, params: project?.params || DEFAULT_PARAMS }
+    return { geometry: null, volume: null, estimates: [], drawingMaterialId: null, areaDm2: 0, needsGeometry: false, params: project?.params || DEFAULT_PARAMS }
   }
   const analysis = project.analysis
   const geometry = { ...(analysis.geometry || {}), ...project.geometryEdits }
@@ -345,6 +345,16 @@ function deriveAll(state, drawing, project) {
     }
   }
 
+  // A drawing whose geometry could not be read yields no volume. Rather than
+  // costing a zero-weight part, the chain stops here and asks for a number.
+  const needsGeometry = !volume.volumeCm3
+  if (needsGeometry) {
+    return {
+      geometry, volume: { ...volume, volumeCm3: null }, areaDm2: 0,
+      estimates: [], drawingMaterialId, params, needsGeometry: true,
+    }
+  }
+
   const areaDm2 = estimateSurfaceAreaDm2(geometry, volume.volumeCm3)
 
   // ---- Per-material weight, route and cost --------------------------------
@@ -376,7 +386,7 @@ function deriveAll(state, drawing, project) {
     return { ...est, route, material, weightSource, isDrawingMaterial: id === drawingMaterialId }
   }).filter(Boolean)
 
-  return { geometry, volume, areaDm2, estimates, drawingMaterialId, params }
+  return { geometry, volume, areaDm2, estimates, drawingMaterialId, params, needsGeometry: false }
 }
 
 /**

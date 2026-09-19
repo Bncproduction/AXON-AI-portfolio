@@ -1,21 +1,19 @@
 import React, { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
-import { Card, Empty, Kpi, Validation, Banner, Num } from '../components/ui.jsx'
+import { Card, Empty, Kpi, Validation, Banner, Num, NoEstimates } from '../components/ui.jsx'
 import { PROCESS_MASTER, processById } from '../data/processes.js'
 import { money, num, uid } from '../lib/format.js'
 
 const BASIS_LABEL = { part: '₹/part', lot: '₹/lot', kg: '₹/kg', dm2: '₹/dm²' }
 
 export default function ProcessCost({ go }) {
-  const { estimates, project, dispatch } = useStore()
+  const { estimates, project, dispatch, needsGeometry } = useStore()
   const [active, setActive] = useState(null)
   const [adding, setAdding] = useState('')
 
   if (!estimates.length) {
-    return <Empty title="No costed materials yet" action={<button className="btn primary" onClick={() => go('materials')}>Go to Material Selection</button>}>
-      Process cost is calculated per material route.
-    </Empty>
+    return <NoEstimates go={go} needsGeometry={needsGeometry} />
   }
 
   const est = estimates.find((e) => e.materialId === active) || estimates[0]

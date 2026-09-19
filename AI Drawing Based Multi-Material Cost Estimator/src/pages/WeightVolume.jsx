@@ -108,10 +108,31 @@ export default function WeightVolume({ go }) {
         </Card>
 
         <div>
-          <Card title="Geometry Inputs" hint={`Shape model: ${geometry?.shape || '—'}`}>
+          <Card title="Geometry Inputs" hint={geometry?.shape ? `Shape model: ${geometry.shape}` : 'No geometry read from the drawing'}>
+            {!geometry?.shape && (
+              <Banner kind="warn">
+                <span>⚠</span>
+                <span>
+                  No dimensions were read from this drawing. Either enter the volume directly on the left, or pick the
+                  closest shape below and enter the dimensions — the volume is then calculated and shown as a trail.
+                </span>
+              </Banner>
+            )}
+            <div className="field">
+              <label>Shape model</label>
+              <select className="inp" value={geometry?.shape || ''}
+                onChange={(e) => dispatch({ type: 'UPDATE_GEOMETRY', key: 'shape', value: e.target.value })}>
+                <option value="">Select a shape…</option>
+                <option value="plate">Plate / sheet (L × W × t)</option>
+                <option value="cylinder">Cylinder (Ø × L)</option>
+                <option value="stepped-cylinder">Stepped shaft (Ø steps)</option>
+                <option value="hollow-box">Hollow body / housing (envelope × solid fraction)</option>
+                <option value="prismatic">Prismatic block (L × W × H)</option>
+              </select>
+            </div>
             <p className="small muted">{geometry?.fillFactorNote}</p>
             <div className="grid g2" style={{ gap: 8 }}>
-              {GEOM_FIELDS.filter(([k]) => geometry?.[k] !== undefined).map(([k, label, unit]) => (
+              {GEOM_FIELDS.filter(([k]) => geometry?.[k] !== undefined || (geometry?.shape && !geometry.steps)).map(([k, label, unit]) => (
                 <Field key={k} label={`${label} (${unit})`}>
                   <input className="inp num" type="number" step={k === 'fillFactor' ? 0.01 : 1}
                     value={geometry[k] ?? ''}

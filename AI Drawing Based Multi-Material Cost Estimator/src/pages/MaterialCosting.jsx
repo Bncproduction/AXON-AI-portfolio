@@ -1,17 +1,15 @@
 import React from 'react'
 import { useStore } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
-import { Card, Empty, Kpi, SourceTag, Validation, BarRow, PALETTE, Banner } from '../components/ui.jsx'
+import { Card, Empty, Kpi, SourceTag, Validation, BarRow, PALETTE, Banner, NoEstimates } from '../components/ui.jsx'
 import { money, num } from '../lib/format.js'
 import { SRC } from '../lib/sources.js'
 
 export default function MaterialCosting({ go }) {
-  const { estimates, project, dispatch, state, volume } = useStore()
+  const { estimates, project, dispatch, state, volume, needsGeometry } = useStore()
 
   if (!estimates.length) {
-    return <Empty title="No materials selected" action={<button className="btn primary" onClick={() => go('materials')}>Go to Material Selection</button>}>
-      Add at least one candidate material to calculate raw material cost.
-    </Empty>
+    return <NoEstimates go={go} needsGeometry={needsGeometry} />
   }
 
   const p = project.params

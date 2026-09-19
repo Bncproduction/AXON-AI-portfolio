@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { useStore } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
-import { Card, Empty, Kpi, Validation, PALETTE, BarRow } from '../components/ui.jsx'
+import { Card, Empty, Kpi, Validation, PALETTE, BarRow, NoEstimates } from '../components/ui.jsx'
 import { breakdownRows } from '../lib/costing.js'
 import { money, money0, num, uid, dateStr } from '../lib/format.js'
 
@@ -26,13 +26,11 @@ const PARAM_FIELDS = [
 ]
 
 export default function ManufacturingCost({ go }) {
-  const { estimates, project, dispatch, state, drawing } = useStore()
+  const { estimates, project, dispatch, state, drawing, needsGeometry } = useStore()
   const [active, setActive] = useState(null)
 
   if (!estimates.length) {
-    return <Empty title="Nothing to cost yet" action={<button className="btn primary" onClick={() => go('materials')}>Go to Material Selection</button>}>
-      Select materials and generate routes first.
-    </Empty>
+    return <NoEstimates go={go} needsGeometry={needsGeometry} />
   }
 
   const est = estimates.find((e) => e.materialId === active) || estimates[0]

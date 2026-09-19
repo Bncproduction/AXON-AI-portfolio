@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useStore } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
-import { Card, Empty, Kpi, Validation, Slider, PALETTE } from '../components/ui.jsx'
+import { Card, Empty, Kpi, Validation, Slider, PALETTE, NoEstimates } from '../components/ui.jsx'
 import { computeEstimate } from '../lib/costing.js'
 import { money, num } from '../lib/format.js'
 
@@ -38,7 +38,7 @@ const SCENARIOS = [
 ]
 
 export default function CostSimulator({ go }) {
-  const { estimates, project, dispatch } = useStore()
+  const { estimates, project, dispatch, needsGeometry } = useStore()
   const [active, setActive] = useState(null)
 
   const est = estimates.find((e) => e.materialId === active) || estimates[0] || null
@@ -72,9 +72,7 @@ export default function CostSimulator({ go }) {
   }, [estimates, p])
 
   if (!est) {
-    return <Empty title="Nothing to simulate yet" action={<button className="btn primary" onClick={() => go('materials')}>Go to Material Selection</button>}>
-      Build an estimate first, then use this page to test its sensitivity.
-    </Empty>
+    return <NoEstimates go={go} needsGeometry={needsGeometry} />
   }
 
   const delta = est.total - baseline.total

@@ -4,6 +4,8 @@ import Stepper from '../components/Stepper.jsx'
 import { Card, Banner, Field } from '../components/ui.jsx'
 import { SAMPLE_DRAWINGS } from '../data/sampleDrawings.js'
 import { parseFileName } from '../lib/aiEngine.js'
+import { readDrawingText } from '../lib/fileText.js'
+import { parseTitleBlock, scanAnnotations } from '../lib/titleBlock.js'
 import { uid, dateTime } from '../lib/format.js'
 
 const ACCEPT = '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.step,.stp,.iges,.igs'
@@ -26,14 +28,27 @@ export default function DrawingUpload({ go }) {
   const { state, dispatch, drawing } = useStore()
   const removeDrawing = useDeleteDrawing()
   const [over, setOver] = useState(false)
+  const [reading, setReading] = useState(false)
   const [pending, setPending] = useState(null)
   const inputRef = useRef(null)
 
-  const takeFile = (file) => {
+  const takeFile = async (file) => {
     if (!file) return
     const ext = extOf(file.name)
     const canView = EXT_SUPPORT[ext]?.view
     const guess = parseFileName(file.name)
+    setReading(true)
+
+    // Read the sheet's own text before showing the form, so the title block —
+    // not the file name — is what populates it wherever possible.
+    const text = await readDrawingText(file)
+    const tb = text.hasText ? parseTitleBlock(text.items) : {}
+    const annotations = text.hasText ? scanAnnotations(text.items) : {}
+    setReading(false)
+
+    const pick = (field, fallback) => (tb[field]?.value ? tb[field].value : fallback)
+    const fromTitleBlock = Object.keys(tb)
+
     setPending({
       id: uid(),
       fileName: file.name,
@@ -41,12 +56,20 @@ export default function DrawingUpload({ go }) {
       fileSize: file.size,
       previewUrl: canView ? URL.createObjectURL(file) : null,
       ext,
-      guessedFields: Object.entries(guess).filter(([, v]) => v).map(([k]) => k),
-      drawingNumber: guess.drawingNumber,
-      partNumber: '',
-      partName: guess.partName,
-      revision: guess.revision,
-      drawingDate: '',
+      titleBlock: text.hasText ? tb : null,
+      annotations,
+      textItemCount: text.items.length,
+      textReason: text.reason,
+      hasText: text.hasText,
+      fromTitleBlock,
+      guessedFields: Object.entries(guess)
+        .filter(([k, v]) => v && !tb[k]?.value)
+        .map(([k]) => k),
+      drawingNumber: pick('drawingNumber', guess.drawingNumber),
+      partNumber: pick('partNumber', ''),
+      partName: pick('partName', guess.partName),
+      revision: pick('revision', guess.revision),
+      drawingDate: pick('drawingDate', ''),
       customer: state.settings.customer || '',
       uploadedBy: state.settings.preparedBy,
       uploadDate: new Date().toISOString(),
@@ -98,8 +121,10 @@ export default function DrawingUpload({ go }) {
               onDrop={onDrop}
               onClick={() => inputRef.current?.click()}
             >
-              <h3>Drag &amp; drop an engineering drawing here</h3>
-              <p>or click to browse — PDF, JPG, PNG, DWG, DXF, STEP/STP, IGES</p>
+              <h3>{reading ? 'Reading the drawing…' : 'Drag & drop an engineering drawing here'}</h3>
+              <p>{reading
+                ? 'Extracting the text layer and locating the title block.'
+                : 'or click to browse — PDF, JPG, PNG, DWG, DXF, STEP/STP, IGES'}</p>
               <input ref={inputRef} type="file" accept={ACCEPT} hidden
                 onChange={(e) => takeFile(e.target.files?.[0])} />
             </div>
@@ -112,13 +137,31 @@ export default function DrawingUpload({ go }) {
                     <b>{p.fileName}</b> ({(p.fileSize / 1024).toFixed(0)} KB) — {EXT_SUPPORT[p.ext]?.note || 'File type not recognised; extraction support is limited.'}
                   </span>
                 </Banner>
+                {p.fromTitleBlock?.length > 0 && (
+                  <Banner kind="info">
+                    <span>✓</span>
+                    <span>
+                      Read from the drawing's own <b>title block</b>: {p.fromTitleBlock.map((k) => (
+                        <span key={k} className="tag drawing" style={{ marginRight: 4 }}>
+                          {p.titleBlock[k].label} → {String(p.titleBlock[k].value).slice(0, 40)}
+                        </span>
+                      ))}
+                    </span>
+                  </Banner>
+                )}
                 {p.guessedFields?.length > 0 && (
                   <Banner kind="warn">
                     <span>⚠</span>
                     <span>
                       Pre-filled from the <b>file name</b> ({p.guessedFields.join(', ')}) — a naming-convention guess, not the
-                      title block. Correct anything that is wrong; the remaining blanks are filled from the drawing during analysis.
+                      title block. Correct anything that is wrong.
                     </span>
+                  </Banner>
+                )}
+                {!p.hasText && (
+                  <Banner kind="danger">
+                    <span>⚠</span>
+                    <span><b>No text could be read from this file.</b> {p.textReason} Enter the title-block values below by hand.</span>
                   </Banner>
                 )}
                 <div className="grid g2">

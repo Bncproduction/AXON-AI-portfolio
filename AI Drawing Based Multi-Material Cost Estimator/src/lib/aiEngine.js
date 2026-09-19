@@ -1,7 +1,7 @@
 import { SAMPLE_DRAWINGS } from '../data/sampleDrawings.js'
 import { MATERIAL_MASTER, MATERIAL_CALLOUT_MAP, materialById } from '../data/materials.js'
 import { processById } from '../data/processes.js'
-import { SRC, isAvailable } from './sources.js'
+import { SRC, f, na, isAvailable } from './sources.js'
 import { boundingVolumeCm3 } from './geometry.js'
 
 // ---------------------------------------------------------------------------
@@ -71,7 +71,95 @@ export function parseFileName(fileName = '') {
   return out
 }
 
+/**
+ * Build an extraction from what was actually read off the sheet.
+ * Used for real uploads. Anything the drawing does not state is returned as
+ * "Not Available in Drawing" — sample data is never mixed in here.
+ */
+export function buildExtractionFromDrawing(drawing) {
+  const tb = drawing.titleBlock || {}
+  const ann = drawing.annotations || {}
+  const fromTB = (key, note) =>
+    tb[key]
+      ? f(tb[key].value, SRC.DRAWING, tb[key].confidence, note || `Read from the title block field "${tb[key].label}".`)
+      : na()
+
+  const dias = ann.diameters || []
+  const extraction = {
+    part: {
+      partName: fromTB('partName'),
+      partNumber: fromTB('partNumber'),
+      drawingNumber: fromTB('drawingNumber'),
+      revision: fromTB('revision'),
+      componentType: na('Not stated on the drawing; classify manually if a process route is needed.'),
+    },
+    dimensions: {
+      length: na('No overall length could be read from the sheet.'),
+      width: na('No overall width could be read from the sheet.'),
+      height: na('No overall height could be read from the sheet.'),
+      diameter: dias.length
+        ? f(dias[0], SRC.AI, 'Low', `Largest of ${dias.length} diameter callout(s) found on the sheet (${dias.slice(0, 6).join(', ')} mm). Confirm which is the overall diameter.`)
+        : na(),
+      thickness: na(),
+      wallThickness: na(),
+      holeDiameter: dias.length > 1 ? f(dias[dias.length - 1], SRC.AI, 'Low', 'Smallest diameter callout found — may or may not be a hole.') : na(),
+      holeQuantity: na('Hole count cannot be derived from text alone.'),
+      threadDetails: ann.thread ? f(ann.thread, SRC.DRAWING, 'Medium', 'Thread callout found on the sheet.') : na(),
+      radius: na(),
+      chamfer: na(),
+    },
+    quality: {
+      tolerances: tb.generalTolerance
+        ? fromTB('generalTolerance')
+        : (ann.tolerance ? f(ann.tolerance, SRC.DRAWING, 'Medium', 'Tolerance callout found on the sheet.') : na()),
+      gdt: na('Geometric tolerance frames cannot be read from text alone.'),
+      datums: na(),
+      surfaceFinish: tb.surfaceFinish
+        ? fromTB('surfaceFinish')
+        : (ann.surfaceFinish ? f(ann.surfaceFinish, SRC.DRAWING, 'Medium', 'Roughness callout found on the sheet.') : na()),
+      criticalCharacteristics: na(),
+      specialNotes: na(),
+    },
+    material: {
+      specification: fromTB('material'),
+      grade: fromTB('material'),
+      heatTreatment: fromTB('heatTreatment'),
+      coating: na(),
+      plating: na(),
+      surfaceTreatment: na(),
+    },
+    manufacturing: {
+      casting: na('No casting note found on the drawing.'),
+      forging: na('No forging note found on the drawing.'),
+      machining: na('No machining note found on the drawing.'),
+      sheetMetal: na('No sheet metal note found on the drawing.'),
+      welding: na('No welding note found on the drawing.'),
+      specialProcess: na(),
+    },
+    weight: tb.weight?.kg
+      ? f(Number(tb.weight.kg.toFixed(3)), SRC.DRAWING, tb.weight.confidence, `Mass read from the title block field "${tb.weight.label}" (${tb.weight.value}).`)
+      : na('No mass callout found in the title block.'),
+    geometry: null, // nothing dimensional was read; the user supplies volume
+  }
+  return extraction
+}
+
 export function analyzeDrawing(drawing) {
+  // Real upload whose text we could read: report only what the sheet says.
+  if (!drawing.isSample && drawing.titleBlock) {
+    const extraction = buildExtractionFromDrawing(drawing)
+    const counts = countFields(extraction)
+    return {
+      ...extraction,
+      sampleKey: null,
+      analyzedAt: new Date().toISOString(),
+      engineMode: `Title block read directly from the uploaded ${String(drawing.fileName).split('.').pop().toUpperCase()} (${drawing.textItemCount || 0} text elements).`,
+      readFromFile: true,
+      fieldsFound: counts.found,
+      fieldsMissing: counts.missing,
+    }
+  }
+
   const sample = drawing.sampleKey
     ? SAMPLE_DRAWINGS.find((s) => s.key === drawing.sampleKey) || matchSample(drawing.fileName)
     : matchSample(drawing.fileName)
@@ -96,7 +184,11 @@ export function analyzeDrawing(drawing) {
     ...extraction,
     sampleKey: sample.key,
     analyzedAt: new Date().toISOString(),
-    engineMode: ENGINE_MODE,
+    readFromFile: false,
+    isSampleData: !drawing.isSample,
+    engineMode: drawing.isSample
+      ? ENGINE_MODE
+      : `No readable text in this file, so the values below are SAMPLE DATA from the reference part "${sample.header.partName}" — they do not describe your drawing. ${drawing.textReason || ''}`,
     fieldsFound: countFields(extraction).found,
     fieldsMissing: countFields(extraction).missing,
   }

@@ -2,17 +2,15 @@ import React from 'react'
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts'
 import { useStore } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
-import { Card, Empty, Kpi, Validation, Banner, PALETTE } from '../components/ui.jsx'
+import { Card, Empty, Kpi, Validation, Banner, PALETTE, NoEstimates } from '../components/ui.jsx'
 import { money, money0, num } from '../lib/format.js'
 import { RECO_DISCLAIMER } from '../lib/sources.js'
 
 export default function CostComparison({ go }) {
-  const { estimates, project } = useStore()
+  const { estimates, project, needsGeometry } = useStore()
 
   if (estimates.length < 1) {
-    return <Empty title="Nothing to compare yet" action={<button className="btn primary" onClick={() => go('materials')}>Go to Material Selection</button>}>
-      Select two or more materials to build a comparison.
-    </Empty>
+    return <NoEstimates go={go} needsGeometry={needsGeometry} />
   }
 
   const sorted = [...estimates].sort((a, b) => a.total - b.total)

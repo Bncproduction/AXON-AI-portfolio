@@ -1,7 +1,7 @@
 import React from 'react'
 import { useStore } from '../state/store.jsx'
 import Stepper from '../components/Stepper.jsx'
-import { Card, Empty, Kpi, Validation, Banner, SourceTag } from '../components/ui.jsx'
+import { Card, Empty, Kpi, Validation, Banner, SourceTag, NoEstimates } from '../components/ui.jsx'
 import { recommendRoute, finestRa, tightestToleranceMm } from '../lib/aiEngine.js'
 import { money, num } from '../lib/format.js'
 import { SRC, isAvailable, RECO_DISCLAIMER } from '../lib/sources.js'
@@ -16,12 +16,10 @@ const FACTORS = [
 ]
 
 export default function ProcessAnalysis({ go }) {
-  const { analysis, geometry, estimates, project, dispatch, volume, areaDm2 } = useStore()
+  const { analysis, geometry, estimates, project, dispatch, volume, areaDm2, needsGeometry } = useStore()
 
   if (!estimates.length) {
-    return <Empty title="No materials selected" action={<button className="btn primary" onClick={() => go('materials')}>Go to Material Selection</button>}>
-      Process routes are generated per material.
-    </Empty>
+    return <NoEstimates go={go} needsGeometry={needsGeometry} />
   }
 
   const params = project.params

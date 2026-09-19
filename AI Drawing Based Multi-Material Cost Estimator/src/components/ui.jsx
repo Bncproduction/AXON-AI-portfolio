@@ -58,6 +58,25 @@ export const Empty = ({ title, children, action }) => (
   </div>
 )
 
+/** Why a cost page has nothing to show — geometry missing beats "no materials". */
+export const NoEstimates = ({ go, needsGeometry }) =>
+  needsGeometry ? (
+    <Empty
+      title="Part volume or weight is needed before costing"
+      action={<button className="btn primary" onClick={() => go('weight')}>Go to Weight &amp; Volume</button>}
+    >
+      No dimensions could be read from this drawing, so the part volume is unknown. Nothing has been assumed —
+      enter the volume (or describe the geometry) and the whole cost chain will build from it.
+    </Empty>
+  ) : (
+    <Empty
+      title="No materials selected"
+      action={<button className="btn primary" onClick={() => go('materials')}>Go to Material Selection</button>}
+    >
+      Add at least one candidate material to cost.
+    </Empty>
+  )
+
 export const Num = ({ value, onChange, step = 1, min, max, suffix, width = 110, disabled }) => (
   <div className="flex" style={{ gap: 6, justifyContent: 'flex-end' }}>
     <input
