@@ -25,6 +25,52 @@ export function matchSample(fileName = '') {
   return SAMPLE_DRAWINGS[sum % SAMPLE_DRAWINGS.length]
 }
 
+/**
+ * Read what the file name itself discloses, so the upload form is not empty
+ * before the drawing has been analyzed. This is a naming-convention guess,
+ * never a substitute for the title block — the UI labels it as such and every
+ * field stays editable.
+ */
+export function parseFileName(fileName = '') {
+  const stem = fileName.replace(/\.[^.]+$/, '')
+  const out = { drawingNumber: '', partNumber: '', revision: '', partName: '' }
+
+  // Word boundaries are useless here: "_" counts as a word character, so \b
+  // never fires in BNC-2291-R3_Pump. Use explicit alphanumeric lookarounds.
+  const NOT_BEFORE = '(?<![A-Za-z0-9])'
+  const NOT_AFTER = '(?![A-Za-z0-9])'
+
+  // Revision: _R3, -REV2, (Rev B)
+  const rev = stem.match(new RegExp(`[_\\-\\s(]re?v?[._\\-\\s]?([0-9]{1,2}|[A-Z])${NOT_AFTER}`, 'i'))
+  if (rev) {
+    const r = rev[1].toUpperCase()
+    out.revision = /^\d+$/.test(r) ? `R${r}` : r // numeric -> R3, letter -> B
+  }
+
+  // Drawing number: a prefixed code such as BNC-2291, ABC1234, PH-2291-03.
+  // Skip generic camera/scanner names so "scan001.jpg" is not read as a number.
+  const GENERIC = /^(scan|img|image|photo|pic|doc|file|page|copy|new|untitled|screenshot)$/i
+  const dwgRe = new RegExp(
+    `${NOT_BEFORE}((?:[A-Z]{2,6}[-_ ]){0,2}([A-Z]{2,6})[-_ ]?\\d{3,6}(?:[-_]\\d{1,3})?)${NOT_AFTER}`, 'i')
+  const dwg = stem.match(dwgRe)
+  if (dwg && !GENERIC.test(dwg[2])) out.drawingNumber = dwg[1].replace(/[_ ]/g, '-').toUpperCase()
+
+  // Part name: whatever is left once the code and revision are removed
+  let rest = stem
+  if (out.drawingNumber) rest = rest.replace(dwg[1], ' ')
+  if (rev) rest = rest.replace(rev[0], ' ')
+  rest = rest.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim()
+  if (rest.length > 2) {
+    out.partName = rest
+      .split(' ')
+      .filter((w) => !/^(drg|dwg|drawing|rev|final|copy|new|\d+)$/i.test(w))
+      .map((w) => (w.length > 2 ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w.toUpperCase()))
+      .join(' ')
+      .trim()
+  }
+  return out
+}
+
 export function analyzeDrawing(drawing) {
   const sample = drawing.sampleKey
     ? SAMPLE_DRAWINGS.find((s) => s.key === drawing.sampleKey) || matchSample(drawing.fileName)

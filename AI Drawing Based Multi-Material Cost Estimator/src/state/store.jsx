@@ -87,21 +87,51 @@ function reducer(state, a) {
         materialNotes: Object.fromEntries(suggested.map((s) => [s.id, s])),
         routes: {},
       }))
+      // Write the identifying information back onto the drawing record so the
+      // header, dashboard and reports stop showing placeholders. Anything the
+      // user typed at upload time wins — extraction only fills the blanks.
+      const autoFilled = []
+      const patch = {}
+      const fill = (key, fld) => {
+        if (!drawing[key] && isAvailable(fld)) { patch[key] = fld.value; autoFilled.push(key) }
+      }
+      fill('drawingNumber', analysis.part.drawingNumber)
+      fill('partNumber', analysis.part.partNumber)
+      fill('partName', analysis.part.partName)
+      fill('revision', analysis.part.revision)
+      fill('componentType', analysis.part.componentType)
+
       return {
         ...next,
-        drawings: next.drawings.map((d) => (d.id === a.id ? { ...d, analyzed: true, analyzedAt: analysis.analyzedAt } : d)),
+        drawings: next.drawings.map((d) =>
+          d.id === a.id
+            ? { ...d, ...patch, autoFilled, analyzed: true, analyzedAt: analysis.analyzedAt }
+            : d),
         stats: { ...state.stats, analyses: state.stats.analyses + 1 },
       }
     }
 
-    case 'UPDATE_FIELD':
-      return withProject(state, state.activeId, (p) => {
+    case 'UPDATE_FIELD': {
+      const updated = withProject(state, state.activeId, (p) => {
         if (!p.analysis) return p
         const group = { ...p.analysis[a.group] }
         const prev = group[a.key] || {}
         group[a.key] = { ...prev, value: a.value, source: SRC.USER, confidence: 'High', note: 'Edited by user.' }
         return { ...p, analysis: { ...p.analysis, [a.group]: group }, routes: {} }
       })
+      // Identity fields also live on the drawing record (header, dashboard,
+      // report), so keep the two in step rather than letting them drift.
+      if (a.group === 'part' && ['partName', 'partNumber', 'drawingNumber', 'revision'].includes(a.key)) {
+        return {
+          ...updated,
+          drawings: updated.drawings.map((d) =>
+            d.id === state.activeId
+              ? { ...d, [a.key]: a.value, autoFilled: (d.autoFilled || []).filter((k) => k !== a.key) }
+              : d),
+        }
+      }
+      return updated
+    }
 
     case 'UPDATE_WEIGHT_FIELD':
       return withProject(state, state.activeId, (p) => ({

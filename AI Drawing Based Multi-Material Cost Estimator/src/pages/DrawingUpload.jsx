@@ -3,6 +3,7 @@ import { useStore, makeSampleDrawing, useDeleteDrawing } from '../state/store.js
 import Stepper from '../components/Stepper.jsx'
 import { Card, Banner, Field } from '../components/ui.jsx'
 import { SAMPLE_DRAWINGS } from '../data/sampleDrawings.js'
+import { parseFileName } from '../lib/aiEngine.js'
 import { uid, dateTime } from '../lib/format.js'
 
 const ACCEPT = '.pdf,.jpg,.jpeg,.png,.dwg,.dxf,.step,.stp,.iges,.igs'
@@ -32,6 +33,7 @@ export default function DrawingUpload({ go }) {
     if (!file) return
     const ext = extOf(file.name)
     const canView = EXT_SUPPORT[ext]?.view
+    const guess = parseFileName(file.name)
     setPending({
       id: uid(),
       fileName: file.name,
@@ -39,10 +41,11 @@ export default function DrawingUpload({ go }) {
       fileSize: file.size,
       previewUrl: canView ? URL.createObjectURL(file) : null,
       ext,
-      drawingNumber: '',
+      guessedFields: Object.entries(guess).filter(([, v]) => v).map(([k]) => k),
+      drawingNumber: guess.drawingNumber,
       partNumber: '',
-      partName: '',
-      revision: '',
+      partName: guess.partName,
+      revision: guess.revision,
       drawingDate: '',
       customer: state.settings.customer || '',
       uploadedBy: state.settings.preparedBy,
@@ -109,6 +112,15 @@ export default function DrawingUpload({ go }) {
                     <b>{p.fileName}</b> ({(p.fileSize / 1024).toFixed(0)} KB) — {EXT_SUPPORT[p.ext]?.note || 'File type not recognised; extraction support is limited.'}
                   </span>
                 </Banner>
+                {p.guessedFields?.length > 0 && (
+                  <Banner kind="warn">
+                    <span>⚠</span>
+                    <span>
+                      Pre-filled from the <b>file name</b> ({p.guessedFields.join(', ')}) — a naming-convention guess, not the
+                      title block. Correct anything that is wrong; the remaining blanks are filled from the drawing during analysis.
+                    </span>
+                  </Banner>
+                )}
                 <div className="grid g2">
                   <Field label="Drawing Number"><input className="inp" value={p.drawingNumber} onChange={(e) => setPending({ ...p, drawingNumber: e.target.value })} placeholder="e.g. BNC-DRG-2291" /></Field>
                   <Field label="Part Number"><input className="inp" value={p.partNumber} onChange={(e) => setPending({ ...p, partNumber: e.target.value })} placeholder="e.g. PH-2291-03" /></Field>
@@ -163,11 +175,16 @@ export default function DrawingUpload({ go }) {
             </div>
             {drawing && (
               <div className="grid g2 mt" style={{ gap: 8 }}>
-                {[['File Name', drawing.fileName], ['Drawing Number', drawing.drawingNumber || '—'],
-                  ['Part Number', drawing.partNumber || '—'], ['Part Name', drawing.partName || '—'],
-                  ['Revision', drawing.revision || '—'], ['Drawing Date', drawing.drawingDate || '—'],
-                  ['Uploaded By', drawing.uploadedBy], ['Upload Date', dateTime(drawing.uploadDate)]].map(([k, v]) => (
-                  <div key={k} className="small"><span className="muted">{k}</span><br /><b>{v}</b></div>
+                {[['File Name', drawing.fileName], ['Drawing Number', drawing.drawingNumber, 'drawingNumber'],
+                  ['Part Number', drawing.partNumber, 'partNumber'], ['Part Name', drawing.partName, 'partName'],
+                  ['Revision', drawing.revision, 'revision'], ['Drawing Date', drawing.drawingDate, 'drawingDate'],
+                  ['Uploaded By', drawing.uploadedBy], ['Upload Date', dateTime(drawing.uploadDate)]].map(([k, v, key]) => (
+                  <div key={k} className="small">
+                    <span className="muted">{k}</span>
+                    {key && drawing.autoFilled?.includes(key) && <span className="tag drawing" style={{ marginLeft: 6 }}>from drawing</span>}
+                    <br />
+                    <b>{v || (drawing.analyzed && key ? <span className="muted">Not Available in Drawing</span> : '—')}</b>
+                  </div>
                 ))}
                 <div style={{ gridColumn: '1 / -1' }}>
                   <button className="btn primary mt" onClick={() => analyze(drawing.id)}>
