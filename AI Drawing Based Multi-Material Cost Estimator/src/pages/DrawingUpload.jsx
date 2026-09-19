@@ -176,7 +176,6 @@ export default function DrawingUpload({ go }) {
                   <Field label="Drg./Part No."><input className="inp" value={p.drawingNumber} onChange={(e) => setPending({ ...p, drawingNumber: e.target.value })} placeholder="read from the Drg./Part No. cell" /></Field>
                   <Field label="Part Name"><input className="inp" value={p.partName} onChange={(e) => setPending({ ...p, partName: e.target.value })} placeholder="read from the Drg./Part Designation cell" /></Field>
                   <Field label="Revision"><input className="inp" value={p.revision} onChange={(e) => setPending({ ...p, revision: e.target.value })} placeholder="e.g. R3" /></Field>
-                  <Field label="Drawing Date"><input className="inp" type="date" value={p.drawingDate} onChange={(e) => setPending({ ...p, drawingDate: e.target.value })} /></Field>
                   <Field label="Customer"><input className="inp" value={p.customer} onChange={(e) => setPending({ ...p, customer: e.target.value })} /></Field>
                   <Field label="Uploaded By"><input className="inp" value={p.uploadedBy} onChange={(e) => setPending({ ...p, uploadedBy: e.target.value })} /></Field>
                   <Field label="Upload Date"><input className="inp" value={new Date(p.uploadDate).toLocaleString('en-IN')} readOnly /></Field>
