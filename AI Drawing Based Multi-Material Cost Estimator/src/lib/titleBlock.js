@@ -21,8 +21,14 @@ export const FIELD_LABELS = {
   // Not a costing field, but claiming it stops "1 of 1 Sheets" being read as
   // a drawing number.
   sheet: /^(sheet|sht)s?\.?\s*(no|size)?$/i,
-  // REVN, REV NO, REV., ISS, ISSUE — the forms that actually appear on sheets
-  revision: /^(rev\s*n(o|r)?\.?|revn\.?|rev\.?|revision|iss(ue)?\.?\s*(no)?|änderung|alt(eration)?)$/i,
+  // Revision-history columns. Claiming them keeps each entry in its own
+  // column, and the modification text explains what the revision was.
+  modification: /^(modification|description\s*of\s*change|change\s*(description|note)|nature\s*of\s*change|amendment|remarks?)$/i,
+  ecnNo: /^(ecn\.?\s*no\.?|eco\.?\s*no\.?|change\s*no\.?)$/i,
+  zone: /^zone$/i,
+  // REV, REVN, "REVN O." (REV NO. wrapped mid-word by the CAD system),
+  // REV NO., ISS, ISSUE — the forms that actually appear on sheets
+  revision: /^(rev(is(ion)?)?\s*\.?\s*n?o?\.?|revn\s*o?\.?|iss(ue)?\.?\s*(no)?\.?|änderung|alt(eration)?)$/i,
   material: /^(material|werkstoff|mat(l|erial)?\.?\s*(spec|grade)?|stock|raw\s*material)/i,
   weight: /^(weight|mass|gewicht|wt\.?)/i,
   scale: /^(scale|maßstab|masstab)/i,
@@ -75,7 +81,9 @@ function valid(field, raw) {
         && !normalizeDate(s)
         && !/sheet|scale|rev\b/i.test(s)
     case 'revision':
-      return /^(rev\.?\s*)?[A-Z]?\d{1,2}$|^[A-Z]$/i.test(s)
+      // A1, 01, H, and letter codes such as NR ("new release") — but not a
+      // whole word, which would be a neighbouring heading.
+      return /^(rev\.?\s*)?[A-Z]{0,3}\d{0,2}$/i.test(s) && s.length <= 4 && /[A-Z0-9]/i.test(s)
     case 'approvedDate':
     case 'drawingDate':
       return !!normalizeDate(s)
@@ -145,14 +153,49 @@ export function toPhrases(items = []) {
   return phrases
 }
 
-/** Score of a label/value pairing, or null when the geometry rules it out. */
-function pairScore(label, item) {
+/**
+ * Join a heading that the CAD system wrapped onto a second line.
+ * "REV NO." is often drawn as "REVN" above "O.", and without this the "O."
+ * fragment sits exactly where a value would and gets read as the revision.
+ * Two stacked fragments are merged only when the joined text is itself a
+ * recognised label.
+ */
+export function mergeWrappedLabels(phrases) {
+  const dropped = new Set()
+  for (const a of phrases) {
+    if (dropped.has(a)) continue
+    for (const b of phrases) {
+      if (a === b || dropped.has(b) || b.page !== a.page) continue
+      const dy = b.y - a.y
+      if (dy <= 1 || dy > 13 || Math.abs(b.x - a.x) > 14) continue
+      if (b.str.length > 6) continue
+      const joined = `${a.str} ${b.str}`.trim()
+      if (joined.length <= 24 && looksLikeLabel(joined)) {
+        a.str = joined
+        a.w = Math.max(a.w, b.w)
+        dropped.add(b)
+      }
+    }
+  }
+  return phrases.filter((p) => !dropped.has(p))
+}
+
+/**
+ * Score of a label/value pairing, or null when the geometry rules it out.
+ * `allowAbove` covers revision-history tables, which are headed at the bottom:
+ * the entries sit above "DATE | ECN.NO. | REVN | ZONE | MODIFICATION". It is a
+ * last resort and demands the value sit almost directly over its heading.
+ */
+function pairScore(label, item, allowAbove = false) {
   if (item === label || item.page !== label.page) return null
   const labelRight = label.x + (label.w || label.str.length * 4)
   const dy = item.y - label.y
   const dx = item.x - label.x
   if (Math.abs(dy) <= 4.5 && item.x >= labelRight - 2 && dx < 320) return { score: dx, placement: 'right' }
   if (dy > 1 && dy <= 42 && dx > -60 && dx < 420) return { score: 1000 + dy * 6 + Math.abs(dx) * 0.2, placement: 'below' }
+  if (allowAbove && dy < -2 && dy >= -46 && Math.abs(dx) <= 40) {
+    return { score: 2000 + Math.abs(dy) * 6 + Math.abs(dx) * 2, placement: 'above' }
+  }
   return null
 }
 
@@ -179,27 +222,38 @@ function valueFor(field, label, phrases, labelIndex, labelRe) {
     }
   }
 
-  let best = null
-  for (const it of phrases) {
-    const s = stripEdges(it.str)
-    if (isNoise(s) || looksLikeLabel(s) || !valid(field, s)) continue
-    const pair = pairScore(label, it)
-    if (!pair) continue
+  // Pass 1 looks right and below; only if that finds nothing does pass 2 look
+  // above, so an ordinary title block can never be read upside down.
+  const search = (allowAbove) => {
+    let best = null
+    for (const it of phrases) {
+      const s = stripEdges(it.str)
+      if (isNoise(s) || looksLikeLabel(s) || !valid(field, s)) continue
+      const pair = pairScore(label, it, allowAbove)
+      if (!pair) continue
 
-    // Ownership: whichever label pairs most tightly with this text owns it.
-    let owner = label
-    let ownerScore = pair.score
-    for (const other of labelIndex) {
-      if (other.item === label) continue
-      const p = pairScore(other.item, it)
-      if (p && p.score < ownerScore) { owner = other.item; ownerScore = p.score }
+      // Ownership: whichever label pairs most tightly with this text owns it.
+      let owner = label
+      let ownerScore = pair.score
+      for (const other of labelIndex) {
+        if (other.item === label) continue
+        const p = pairScore(other.item, it, allowAbove)
+        if (p && p.score < ownerScore) { owner = other.item; ownerScore = p.score }
+      }
+      if (owner !== label) continue
+
+      if (!best || pair.score < best.score) best = { value: s, score: pair.score, placement: pair.placement }
     }
-    if (owner !== label) continue
-
-    if (!best || pair.score < best.score) best = { value: s, score: pair.score, placement: pair.placement }
+    return best
   }
+
+  const best = search(false) || search(true)
   if (!best) return null
-  return { value: best.value, confidence: best.placement === 'below' ? 'Medium' : 'High', placement: best.placement }
+  return {
+    value: best.value,
+    confidence: best.placement === 'right' || best.placement === 'inline' ? 'High' : 'Medium',
+    placement: best.placement,
+  }
 }
 
 /**
@@ -209,7 +263,7 @@ function valueFor(field, label, phrases, labelIndex, labelRe) {
 export function parseTitleBlock(items = []) {
   const found = {}
   if (!items.length) return found
-  const phrases = toPhrases(items)
+  const phrases = mergeWrappedLabels(toPhrases(items))
 
   // Every label on the sheet, used for the ownership test
   const labelIndex = []
@@ -236,7 +290,14 @@ export function parseTitleBlock(items = []) {
       found.weight.kg = /^g/i.test(m[2] || '') ? n / 1000 : n
     } else delete found.weight
   }
-  if (found.revision) found.revision.value = String(found.revision.value).replace(/^rev\.?\s*/i, '').toUpperCase()
+  if (found.revision) {
+    found.revision.value = String(found.revision.value).replace(/^rev\.?\s*/i, '').toUpperCase()
+    // The modification column says what the revision was, e.g. "NEW RELEASE"
+    if (found.modification?.value) found.revision.change = found.modification.value
+  }
+  delete found.modification
+  delete found.ecnNo
+  delete found.zone
 
   // An approval date is the controlled date; fall back to a plain date cell.
   const dateHit = found.approvedDate || found.drawingDate

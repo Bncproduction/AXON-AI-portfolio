@@ -146,6 +146,7 @@ export default function DrawingUpload({ go }) {
                       Read from the drawing's own <b>title block</b>: {p.fromTitleBlock.map((k) => (
                         <span key={k} className="tag drawing" style={{ marginRight: 4 }}>
                           {p.titleBlock[k].label} → {String(p.titleBlock[k].value).slice(0, 40)}
+                          {p.titleBlock[k].change && ` (${p.titleBlock[k].change})`}
                           {p.titleBlock[k].mirrored && ' (used for both drawing & part no.)'}
                         </span>
                       ))}

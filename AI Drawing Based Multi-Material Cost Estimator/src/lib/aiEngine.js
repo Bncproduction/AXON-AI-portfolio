@@ -84,8 +84,9 @@ export function buildExtractionFromDrawing(drawing) {
     const mirrored = tb[key].mirrored
       ? ` This sheet carries a single number for both the drawing and the part, so the same value is used for each.`
       : ''
+    const change = tb[key].change ? ` Latest entry in the revision table: "${tb[key].change}".` : ''
     return f(tb[key].value, SRC.DRAWING, tb[key].confidence,
-      note || `Read from the title block field "${tb[key].label}".${mirrored}`)
+      note || `Read from the title block field "${tb[key].label}".${mirrored}${change}`)
   }
 
   const dias = ann.diameters || []
