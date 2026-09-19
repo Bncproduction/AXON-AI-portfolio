@@ -52,7 +52,7 @@ export default function History() {
         <div className="tbl-wrap">
           <table>
             <thead>
-              <tr><th>Date</th><th>Drawing</th><th>Part No.</th><th>Part Name</th><th>Rev</th><th>Material</th><th>Process</th>
+              <tr><th>Date</th><th>Drg./Part No.</th><th>Part No.</th><th>Part Name</th><th>Rev</th><th>Material</th><th>Process</th>
                 <th className="num">Weight</th><th className="num">Lot</th><th className="num">Cost / Part</th>
                 <th className="num">Batch</th><th className="num">Annual</th><th>Prepared By</th><th></th></tr>
             </thead>

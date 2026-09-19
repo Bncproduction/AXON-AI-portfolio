@@ -10,7 +10,7 @@ export function collectAssumptions({ analysis, volume, estimates, params, drawin
   const push = (group, parameter, value, source, note) => rows.push({ group, parameter, value, source, note })
 
   if (drawing) {
-    push('Drawing', 'Drawing number', drawing.drawingNumber || '—', SRC.DRAWING, 'Title block / upload record.')
+    push('Drawing', 'Drg./Part No.', drawing.drawingNumber || '—', SRC.DRAWING, 'Title block / upload record.')
     push('Drawing', 'Part number', drawing.partNumber || '—', SRC.DRAWING, 'Title block / upload record.')
     push('Drawing', 'Revision', drawing.revision || '—', SRC.DRAWING, 'Costing is valid for this revision only.')
   }

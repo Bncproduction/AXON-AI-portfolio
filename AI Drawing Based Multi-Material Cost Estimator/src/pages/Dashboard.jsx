@@ -107,7 +107,7 @@ export default function Dashboard({ go }) {
       >
         <div className="grid g4" style={{ gap: 8, marginBottom: 12 }}>
           <div className="field"><label>Part Number</label><input className="inp sm" value={f.part} onChange={(e) => set('part', e.target.value)} placeholder="filter…" /></div>
-          <div className="field"><label>Drawing Number</label><input className="inp sm" value={f.drawing} onChange={(e) => set('drawing', e.target.value)} placeholder="filter…" /></div>
+          <div className="field"><label>Drg./Part No.</label><input className="inp sm" value={f.drawing} onChange={(e) => set('drawing', e.target.value)} placeholder="filter…" /></div>
           <div className="field"><label>Material</label><select className="inp sm" value={f.material} onChange={(e) => set('material', e.target.value)}>{uniq('material').map((x) => <option key={x}>{x}</option>)}</select></div>
           <div className="field"><label>Process</label><select className="inp sm" value={f.process} onChange={(e) => set('process', e.target.value)}>{uniq('process').map((x) => <option key={x}>{x}</option>)}</select></div>
           <div className="field"><label>Supplier</label><select className="inp sm" value={f.supplier} onChange={(e) => set('supplier', e.target.value)}>{uniq('supplier').map((x) => <option key={x}>{x}</option>)}</select></div>
@@ -117,7 +117,7 @@ export default function Dashboard({ go }) {
         <div className="tbl-wrap">
           <table>
             <thead>
-              <tr><th>Date</th><th>Drawing</th><th>Part No.</th><th>Rev</th><th>Material</th><th>Process</th>
+              <tr><th>Date</th><th>Drg./Part No.</th><th>Part No.</th><th>Rev</th><th>Material</th><th>Process</th>
                 <th className="num">Weight</th><th className="num">Cost / Part</th><th className="num">Batch</th><th className="num">Annual</th><th>Status</th></tr>
             </thead>
             <tbody>
@@ -145,7 +145,7 @@ export default function Dashboard({ go }) {
       <Card title="Drawings" hint={`${state.drawings.length} records`} flush>
         <div className="tbl-wrap">
           <table>
-            <thead><tr><th>Drawing</th><th>Part</th><th>Rev</th><th>Uploaded</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Drg./Part No.</th><th>Part</th><th>Rev</th><th>Uploaded</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {state.drawings.length === 0 && <tr><td colSpan={6} className="muted" style={{ textAlign: 'center', padding: 24 }}>No drawings uploaded.</td></tr>}
               {state.drawings.map((d) => (

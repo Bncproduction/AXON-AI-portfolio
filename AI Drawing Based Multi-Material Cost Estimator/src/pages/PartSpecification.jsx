@@ -8,7 +8,7 @@ import { num } from '../lib/format.js'
 const ROWS = [
   ['part', 'partName', 'Part Name', ''],
   ['part', 'partNumber', 'Part Number', ''],
-  ['part', 'drawingNumber', 'Drawing Number', ''],
+  ['part', 'drawingNumber', 'Drg./Part No.', ''],
   ['part', 'revision', 'Revision', ''],
   ['part', 'componentType', 'Component Type', ''],
   ['material', 'specification', 'Material', ''],

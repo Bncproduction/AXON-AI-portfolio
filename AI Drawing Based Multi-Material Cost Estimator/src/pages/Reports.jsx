@@ -99,7 +99,7 @@ export default function Reports({ go }) {
           <div className="meta">
             <div><b>Part Number</b>{drawing?.partNumber || analysis.part.partNumber?.value || '—'}</div>
             <div><b>Part Name</b>{drawing?.partName || analysis.part.partName?.value || '—'}</div>
-            <div><b>Drawing Number</b>{drawing?.drawingNumber || analysis.part.drawingNumber?.value || '—'}</div>
+            <div><b>Drg./Part No.</b>{drawing?.drawingNumber || analysis.part.drawingNumber?.value || '—'}</div>
             <div><b>Revision</b>{drawing?.revision || analysis.part.revision?.value || '—'}</div>
             <div><b>Customer</b>{st.customer || drawing?.customer || '—'}</div>
             <div><b>Supplier</b>{st.supplier || '—'}</div>
@@ -110,7 +110,7 @@ export default function Reports({ go }) {
           <S n="1" title="Engineering Drawing">
             <T head={['Item', 'Detail']} rows={[
               ['File name', drawing?.fileName || '—'],
-              ['Drawing number', drawing?.drawingNumber || '—'],
+              ['Drg./Part No.', drawing?.drawingNumber || '—'],
               ['Part number / name', `${drawing?.partNumber || '—'} / ${drawing?.partName || '—'}`],
               ['Revision', drawing?.revision || '—'],
               ['Drawing date', drawing?.drawingDate || 'Not recorded'],

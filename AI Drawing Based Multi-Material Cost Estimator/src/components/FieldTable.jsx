@@ -64,7 +64,7 @@ export const DIM_SUFFIX = {
   wallThickness: 'mm', holeDiameter: 'mm', holeQuantity: 'nos',
 }
 export const PART_LABELS = {
-  partName: 'Part Name', partNumber: 'Part Number', drawingNumber: 'Drawing Number',
+  partName: 'Part Name', partNumber: 'Part Number', drawingNumber: 'Drg./Part No.',
   revision: 'Revision', componentType: 'Component Type',
 }
 export const QUALITY_LABELS = {
