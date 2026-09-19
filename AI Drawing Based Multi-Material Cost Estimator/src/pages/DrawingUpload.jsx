@@ -171,8 +171,7 @@ export default function DrawingUpload({ go }) {
                 )}
                 <div className="grid g2">
                   <Field label="Drg./Part No."><input className="inp" value={p.drawingNumber} onChange={(e) => setPending({ ...p, drawingNumber: e.target.value })} placeholder="read from the Drg./Part No. cell" /></Field>
-                  <Field label="Part Number"><input className="inp" value={p.partNumber} onChange={(e) => setPending({ ...p, partNumber: e.target.value })} placeholder="read from the drawing" /></Field>
-                  <Field label="Part Name"><input className="inp" value={p.partName} onChange={(e) => setPending({ ...p, partName: e.target.value })} placeholder="e.g. Pump Housing" /></Field>
+                  <Field label="Part Name"><input className="inp" value={p.partName} onChange={(e) => setPending({ ...p, partName: e.target.value })} placeholder="read from the Drg./Part Designation cell" /></Field>
                   <Field label="Revision"><input className="inp" value={p.revision} onChange={(e) => setPending({ ...p, revision: e.target.value })} placeholder="e.g. R3" /></Field>
                   <Field label="Drawing Date"><input className="inp" type="date" value={p.drawingDate} onChange={(e) => setPending({ ...p, drawingDate: e.target.value })} /></Field>
                   <Field label="Customer"><input className="inp" value={p.customer} onChange={(e) => setPending({ ...p, customer: e.target.value })} /></Field>
@@ -212,7 +211,10 @@ export default function DrawingUpload({ go }) {
             {drawing && (
               <div className="grid g2 mt" style={{ gap: 8 }}>
                 {[['File Name', drawing.fileName], ['Drg./Part No.', drawing.drawingNumber, 'drawingNumber'],
-                  ['Part Number', drawing.partNumber, 'partNumber'], ['Part Name', drawing.partName, 'partName'],
+                  // The sheet carries one number for both, so it is not repeated
+                  ...(drawing.partNumber && drawing.partNumber !== drawing.drawingNumber
+                    ? [['Part Number', drawing.partNumber, 'partNumber']] : []),
+                  ['Part Name', drawing.partName, 'partName'],
                   ['Revision', drawing.revision, 'revision'], ['Drawing Date', drawing.drawingDate, 'drawingDate'],
                   ['Uploaded By', drawing.uploadedBy], ['Upload Date', dateTime(drawing.uploadDate)]].map(([k, v, key]) => (
                   <div key={k} className="small">
