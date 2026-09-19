@@ -34,8 +34,10 @@ export const FIELD_LABELS = {
   scale: /^(scale|maßstab|masstab)/i,
   // An approval / release date is the controlled date on most title blocks,
   // so it is preferred over a plain "Date" cell.
-  approvedDate: /^(app(r(o)?)?(o?v(e)?d|d)?\.?\s*(on|date|dt)?|approval\s*date|released?\s*(on|date)?|date\s*of\s*(approval|issue|release))$/i,
-  drawingDate: /^(date|datum|drawn\s*on|issue\s*date|dt\.?)$/i,
+  // Not anchored at the end: a signature row is often one text run,
+  // "APPROVED  VINOTH  19/06/26", and the date is pulled out of the rest.
+  approvedDate: /^(approved?|appd|apprd|approval|released?)\b/i,
+  drawingDate: /^(date|datum|drawn\s*on|issue\s*date|dt\.)\b/i,
   generalTolerance: /^(gen(eral)?\.?\s*tol|tolerance[s]?|unspecified\s*tol|tol(erance)?\s*class|allgemeintoleranz)/i,
   surfaceFinish: /^(surface\s*(finish|roughness|texture)|roughness|finish|oberfl)/i,
   heatTreatment: /^(heat\s*treat|hardness|hrc|case\s*depth|wärmebehandlung)/i,
@@ -62,6 +64,31 @@ const STOPWORDS = new Set([
 
 const isNoise = (s) => !s || /^[-–—_:.,/|\s]+$/.test(s) || s.length > 90
 const isStopword = (s) => STOPWORDS.has(s.toLowerCase().replace(/[.,:;]+$/, '').trim())
+
+/** Pull a date out of a longer string, e.g. "VINOTH  19/06/26". */
+export function extractDate(text = '') {
+  const m = String(text).match(/\b(\d{4}[-./]\d{1,2}[-./]\d{1,2}|\d{1,2}[-./]\d{1,2}[-./]\d{2,4}|\d{1,2}[-\s][A-Za-z]{3,}[-\s]\d{2,4})\b/)
+  return m ? normalizeDate(m[1]) : null
+}
+
+/** Pull the signatory out of a signature row, e.g. "APPROVED VINOTH 19/06/26". */
+export function extractName(text = '') {
+  const cleaned = String(text).replace(/\b\d[\d-./]*\b/g, ' ').replace(/\s+/g, ' ').trim()
+  const words = cleaned.split(' ').filter((w) => /^[A-Za-z][A-Za-z.'-]{1,}$/.test(w) && !isStopword(w))
+  return words.length ? words.join(' ').slice(0, 40) : null
+}
+
+/**
+ * The usable value this text yields for a field, or null.
+ * Dates are extracted from anywhere in the string, because a title block
+ * often puts the label, the signatory and the date in a single cell.
+ */
+function coerce(field, raw) {
+  const s = stripEdges(raw)
+  if (!s || isStopword(s)) return null
+  if (field === 'approvedDate' || field === 'drawingDate') return extractDate(s)
+  return valid(field, s) ? s : null
+}
 
 /** Does this text plausibly belong in that field? */
 function valid(field, raw) {
@@ -203,8 +230,8 @@ function pairScore(label, item, allowAbove = false) {
 function valueFor(field, label, phrases, labelIndex, labelRe) {
   const inline = label.str.split(/[:：]/)
   if (inline.length > 1) {
-    const v = stripEdges(inline.slice(1).join(':'))
-    if (v && valid(field, v)) return { value: v, confidence: 'High', placement: 'inline' }
+    const v = coerce(field, inline.slice(1).join(':'))
+    if (v) return { value: v, confidence: 'High', placement: 'inline' }
   }
   // "GENERAL TOL +/- 0.2" — the cell holds its own value with no colon.
   // Take the remainder after the label text rather than reaching for the
@@ -215,9 +242,10 @@ function valueFor(field, label, phrases, labelIndex, labelRe) {
     // Only when the label ends at a separator — otherwise "Drg./Part Designation"
     // would be split into the label "…Desig" and a value of "nation".
     if (after && /^[\s:.\-–—|]/.test(after)) {
-      const remainder = stripEdges(after)
-      if (remainder && valid(field, remainder)) {
-        return { value: remainder, confidence: 'High', placement: 'inline' }
+      const v = coerce(field, after)
+      if (v) {
+        const signedBy = field === 'approvedDate' ? extractName(after) : null
+        return { value: v, confidence: 'High', placement: 'inline', signedBy }
       }
     }
   }
@@ -228,7 +256,9 @@ function valueFor(field, label, phrases, labelIndex, labelRe) {
     let best = null
     for (const it of phrases) {
       const s = stripEdges(it.str)
-      if (isNoise(s) || looksLikeLabel(s) || !valid(field, s)) continue
+      if (isNoise(s) || looksLikeLabel(s)) continue
+      const value = coerce(field, s)
+      if (!value) continue
       const pair = pairScore(label, it, allowAbove)
       if (!pair) continue
 
@@ -242,17 +272,34 @@ function valueFor(field, label, phrases, labelIndex, labelRe) {
       }
       if (owner !== label) continue
 
-      if (!best || pair.score < best.score) best = { value: s, score: pair.score, placement: pair.placement }
+      if (!best || pair.score < best.score) best = { value, score: pair.score, placement: pair.placement, item: it }
     }
     return best
   }
 
   const best = search(false) || search(true)
   if (!best) return null
+
+  // On a signature row the name sits between "APPROVED" and the date.
+  let signedBy = null
+  if (field === 'approvedDate') {
+    signedBy = extractName(label.str)
+    if (!signedBy && best.item) {
+      const between = phrases.filter((p) =>
+        p.page === label.page && Math.abs(p.y - label.y) <= 4.5 &&
+        p.x > label.x && p.x < best.item.x && !looksLikeLabel(stripEdges(p.str)))
+      for (const p of between) {
+        const n = extractName(p.str)
+        if (n) { signedBy = n; break }
+      }
+    }
+  }
+
   return {
     value: best.value,
     confidence: best.placement === 'right' || best.placement === 'inline' ? 'High' : 'Medium',
     placement: best.placement,
+    signedBy,
   }
 }
 

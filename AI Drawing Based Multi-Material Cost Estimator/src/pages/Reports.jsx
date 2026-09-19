@@ -69,7 +69,10 @@ export default function Reports({ go }) {
             <Field label="Customer"><input className="inp" value={st.customer} onChange={(e) => setS({ customer: e.target.value })} placeholder={drawing?.customer || 'Customer name'} /></Field>
             <Field label="Supplier"><input className="inp" value={st.supplier} onChange={(e) => setS({ supplier: e.target.value })} /></Field>
             <Field label="Prepared By"><input className="inp" value={st.preparedBy} onChange={(e) => setS({ preparedBy: e.target.value })} /></Field>
-            <Field label="Engineering Approval"><input className="inp" value={st.approvalEngineering} onChange={(e) => setS({ approvalEngineering: e.target.value })} placeholder="Name / designation" /></Field>
+            <Field label="Engineering Approval">
+              <input className="inp" value={st.approvalEngineering} onChange={(e) => setS({ approvalEngineering: e.target.value })}
+                placeholder={drawing?.approvedBy ? `${drawing.approvedBy} (approved the drawing)` : 'Name / designation'} />
+            </Field>
             <Field label="Costing Approval"><input className="inp" value={st.approvalCosting} onChange={(e) => setS({ approvalCosting: e.target.value })} placeholder="Name / designation" /></Field>
           </div>
           <div className="flex mt">
@@ -111,6 +114,7 @@ export default function Reports({ go }) {
               ['Part number / name', `${drawing?.partNumber || '—'} / ${drawing?.partName || '—'}`],
               ['Revision', drawing?.revision || '—'],
               ['Drawing date', drawing?.drawingDate || 'Not recorded'],
+              ['Drawing approved by', drawing?.approvedBy ? `${drawing.approvedBy} (from the drawing's approval block)` : 'Not stated on the drawing'],
               ['Uploaded by / on', `${drawing?.uploadedBy || '—'} · ${dateTime(drawing?.uploadDate)}`],
             ]} />
           </S>

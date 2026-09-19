@@ -72,6 +72,7 @@ export default function DrawingUpload({ go }) {
       partName: pick('partName', guess.partName),
       revision: pick('revision', guess.revision),
       drawingDate: pick('drawingDate', ''),
+      approvedBy: tb.drawingDate?.signedBy || '',
       customer: state.settings.customer || '',
       uploadedBy: state.settings.preparedBy,
       uploadDate: new Date().toISOString(),
@@ -147,6 +148,7 @@ export default function DrawingUpload({ go }) {
                         <span key={k} className="tag drawing" style={{ marginRight: 4 }}>
                           {p.titleBlock[k].label} → {String(p.titleBlock[k].value).slice(0, 40)}
                           {p.titleBlock[k].change && ` (${p.titleBlock[k].change})`}
+                          {p.titleBlock[k].signedBy && ` (signed ${p.titleBlock[k].signedBy})`}
                           {p.titleBlock[k].mirrored && ' (used for both drawing & part no.)'}
                         </span>
                       ))}
