@@ -76,6 +76,22 @@ show('multi-line material heading + two-line value', [
   { str: '\u00d8 20mm', x: 85, y: 144, w: 40, page: 1 },
 ], { material: 'IS 3074 CEW I, Ø 20mm' })
 
+show('material vs neighbouring MODEL, USED ON column', [
+  { str: 'Material description, Size,', x: 60, y: 100, w: 120, page: 1 },
+  { str: 'Spec, Std No.', x: 85, y: 109, w: 60, page: 1 },
+  { str: 'MODEL, USED ON', x: 250, y: 100, w: 80, page: 1 },
+  { str: 'IS 3074 CEW I', x: 70, y: 128, w: 70, page: 1 },
+  { str: 'Ø 20mm', x: 85, y: 144, w: 40, page: 1 },
+  { str: 'XYZ-500 / ABC-750', x: 250, y: 128, w: 90, page: 1 },
+], { material: 'IS 3074 CEW I, Ø 20mm' })
+
+// a plain-word grade must still be accepted when nothing spec-like competes
+show('plain word material', [
+  { str: 'Material', x: 60, y: 100, w: 32, page: 1 },
+  { str: 'Mild Steel', x: 60, y: 118, w: 44, page: 1 },
+], { material: 'Mild Steel' })
+
+
 console.log(failed ? `
 ${failed} FAILING` : `
 all ${total} layouts pass`)

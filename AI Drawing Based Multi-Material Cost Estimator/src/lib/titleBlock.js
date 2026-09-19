@@ -26,6 +26,9 @@ export const FIELD_LABELS = {
   modification: /^(modification|description\s*of\s*change|change\s*(description|note)|nature\s*of\s*change|amendment|remarks?)$/i,
   ecnNo: /^(ecn\.?\s*no\.?|eco\.?\s*no\.?|change\s*no\.?)$/i,
   zone: /^zone$/i,
+  // "MODEL, USED ON" lists the vehicles a part is fitted to. Claiming it stops
+  // that column being read as the material of the cell beside it.
+  usedOn: /^(model,?\s*used\s*on|used\s*on|model\s*used|used\s*in|application|assembly\s*(no|name)?)/i,
   // REV, REVN, "REVN O." (REV NO. wrapped mid-word by the CAD system),
   // REV NO., ISS, ISSUE — the forms that actually appear on sheets
   revision: /^(rev(is(ion)?)?\s*\.?\s*n?o?\.?|revn\s*o?\.?|iss(ue)?\.?\s*(no)?\.?|änderung|alt(eration)?)$/i,
@@ -60,6 +63,7 @@ const STOPWORDS = new Set([
   'page', 'of', 'all dimensions in mm', 'do not scale', 'confidential', 'sl', 'sr',
   'sht', 'shts', 'sheets', 'issue', 'iss', 'checked by', 'approved by', 'drawn by',
   'spec', 'specs', 'specification', 'std', 'standard', 'grade', 'type', 'ref',
+  'model', 'used', 'used on', 'application', 'assembly', 'variant', 'model used on',
   'a0', 'a1', 'a2', 'a3', 'a4', 'description', 'designation', 'item', 'code', 'remarks',
 ])
 
@@ -226,6 +230,15 @@ export function mergeWrappedLabels(phrases) {
 }
 
 /**
+ * A material callout almost always names a standard or a grade designation.
+ * Text with neither is far more likely to be a neighbouring column, so it is
+ * pushed behind a candidate that does — a plain "Mild Steel" is still taken
+ * when nothing better competes.
+ */
+const SPEC_TOKENS = /\b(is|en|astm|aisi|sae|din|jis|bs|ss|fg|sg|adc|cew|hr|cr|gr|grade)\b/i
+const looksLikeSpec = (s) => /\d/.test(s) || SPEC_TOKENS.test(s)
+
+/**
  * Score of a label/value pairing, or null when the geometry rules it out.
  * `allowAbove` covers revision-history tables, which are headed at the bottom:
  * the entries sit above "DATE | ECN.NO. | REVN | ZONE | MODIFICATION". It is a
@@ -292,7 +305,8 @@ function valueFor(field, label, phrases, labelIndex, labelRe) {
       }
       if (owner !== label) continue
 
-      if (!best || pair.score < best.score) best = { value, score: pair.score, placement: pair.placement, item: it }
+      const score = pair.score + (field === 'material' && !looksLikeSpec(value) ? 1500 : 0)
+      if (!best || score < best.score) best = { value, score, placement: pair.placement, item: it }
     }
     return best
   }
@@ -381,6 +395,7 @@ export function parseTitleBlock(items = []) {
   delete found.modification
   delete found.ecnNo
   delete found.zone
+  delete found.usedOn
 
   // An approval date is the controlled date; fall back to a plain date cell.
   const dateHit = found.approvedDate || found.drawingDate
