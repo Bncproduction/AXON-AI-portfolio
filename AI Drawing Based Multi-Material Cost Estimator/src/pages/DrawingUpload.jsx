@@ -47,7 +47,9 @@ export default function DrawingUpload({ go }) {
     setReading(false)
 
     const pick = (field, fallback) => (tb[field]?.value ? tb[field].value : fallback)
-    const fromTitleBlock = Object.keys(tb)
+    // 'sheet' is only parsed to stop a sheet counter being mistaken for a
+    // drawing number — it is not a costing input, so it is not reported.
+    const fromTitleBlock = Object.keys(tb).filter((k) => k !== 'sheet')
 
     setPending({
       id: uid(),

@@ -14,8 +14,13 @@
 /** Label vocabulary, including the abbreviations CAD title blocks actually use. */
 export const FIELD_LABELS = {
   partName: /^(drg\.?\s*\/?\s*part\s*desig|part\s*desig|part\s*name|part\s*descr|description|designation|benennung|title|component\s*name|nomenclature|item\s*name)/i,
-  partNumber: /^(part\s*(no|nr|num|number|code)|p\/?n\b|item\s*(no|code)|component\s*(no|code)|teil\s*nr|artikel|drg\.?\s*\/?\s*part\s*no)/i,
-  drawingNumber: /^(dr(aw)?(g|ing)?\.?\s*(no|nr|num|number)|dwg\.?\s*(no)?|zeichnungs?\s*nr|doc(ument)?\s*(no|number)|sheet\s*no)/i,
+  // "Drg./Part No." is one cell serving both numbers — matched here, then
+  // mirrored onto the drawing number below.
+  partNumber: /^(drg\.?\s*\/?\s*part\s*(no|nr|number)|part\s*(no|nr|num|number|code)|p\/?n\b|item\s*(no|code)|component\s*(no|code)|teil\s*nr|artikel)/i,
+  drawingNumber: /^(dr(aw)?(g|ing)?\.?\s*(no|nr|num|number)|dwg\.?\s*(no)?|zeichnungs?\s*nr|doc(ument)?\s*(no|number))/i,
+  // Not a costing field, but claiming it stops "1 of 1 Sheets" being read as
+  // a drawing number.
+  sheet: /^(sheet|sht)s?\.?\s*(no|size)?$/i,
   // REVN, REV NO, REV., ISS, ISSUE — the forms that actually appear on sheets
   revision: /^(rev\s*n(o|r)?\.?|revn\.?|rev\.?|revision|iss(ue)?\.?\s*(no)?|änderung|alt(eration)?)$/i,
   material: /^(material|werkstoff|mat(l|erial)?\.?\s*(spec|grade)?|stock|raw\s*material)/i,
@@ -45,6 +50,7 @@ const STOPWORDS = new Set([
   'mm', 'cm', 'inch', 'kg', 'tolerance', 'tol', 'finish', 'title', 'drawing', 'drg',
   'dwg', 'part', 'no', 'nos', 'number', 'projection', 'angle', 'third angle', 'first angle',
   'page', 'of', 'all dimensions in mm', 'do not scale', 'confidential', 'sl', 'sr',
+  'sht', 'shts', 'sheets', 'issue', 'iss', 'checked by', 'approved by', 'drawn by',
   'a0', 'a1', 'a2', 'a3', 'a4', 'description', 'designation', 'item', 'code', 'remarks',
 ])
 
@@ -61,7 +67,13 @@ function valid(field, raw) {
       return /[A-Za-z]{3}/.test(s) && s.length >= 3 && s.length <= 60 && !/^\d+$/.test(s)
     case 'partNumber':
     case 'drawingNumber':
-      return /\d/.test(s) && /^[A-Za-z0-9][A-Za-z0-9 ._\-/]{2,39}$/.test(s)
+      // A part/drawing number is a single token with a digit in it. Rejecting
+      // whitespace keeps out sheet counters ("1 .... of .... 1 .... Sheets"),
+      // and rejecting parseable dates keeps out the date cell ("19/06/26").
+      return /\d/.test(s)
+        && /^[A-Za-z0-9][A-Za-z0-9._\-/]{2,29}$/.test(s)
+        && !normalizeDate(s)
+        && !/sheet|scale|rev\b/i.test(s)
     case 'revision':
       return /^(rev\.?\s*)?[A-Z]?\d{1,2}$|^[A-Z]$/i.test(s)
     case 'approvedDate':
